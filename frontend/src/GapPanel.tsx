@@ -149,7 +149,7 @@ export default function GapPanel({
             <p>These scores count sampled journeys that change if one unknown connection is blocked. Other unknown conditions remain usable in both scenarios. They do not measure ridership or official priority.</p>
             <p>{reachability.inspection_priorities.evaluated_candidate_count} candidates evaluated from {reachability.inspection_priorities.candidate_count_on_sample_paths} connections on sampled paths; limited to {reachability.inspection_priorities.candidate_limit} candidates.</p>
             <ol>{reachability.inspection_priorities.candidates.slice(0, 5).map(candidate => <li key={candidate.candidate_id}>
-              <a href={candidate.source_url} target="_blank" rel="noreferrer">OSM connection {candidate.candidate_id}</a>: {candidate.score === null ? "impact unavailable" : `${candidate.score} of ${candidate.sample_count} sampled journeys change`}. Missing {candidate.missing_critical_attributes.join(", ")}.
+              <a href={candidate.source_url} target="_blank" rel="noreferrer">OpenStreetMap way {candidate.source_url.split("/").pop()}</a>: {candidate.score === null ? "impact unavailable" : `${candidate.score} of ${candidate.sample_count} sampled journeys change`}. Missing {candidate.missing_critical_attributes.join(", ")}.
               <details><summary>Calculation details</summary><p>{candidate.assumptions}</p><p>{reachability.inspection_priorities.parallel_edge_policy}</p><p>Changed origin/stop pairs: {candidate.affected_pairs.map(pair => pair.join(" → ")).join("; ") || "none"}.</p></details>
             </li>)}</ol>
             {reachability.inspection_priorities.candidates.length === 0 && <p>No source-linked unknown connections occur on the sampled possible paths.</p>}

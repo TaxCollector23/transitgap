@@ -11,3 +11,5 @@
 - Generated screenshots/traces are ignored by Git; failures remain available in GitHub Actions artifacts and history.
 
 See RELEASE_ACCEPTANCE.md for final-head CI, deployment, and live browser checks. Real screen-reader/voice-control testing, field observations, independent student work and CAC submission are not claimed.
+
+Mobile screenshot review caught clipped opaque candidate IDs in the new impact list. The display now uses readable OSM way numbers, with exact connection IDs retained in the API. The targeted pilot browser flow passes at both desktop and 390 px, including an internal result-region width assertion.

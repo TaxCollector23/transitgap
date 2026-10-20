@@ -158,6 +158,13 @@ test("network gaps render and create an editable factual letter", async ({
   await expect(page.getByRole("region", { name: "Inspection reachability impact" })).toContainText("sampled journeys change");
   await page.getByRole("region", { name: "Inspection reachability impact" }).scrollIntoViewIfNeeded();
   await page.screenshot({ path: "test-artifacts/screenshots/inspection-impact.png" });
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
+  const impactBox = await page.getByRole("region", { name: "Inspection reachability impact" }).evaluate(element => ({ width: element.clientWidth, contentWidth: element.scrollWidth }));
+  expect(impactBox.contentWidth).toBeLessThanOrEqual(impactBox.width);
+  await expect.poll(() => page.evaluate(() => (window as any).__transitGapMap?.areTilesLoaded())).toBe(true);
+  await page.screenshot({ path: "test-artifacts/screenshots/inspection-impact-mobile.png" });
+  await page.setViewportSize({ width: 1440, height: 900 });
   await page.locator(".gap-ranking button").first().click();
   await expect(page.locator(".study-detail")).toContainText(
     "Standard network",

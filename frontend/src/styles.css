@@ -66,13 +66,6 @@ a:focus-visible {
   white-space: nowrap;
   border: 0;
 }
-.app-boot {
-  display: flex;
-  min-height: 100dvh;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-}
 .app-shell {
   position: relative;
   height: 100dvh;
@@ -135,21 +128,18 @@ a:focus-visible {
   border-left: 4px solid #b45622;
   padding-left: 8px;
 }
-.map-loading {
-  position: absolute;
-  z-index: 3;
-  top: 40%;
-  left: 60%;
-  transform: translate(-50%, -50%);
-  padding: 16px;
-  background: var(--surface);
-  border: 1px solid var(--line);
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 14px;
-  white-space: nowrap;
-}
+/* Cover the mobile sheet as well as the map while either is starting. */
+.app-loading { position:fixed; inset:0; z-index:20; display:grid; place-items:center; padding:28px; overflow-y:auto; background:var(--surface); }
+.app-loading-content { width:100%; max-width:440px; text-align:center; }
+.app-loading h1 { margin:22px 0 16px; font-size:28px; letter-spacing:-.03em; }
+.app-loading p { margin:12px 0; font-size:16px; line-height:1.6; }
+.app-loading .app-loading-message { font-weight:600; }
+.app-loading-content > a { display:inline-block; margin-top:24px; padding:10px; }
+.app-loading .app-loading-spinner { width:38px; height:38px; border-width:3px; }
+.app-loading-recovery { margin-top:24px; }
+.routing-startup { display:flex; gap:10px; align-items:flex-start; flex-wrap:wrap; margin:16px 0 24px; font-size:14px; line-height:1.6; }
+.routing-startup .spinner { flex:none; margin-top:3px; }
+.routing-startup > span:not(.spinner) { flex:1; min-width:180px; }
 .map-selection-banner {
   position: absolute;
   z-index: 3;
@@ -683,10 +673,6 @@ a:focus-visible {
     top: 65px;
     transform: none;
     max-width: calc(100vw - 24px);
-  }
-  .map-loading {
-    left: 50%;
-    top: 22%;
   }
   .step-section {
     margin-bottom: 20px;

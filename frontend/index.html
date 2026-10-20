@@ -22,7 +22,14 @@
     <title>TransitGap | Transit access, with evidence</title>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <div id="initial-app-loading" style="display:none;min-height:100dvh;place-items:center;padding:28px;background:#fffefa;text-align:center;font-family:Inter,system-ui,sans-serif;color:#202722">
+        <div role="status"><h1 style="font-size:28px">Opening TransitGap</h1><p>Loading the route planner…</p><a href="/" style="color:#176b5b">Back to home</a></div>
+      </div>
+    </div>
+    <script>
+      if (location.pathname !== "/") document.getElementById("initial-app-loading").style.display = "grid";
+    </script>
     <noscript
       ><main>
         <h1>A city for all.</h1>

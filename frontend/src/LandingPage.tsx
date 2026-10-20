@@ -1,8 +1,6 @@
 import { useEffect, useState } from "react";
 import "./landing.css";
-const API =
-  import.meta.env.VITE_API_URL ||
-  (import.meta.env.PROD ? "" : "http://localhost:8000");
+import { studySummary, stopAccess, PREPARED, warmRouting } from "./data";
 type Gap = {
   properties: { stop_id: string; stop_name: string; gap_score: number };
 };
@@ -20,17 +18,14 @@ export default function LandingPage() {
   useEffect(() => {
     document.body.classList.add("landing-page");
     const controller = new AbortController();
-    fetch(`${API}/gaps?limit=5`, { signal: controller.signal })
-      .then((r) => (r.ok ? r.json() : null))
+    if (PREPARED) void warmRouting();
+    studySummary(5, controller.signal)
       .then((data) => {
         if (!data) return;
         setStudy(data);
         const id = data.features[0]?.properties.stop_id;
         if (id)
-          fetch(`${API}/stops/${encodeURIComponent(id)}/access`, {
-            signal: controller.signal,
-          })
-            .then((r) => (r.ok ? r.json() : null))
+          stopAccess(id, controller.signal)
             .then((item) => {
               if (item)
                 setNetwork({

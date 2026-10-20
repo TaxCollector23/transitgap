@@ -35,7 +35,7 @@ Directions are generated from the selected edges, their stored names and bearing
 
 ## Ten-minute access study
 
-The build evaluates 32 stops selected at evenly spaced positions in a latitude/longitude-sorted list of real county stops. This is a reproducible spatial sample, not a statistically representative county study or a countywide worst-stop ranking. Additional selected stops can be evaluated on request.
+The build evaluates 32 stops selected at evenly spaced positions in a latitude/longitude-sorted list of real county stops. This is a reproducible spatial sample, not a statistically representative county study or a countywide worst-stop ranking. Additional selected stops can be evaluated on request, but those ad-hoc requests do not silently change the prepared ranking sample.
 
 For each stop, reverse Dijkstra measures travel **toward** the stop within 600 seconds. Edge budgets include the same profile costs and assumed speeds used by routing. Reachable edge fragments at the cutoff are retained. Reciprocal geometry is deduplicated, and reachable intervals from both ends are merged before measuring physical network length.
 
@@ -58,3 +58,7 @@ Address search is explicit rather than autocomplete. A backend proxy bounds quer
 ## Verification still needed
 
 Automated graph, protocol, browser and accessibility checks cannot establish real-world usability. No field routes, interviews, endorsements or accessibility certifications have been invented. Field checks, durable report storage and a representative larger study remain necessary before making broader conclusions.
+
+## Prepared frontend snapshots
+
+The build exports public stop coordinates, coverage, the evaluated sample and letter drafts from the exact same prepared datasets. Vercel serves these static files through its CDN, and the UI falls back to the live API if a snapshot is unavailable. A background health request warms the routing engine. Snapshot preparation time is distinct from source acquisition time. No user origins, private addresses or community-report text are exported. A browser check blocks all live dataset endpoints and still opens these views. Routing itself still requires the backend.

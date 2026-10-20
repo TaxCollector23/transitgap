@@ -8,6 +8,7 @@ const GapPanel = lazy(() => import("./GapPanel"));
 const MapView = lazy(() => import("./MapView"));
 const GroundTruthPanel = lazy(() => import("./GroundTruthPanel"));
 import type { Coverage, RouteResult, Stop } from "./types";
+import { plannerData, PREPARED, warmRouting } from "./data";
 
 const API =
   import.meta.env.VITE_API_URL ||
@@ -162,6 +163,7 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [mapReady, setMapReady] = useState(false);
   const [dataReady, setDataReady] = useState(false);
+  const [routingWarm, setRoutingWarm] = useState(!PREPARED);
   const [calculating, setCalculating] = useState(false);
   const [mapMode, setMapMode] = useState<"idle" | "origin" | "report">("idle");
   const selecting = mapMode !== "idle";
@@ -198,27 +200,10 @@ export default function App() {
     setError("");
     const request = (async () => {
       try {
-        const [healthResponse, coverageResponse, stopsResponse] =
-          await Promise.all([
-            fetch(`${API}/health`),
-            fetch(`${API}/coverage`),
-            fetch(`${API}/stops`),
-          ]);
-        const health = await healthResponse.json();
-        if (!healthResponse.ok || !health.ready)
-          throw new Error(
-            health.error || "Transit and walking data could not be loaded.",
-          );
-        if (!coverageResponse.ok)
-          throw new Error(
-            detailOf(await coverageResponse.json().catch(() => null)),
-          );
-        if (!stopsResponse.ok)
-          throw new Error(
-            detailOf(await stopsResponse.json().catch(() => null)),
-          );
-        const nextCoverage = (await coverageResponse.json()) as Coverage;
-        const stopData = (await stopsResponse.json()) as { stops: Stop[] };
+        if (PREPARED) void warmRouting().then(setRoutingWarm);
+        const { coverage: nextCoverage, stops: loadedStops } =
+          await plannerData();
+        const stopData = { stops: loadedStops };
         setCoverage(nextCoverage);
         setStops(stopData.stops);
         const params = new URLSearchParams(location.search);
@@ -900,7 +885,9 @@ export default function App() {
                     {calculating ? (
                       <>
                         <span className="spinner light" />
-                        Finding route…
+                        {routingWarm
+                          ? "Finding route…"
+                          : "Preparing county routing…"}
                       </>
                     ) : (
                       "Find Route"
@@ -966,6 +953,9 @@ export default function App() {
                           )}{" "}
                           mph.
                         </p>
+                        {result.algorithm_warning && (
+                          <p role="status">{result.algorithm_warning}</p>
+                        )}
                         {result.data_confidence != null && (
                           <p>
                             {Math.round(result.data_confidence * 100)}% of

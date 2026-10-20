@@ -16,3 +16,7 @@ frontend/test-artifacts
 __pycache__
 .pytest_cache
 *.egg-info
+frontend/public/bootstrap.json
+frontend/public/study-summary.json
+frontend/public/studies
+frontend/public/prepared-letters

@@ -14,7 +14,7 @@ It uses actual OpenStreetMap paths and official VTA GTFS across Santa Clara Coun
 - GTFS route joins, boarding status, service calendars and scheduled departures. These are not live arrivals.
 - Directions from selected edge geometry, explicit address search, shareable journey links and editable civic letters.
 - Five real graph algorithms under “Under the hood”: Dijkstra, bidirectional Dijkstra, A*, queue-based Bellman-Ford and breadth-first search. BFS minimizes segments, not walking distance.
-- A scrolling landing page, a separate planner at `/app`, miles, loading states and mobile map controls. Evidence and the map renderer load separately from the core planner.
+- A scrolling landing page, a separate planner at `/app`, miles, loading states and mobile map controls. Evidence and the map renderer load separately from the core planner. Prepared stop data, sampled studies and letters are served as CDN snapshots while the county engine warms.
 - A public read-only MCP server, plus a local stdio entrypoint.
 
 ## Local setup
@@ -93,7 +93,7 @@ The 13 tools use the same backend functions as the web app. They expose coverage
 
 See [testing](TESTING.md), [current release status](docs/RELEASE_STATUS.md), [methods](docs/METHODOLOGY.md) and [accessibility limitations](ACCESSIBILITY_LIMITATIONS.md). Earlier Phase 4/5 audit files are historical snapshots; current release status takes precedence.
 
-Deployment uses Vercel's FastAPI integration. Prepared data is bundled, static frontend files are promoted to the CDN, and `/app` rewrites to the same HTML shell. The backend remains available at its normal API paths. Test the public root, planner, API and MCP after every production release.
+Deployment uses Vercel's FastAPI integration. Prepared data is bundled, static frontend files are promoted to the CDN, and `/app` rewrites to the same HTML shell. The backend remains available at its normal API paths. Test the public root, planner, API and MCP after every production release. A first routing request can still wait for the county engine to cold-start; no offline route calculation is claimed.
 
 ## Limits and privacy
 

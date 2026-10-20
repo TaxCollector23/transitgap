@@ -26,3 +26,8 @@ frontend/test-artifacts/screenshots/
 !.env.example
 .vercel
 .trace/
+# Generated public dataset snapshots
+frontend/public/bootstrap.json
+frontend/public/study-summary.json
+frontend/public/studies/
+frontend/public/prepared-letters/

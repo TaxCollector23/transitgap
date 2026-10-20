@@ -51,6 +51,11 @@ def test_gap_cache_roundtrip_and_zero_denominator(tmp_path):
     assert detail["gap_score"] == pytest.approx(0.6667, abs=0.0001)
     assert detail["wheelchair_boarding"] == 0
     assert GapIndex(g, stops, tmp_path).summary()["evaluated_stop_count"] == 1
+    # Ad-hoc queries must not silently change the prepared comparison sample.
+    index.stops['other'] = {**stops[0], 'stop_id': 'other'}
+    index.detail('other')
+    assert len(index.cache) == 2
+    assert index.summary()['evaluated_stop_count'] == 1
     g.remove_edges_from(list(g.edges(keys=True)))
     blank = GapIndex(g, stops, tmp_path).detail("s")
     assert blank["gap_score"] is None

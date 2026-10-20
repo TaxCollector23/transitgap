@@ -1,7 +1,5 @@
 import { useEffect, useState } from "react";
-const API =
-  import.meta.env.VITE_API_URL ||
-  (import.meta.env.PROD ? "" : "http://localhost:8000");
+import { studySummary, stopAccess, civicLetter } from "./data";
 export type GapDetail = {
   stop_id: string;
   stop_name: string;
@@ -30,9 +28,7 @@ export default function GapPanel({
     setError("");
     setLetter("");
     try {
-      const r = await fetch(`${API}/stops/${encodeURIComponent(id)}/access`);
-      if (!r.ok) throw Error("Access study unavailable.");
-      const data = await r.json();
+      const data = await stopAccess(id);
       setDetail(data);
       onStudy(data);
     } catch (e) {
@@ -43,11 +39,7 @@ export default function GapPanel({
   }
   useEffect(() => {
     const controller = new AbortController();
-    fetch(`${API}/gaps?limit=10`, { signal: controller.signal })
-      .then((r) => {
-        if (!r.ok) throw Error("Access study unavailable.");
-        return r.json();
-      })
+    studySummary(10, controller.signal)
       .then((data) => {
         setItems(data.features);
         setCount(data.evaluated_stop_count);
@@ -133,11 +125,7 @@ export default function GapPanel({
             className="button"
             onClick={async () => {
               try {
-                const r = await fetch(
-                  `${API}/letters/${encodeURIComponent(detail.stop_id)}`,
-                );
-                if (!r.ok) throw Error("Letter unavailable");
-                setLetter(await r.text());
+                setLetter(await civicLetter(detail.stop_id));
               } catch (e) {
                 setError(e instanceof Error ? e.message : "Unavailable");
               }

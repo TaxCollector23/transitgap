@@ -106,6 +106,7 @@ class GapIndex:
             directory,
         )
         self.cache = {}
+        self.prepared_ids = set()
         from hashlib import sha256
         from .data_loader import (
             graph_cache_path,
@@ -136,6 +137,7 @@ class GapIndex:
                 cached = json.loads(self.path.read_text())
                 if cached["signature"] == self.signature:
                     self.cache = cached["stops"]
+                    self.prepared_ids = set(cached.get("prepared_ids", self.cache))
             except (OSError, ValueError, KeyError):
                 pass
 
@@ -171,8 +173,15 @@ class GapIndex:
                 "boundary_status": "Study is clipped to the county graph; routes near its boundary may be truncated.",
             }
         if len(self.cache) > 100:
-            oldest = next(iter(self.cache))
-            if oldest != stop_id:
+            oldest = next(
+                (
+                    key
+                    for key in self.cache
+                    if key not in self.prepared_ids and key != stop_id
+                ),
+                None,
+            )
+            if oldest is not None:
                 self.cache.pop(oldest)
         return self.cache[stop_id]
 
@@ -183,13 +192,18 @@ class GapIndex:
             key=lambda s: (s["latitude"], s["longitude"], s["stop_id"]),
         )
         stride = max(1, len(selected) // limit)
+        self.prepared_ids = {stop["stop_id"] for stop in selected[::stride][:limit]}
         for stop in selected[::stride][:limit]:
             self.detail(stop["stop_id"])
         try:
             temp = self.path.with_suffix(".part")
             temp.write_text(
                 json.dumps(
-                    {"signature": self.signature, "stops": self.cache},
+                    {
+                        "signature": self.signature,
+                        "stops": self.cache,
+                        "prepared_ids": sorted(self.prepared_ids),
+                    },
                     separators=(",", ":"),
                 )
             )
@@ -199,7 +213,11 @@ class GapIndex:
 
     def summary(self, limit=10):
         ranked = sorted(
-            (r for r in self.cache.values() if r["gap_score"] is not None),
+            (
+                r
+                for key, r in self.cache.items()
+                if key in self.prepared_ids and r["gap_score"] is not None
+            ),
             key=lambda r: (-r["gap_score"], r["stop_id"]),
         )
         features = []

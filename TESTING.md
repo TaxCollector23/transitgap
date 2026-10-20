@@ -14,7 +14,9 @@ Integration tests need prepared real OSM/VTA datasets. Offline unit tests use sy
 
 The suite covers directed and parallel edges, profile costs, exclusions, unknown tags, geometry continuity, connectors, detour availability, GTFS calendars and overnight service, partial walkshed edges, reciprocal geometry, source-cache invalidation, PII normalization, read-only MCP and ephemeral report rejection. A 5,000-node route has a two-second request budget.
 
-Eight browser checks cover desktop/mobile scrolling, the five algorithms, mobility profiles, route comparison, directions, service details, sharing, real network studies, editable letters, map selection, failure recovery, evidence loading and automated WCAG A/AA rules on three views. Automated accessibility checks do not replace keyboard, screen-reader or real-world user evaluation.
+Nine browser checks cover desktop/mobile scrolling, the five algorithms, mobility profiles, route comparison, directions, service details, sharing, real network studies, editable letters, map selection, failure recovery, evidence loading and automated WCAG A/AA rules on three views. Automated accessibility checks do not replace keyboard, screen-reader or real-world user evaluation.
+
+A production-preview regression blocks live data endpoints and still opens the prepared stop selector, network study and editable letter. Build the frontend before running Playwright so its preview server has the actual generated snapshots.
 
 MCP verification:
 

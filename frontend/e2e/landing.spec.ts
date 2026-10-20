@@ -9,6 +9,7 @@ test('city hero and editorial page work at all five target sizes', async ({ page
     await page.setViewportSize({ width, height });
     await page.goto('/');
     await page.evaluate(() => document.fonts.ready);
+    await page.locator(".landing-art").evaluate((image: HTMLImageElement) => image.decode());
     await expect(page.getByRole('heading', {name:'A city for all.',exact:true})).toBeVisible();
     await expect(page.locator('.landing-actions a')).toHaveCount(2);
     const state = await page.evaluate(() => {

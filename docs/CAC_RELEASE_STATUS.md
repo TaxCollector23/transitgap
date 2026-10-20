@@ -1,5 +1,7 @@
 # Current release status
 
-The final engineering sprint supersedes the earlier stub-era audit. The inspection algorithm is implemented and integrated with AI assistance; no student authorship is claimed. See FINAL_RELEASE_AUDIT.md and RELEASE_ACCEPTANCE.md for final CI/deployment results.
+**READY FOR ENGINEERING RELEASE; CAC submission awaiting human work.**
 
-Local verification: 131 backend/contract tests pass; 4 deterministic fixture-browser tests pass; 11 real-data browser tests pass; lint/build pass. MapLibre retains its bundle-size advisory. Production reporting stays disabled without durable storage. Field research, real assistive-technology validation, student contributions, video, deadline confirmation and submission remain human tasks.
+Production code `ca3f34d` is live at https://transitgap.vercel.app and verified by HTTP, the full 11-test public browser suite, and an actual 13-tool MCP client. PR #8 remains open for review with required code CI green. Backend/contract tests: 131 passed locally; ordinary CI: 127 passed / 4 integration cases deselected (all real cases executed locally). Fixture browser: 4 passed.
+
+Inspection sensitivity is implemented and integrated with AI assistance; no independent student authorship is claimed. See RELEASE_ACCEPTANCE.md for evidence, earlier failures/corrections, and exact limits. Production reports remain disabled without durable storage. Cold health took about 39 seconds; field research, manual assistive-technology sessions, real student contribution, video, deadline confirmation and submission are still outstanding.

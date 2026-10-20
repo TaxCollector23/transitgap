@@ -31,3 +31,9 @@ Scores are hypothetical reachability sensitivity on sampled graph journeys. They
 The first public deployment (`cfc74c6`) passed HTTP and MCP smoke but its full browser run had 8 passed / 3 failed. Two checks used a development-only MapLibre handle absent in production. The camera-stability test now pans with keyboard controls and checks the actual origin marker stays in place during stop search. The gap/mobile test uses visible canvas and internal content-width assertions.
 
 The third failure revealed an application issue: `/accessibility/priorities?limit=80` returned in 109 ms, but a stalled `/data-sources` request held the entire evidence panel in loading because of `Promise.all`. Loads are now independent with bounded retry, separate candidate/report/availability states, and explicit optional-source failure/retry. Saving a report no longer waits for unrelated metadata. A fixture regression verifies that candidates and report controls remain usable when metadata requests fail. Local reruns: 4 fixture tests and all 11 real-data tests pass. Initial public failure traces are retained locally under `frontend/test-artifacts/production-before-fix/`.
+
+## Final outcome
+
+Production `ca3f34d` is verified on the stable public hostname. Final public browser run: 11 passed. Fixture suite: 4 passed. Backend/contract: 131 passed locally; ordinary CI: 127 passed with 4 separately executed integration cases deselected. Code CI run 39514893673 passes both required jobs. Public MCP handshake/tool/route/gap/error checks pass with 13 read-only tools.
+
+A later landing-only harness race was fixed by awaiting actual image decoding without changing the visual assertions. All app journeys then passed the full public rerun. See RELEASE_ACCEPTANCE.md for historical failures, live endpoint evidence, performance, and remaining human tasks. The measured 39.188-second first health request is an outstanding cold-start limit; no startup speedup is claimed.

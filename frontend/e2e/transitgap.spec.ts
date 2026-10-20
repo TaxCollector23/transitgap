@@ -164,6 +164,11 @@ test("network gaps render and create an editable factual letter", async ({
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
   const impactBox = await page.getByRole("region", { name: "Inspection reachability impact" }).evaluate(element => ({ width: element.clientWidth, contentWidth: element.scrollWidth }));
   expect(impactBox.contentWidth).toBeLessThanOrEqual(impactBox.width);
+  if (!process.env.TRANSITGAP_E2E_URL) {
+    const padding = await page.evaluate(() => (window as any).__transitGapMap.getPadding());
+    expect(padding.left + padding.right).toBeLessThan(390);
+    expect(padding.top + padding.bottom).toBeLessThan(844);
+  }
   await expect(page.locator(".maplibregl-canvas")).toBeVisible();
   await page.screenshot({ path: "test-artifacts/screenshots/inspection-impact-mobile.png" });
   await page.setViewportSize({ width: 1440, height: 900 });

@@ -1,13 +1,56 @@
 """Fetch real OSM and VTA data into the bundle before a Vercel deployment."""
 import os
 import sys
+import tempfile
 from pathlib import Path
 
 root = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(root))
 os.environ["TRANSITGAP_DATA_DIR"] = str(root / "backend" / "data")
-from backend.app.data_loader import initialize
+os.environ.setdefault("TRANSITGAP_REGION", "santa_clara_county")
+os.environ.setdefault("TRANSITGAP_OVERPASS_URL", "https://overpass.private.coffee/api")
+import osmnx as ox
+ox.settings.log_console = True
+from backend.app.data_loader import (COUNTY_RADIUS_M, COUNTY_REGION, DEFAULT_RADIUS_M, initialize,
+                                    _download, _refresh_requested, _write_metadata, write_compact_graph)
+from backend.app.data_sources.sanjose import load_sidewalks
+from backend.app.data_sources.osm_extract import NORCAL_URL
 
+county_graph = root / "backend" / "data" / "walk-network-santa-clara-county.graphml"
+if os.environ["TRANSITGAP_REGION"] == COUNTY_REGION and (not (county_graph.exists() or county_graph.with_suffix(".jsonl.gz").exists()) or _refresh_requested()) and not os.getenv("TRANSITGAP_OSM_PBF"):
+    extract_path = Path(tempfile.gettempdir()) / "transitgap-norcal.osm.pbf"
+    print("Downloading the official Geofabrik Northern California OSM extract…", flush=True)
+    _download(NORCAL_URL, extract_path)
+    os.environ["TRANSITGAP_OSM_PBF"] = str(extract_path)
+    os.environ["TRANSITGAP_DISPOSABLE_PBF"] = "1"
+
+print(f"Preparing {os.environ['TRANSITGAP_REGION']} walking paths and VTA stops…", flush=True)
 graph, stops = initialize()
 print(f"Prepared OSM graph: {len(graph.nodes)} nodes, {len(graph.edges)} edges")
 print(f"Prepared official VTA stops connected to the graph: {len(stops)}")
+if os.environ["TRANSITGAP_REGION"] == COUNTY_REGION and county_graph.exists():
+    compact = county_graph.with_suffix(".jsonl.gz")
+    print("Packing a streaming JSON walking graph for deployment…", flush=True)
+    write_compact_graph(graph, compact)
+    _write_metadata(compact, COUNTY_RADIUS_M, graph, COUNTY_REGION)
+    county_graph.unlink()
+    print(f"Packed county graph: {compact.stat().st_size / 1_000_000:.1f} MB", flush=True)
+sidewalks = load_sidewalks(radius_m=DEFAULT_RADIUS_M, directory=root / "backend" / "data")
+print(f"Prepared City of San Jose sidewalk comparison snapshot: {len(sidewalks.get('features', []))} features ({sidewalks.get('metadata', {}).get('availability', 'unavailable')}); other county municipalities are not covered by this source")
+
+from backend.app.transit import TransitSchedule
+from backend.app.gaps import GapIndex
+print("Preparing static GTFS schedule joins…", flush=True)
+TransitSchedule(root / "backend" / "data" / "gtfs_vta.zip", [s['stop_id'] for s in stops])
+print("Preparing a spatial sample of 32 ten-minute stop access studies…", flush=True)
+gaps = GapIndex(graph, stops, root / "backend" / "data")
+gaps.prepare(32)
+print(f"Prepared {len(gaps.cache)} network walksheds", flush=True)
+
+from backend.app.groundtruth_cache import load_groundtruth
+print("Preparing immutable municipal evidence index…", flush=True)
+index = load_groundtruth(graph, stops, sidewalks, root / "backend" / "data", gaps.signature)
+print(f"Prepared {len(index.gaps)} municipal review candidates", flush=True)
+from backend.app.prepared_frontend import export_frontend
+export_frontend(graph, stops, gaps, os.environ['TRANSITGAP_REGION'], root / 'frontend' / 'public')
+print('Exported prepared stop and network-study snapshots for CDN delivery', flush=True)

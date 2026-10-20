@@ -7,11 +7,16 @@ backend/data/*
 backend/cache/
 !backend/data/.gitkeep
 *.graphml
+*.osm.pbf
+*.egg-info/
 *.zip
 *.part
 # Frontend
 node_modules/
 frontend/dist/
+frontend/test-artifacts/playwright-report/
+frontend/test-artifacts/test-results/
+frontend/test-artifacts/screenshots/
 *.tsbuildinfo
 # Vercel
 .vercel/
@@ -20,3 +25,9 @@ frontend/dist/
 .env.*
 !.env.example
 .vercel
+.trace/
+# Generated public dataset snapshots
+frontend/public/bootstrap.json
+frontend/public/study-summary.json
+frontend/public/studies/
+frontend/public/prepared-letters/

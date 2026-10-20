@@ -1,2 +1,44 @@
 <!doctype html>
-<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/><meta name="theme-color" content="#f7f7f4"/><meta name="description" content="Find walking routes to VTA transit stops while avoiding mapped stairs."/><title>TransitGap — Walk to transit</title></head><body><div id="root"></div><script type="module" src="/src/main.tsx"></script></body></html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <meta name="theme-color" content="#f7f7f4" />
+    <meta
+      name="description"
+      content="Measure mobility detours and missing accessibility evidence on journeys to VTA stops across Santa Clara County."
+    />
+    <meta
+      property="og:title"
+      content="TransitGap | See the gaps in transit access"
+    />
+    <meta
+      property="og:description"
+      content="Compare mobility routes, inspect the evidence, and explore ten-minute access gaps at real VTA stops."
+    />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://transitgap.vercel.app/" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <title>TransitGap | Transit access, with evidence</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <noscript
+      ><main>
+        <h1>The shortest route is not always a usable route.</h1>
+        <p>
+          TransitGap compares walking routes to VTA stops across Santa Clara
+          County and shows where accessibility information is mapped or missing.
+          No route is independently verified accessible.
+        </p>
+        <p>
+          Enable JavaScript to explore the map.
+          <a href="https://github.com/TaxCollector23/transitgap"
+            >Read the source and methods</a
+          >.
+        </p>
+      </main></noscript
+    >
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

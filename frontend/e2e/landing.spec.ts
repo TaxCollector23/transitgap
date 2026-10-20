@@ -23,7 +23,7 @@ test('city hero and editorial page work at all five target sizes', async ({ page
     });
     expect(state).toMatchObject({ height, art:height, loaded:true, white:'rgb(255, 255, 255)', black:true, overflow:false });
     expect(state.font).toContain('DM Sans');
-    await expect(page.locator('.network-preview,.landing-eyebrow,.eyebrow,.badge,.pill,details,svg')).toHaveCount(0);
+    await expect(page.locator('.network-preview,.landing-eyebrow,.eyebrow,.badge,.pill,details:not(.speech-settings),svg')).toHaveCount(0);
     await page.getByRole('link', {name:'How TransitGap works',exact:true}).click();
     await expect.poll(async()=> (await page.locator('#how-it-works').evaluate(e=>Math.abs(e.getBoundingClientRect().top-32))) < 2).toBe(true);
     await page.getByRole('navigation',{name:'Main navigation'}).getByRole('link',{name:'Data & methods'}).click();

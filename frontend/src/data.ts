@@ -1,8 +1,8 @@
 import type { Coverage, Stop } from "./types";
 export const API =
-  import.meta.env.VITE_API_URL ||
+  (import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL || "").replace(/\/$/, "") ||
   (import.meta.env.PROD ? "" : "http://localhost:8000");
-export const PREPARED = import.meta.env.PROD && !import.meta.env.VITE_API_URL;
+export const PREPARED = import.meta.env.PROD && !(import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL);
 async function json(response: Response) {
   const data = await response.json();
   if (!response.ok)
@@ -12,6 +12,22 @@ async function json(response: Response) {
         : data.detail?.message || "Data could not be loaded.",
     );
   return data;
+}
+
+export async function serviceJSON(path: string) {
+  let last: unknown;
+  for (let attempt=0; attempt<3; attempt++) {
+    const controller = new AbortController();
+    const timer = window.setTimeout(() => controller.abort(), 15000);
+    try {
+      const response = await fetch(path, {signal:controller.signal,cache:"no-store"});
+      if (response.status < 500 && response.status !== 429) return await json(response);
+      last = Error("The routing service is starting or temporarily unavailable.");
+    } catch (error) { last=error; }
+    finally { window.clearTimeout(timer); }
+    if (attempt<2) await new Promise(resolve=>window.setTimeout(resolve,800*2**attempt));
+  }
+  throw last instanceof Error ? last : Error("The routing service could not be reached. Try again.");
 }
 async function prepared(path: string, fallback: string, signal?: AbortSignal) {
   if (PREPARED) {
@@ -40,17 +56,13 @@ export async function plannerData(): Promise<{
       /* Recover through the live API. */
     }
   }
-  const [h, c, s] = await Promise.all([
-    fetch(`${API}/health`, { keepalive: true, cache: "no-store" }),
-    fetch(`${API}/coverage`),
-    fetch(`${API}/stops`),
-  ]);
-  const health = await json(h);
+  const health = await serviceJSON(`${API}/health`);
   if (!health.ready)
     throw Error(
       health.error || "Transit and walking data could not be loaded.",
     );
-  return { coverage: await json(c), stops: (await json(s)).stops };
+  const [coverage, data] = await Promise.all([serviceJSON(`${API}/coverage`),serviceJSON(`${API}/stops`)]);
+  return {coverage,stops:data.stops};
 }
 export async function studySummary(limit = 10, signal?: AbortSignal) {
   const data = await prepared(
@@ -80,19 +92,9 @@ let routingWarmup: Promise<boolean> | null = null;
 export function warmRouting() {
   // StrictMode and overlapping callers share one cold-start request.
   if (routingWarmup) return routingWarmup;
-  const controller = new AbortController();
-  const timeout = window.setTimeout(() => controller.abort(), 60000);
-  routingWarmup = fetch(`${API}/health`, {
-    keepalive: true,
-    cache: "no-store",
-    signal: controller.signal,
-  })
-    .then(json)
-    .then((data) => Boolean(data.ready))
+  routingWarmup = serviceJSON(`${API}/health`)
+    .then(data => Boolean(data.ready))
     .catch(() => false)
-    .finally(() => {
-      window.clearTimeout(timeout);
-      routingWarmup = null;
-    });
+    .finally(() => { routingWarmup = null; });
   return routingWarmup;
 }

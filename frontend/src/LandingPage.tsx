@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import "./landing.css";
+import ReadAloud from "./ReadAloud";
 import { PREPARED, warmRouting } from "./data";
 
 const steps = [
@@ -38,6 +39,7 @@ export default function LandingPage() {
         </div>
       </section>
       <div className="landing-editorial">
+        <ReadAloud text={() => Array.from(document.querySelectorAll<HTMLElement>(".landing-copy h1,.landing-copy > p,.landing-editorial section h2,.landing-editorial section h3,.landing-editorial section p")).filter(e=>e.getClientRects().length && !e.closest('[hidden],[inert],[aria-hidden="true"]')).map(e=>e.innerText).join(". ")} />
         <section className="landing-split" id="why-transitgap">
           <h2>A nearby stop isn't always an easy stop to reach.</h2>
           <div>

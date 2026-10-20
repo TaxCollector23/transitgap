@@ -46,6 +46,8 @@ export type RouteResult = {
   algorithm: string;
   algorithm_warning?: string | null;
   profile: string;
+  profile_explanation?: string;
+  selected_edges?: Array<{from:string;to:string;key:string|null;reference:string}>;
   optimization_objective?: string;
   optimization_cost_m?: number;
   uncertainty_cost_m?: number;
@@ -104,6 +106,7 @@ export type Observation = {
   category: string;
   description: string | null;
   created_at: string;
+  updated_at?: string;
   evidence_status: string;
   review_status: string;
 };

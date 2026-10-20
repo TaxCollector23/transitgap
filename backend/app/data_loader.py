@@ -7,7 +7,14 @@ from pathlib import Path
 from typing import Any
 import httpx
 import networkx as nx
-import osmnx as ox
+class _LazyOSMnx:
+    """Keep build-only pandas/geopandas dependencies out of compact-cache startup."""
+    def __getattr__(self, name):
+        import importlib
+        module = importlib.import_module("osmnx")
+        return getattr(module, name)
+
+ox = _LazyOSMnx()
 from shapely.geometry import Point, shape
 from .geospatial import distance_m, nearest_graph_node
 
@@ -219,6 +226,8 @@ def load_graph(radius_m: int = DEFAULT_RADIUS_M, directory: Path | None = None,
             return graph
         except Exception as exc:
             logger.warning("Cached OSM graph is unreadable; attempting one clean data refresh: %s", exc)
+    if os.getenv("TRANSITGAP_CACHE_ONLY") == "1":
+        raise DatasetError("Prepared OSM graph is missing or unreadable; rebuild the data artifact before starting this service.")
     try:
         _configure_osmnx_tags()
         if refresh:

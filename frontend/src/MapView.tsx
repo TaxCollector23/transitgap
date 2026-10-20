@@ -543,7 +543,7 @@ export default function MapView({
       const { west, south, east, north } = coverage.bounds;
       const mobile = window.matchMedia("(max-width: 760px)").matches;
       const bottom =
-        mobile && panelExpanded ? Math.min(window.innerHeight * 0.73, 680) : 78;
+        mobile && panelExpanded ? (document.querySelector(".panel")?.getBoundingClientRect().height || 78) : 78;
       map.fitBounds(
         [
           [west, south],
@@ -553,7 +553,7 @@ export default function MapView({
           padding: {
             top: 76,
             bottom: bottom + 24,
-            left: mobile ? 24 : 450,
+            left: mobile ? 24 : Math.min((document.querySelector(".panel")?.getBoundingClientRect().right || 408)+20, window.innerWidth*.5),
             right: 36,
           },
           maxZoom: 11,

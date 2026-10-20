@@ -15,6 +15,7 @@ dependencies = [
   "mcp>=2,<3",
   "osmium>=4.3,<5",
   "pykdtree>=1.4,<2",
+  "psycopg[binary]>=3.2,<4",
 ]
 
 [build-system]
@@ -29,6 +30,7 @@ include = ["backend*", "mcp_server*"]
 
 [tool.setuptools.package-data]
 "backend.app.data_sources" = ["*.geojson"]
+"backend.app" = ["migrations/*.sql"]
 
 [tool.vercel]
 entrypoint = "index:app"

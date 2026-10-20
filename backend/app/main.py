@@ -1,4 +1,7 @@
 from __future__ import annotations
+import json
+import hmac
+from datetime import datetime, timezone, timedelta
 import logging
 import math
 import os
@@ -28,16 +31,19 @@ from .models import Profile, RouteComparisonRequest, RouteRequest
 from .gaps import GapIndex
 from .transit import TransitSchedule
 from .geospatial import nearest_graph_node
-from .profiles import SPEED_MPS
-from .routing import PROFILE_OBJECTIVES, calculate_route
+from .profiles import SPEED_MPS, configuration
+from .routing import PROFILE_OBJECTIVES, calculate_route as base_calculate_route, _edge_coords
 from .data_sources.sanjose import load_sidewalks
 from .groundtruth_cache import load_groundtruth
-from .observation_models import ObservationCreate
+from .observation_models import ObservationCreate, ObservationReview
 from .observations import (
     create_observation,
     database_durability,
     initialize_observations,
     list_observations,
+    observation_detail,
+    review_observation,
+    active_routing_effects,
 )
 from .mcp_server import asgi_app as mcp_asgi_app, server as mcp_server
 
@@ -103,7 +109,9 @@ def _load() -> None:
             index, gt_error = None, str(exc)
         try:
             initialize_observations()
+            observations_ready = True
         except Exception:
+            observations_ready = False
             logger.exception("TransitGap community report store initialization failed")
         state.update(
             graph=graph,
@@ -115,6 +123,7 @@ def _load() -> None:
             groundtruth_error=gt_error,
             gaps=gaps,
             schedule=schedule,
+            observations_ready=observations_ready,
             initialization_seconds=round(time.perf_counter() - started, 3),
         )
     except Exception as exc:
@@ -125,7 +134,9 @@ def _load() -> None:
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     pool = ThreadPoolExecutor(max_workers=1)
-    await __import__("asyncio").get_running_loop().run_in_executor(pool, _load)
+    initialization = __import__("asyncio").get_running_loop().run_in_executor(pool, _load)
+    if os.getenv("TRANSITGAP_ASYNC_STARTUP") != "1":
+        await initialization
     try:
         async with mcp_server.session_manager.run():
             yield
@@ -137,7 +148,7 @@ app = FastAPI(title="TransitGap API", version="0.1.0", lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=os.getenv(
-        "CORS_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173"
+        "CORS_ORIGINS", "https://transitgap.vercel.app,http://localhost:5173,http://127.0.0.1:5173"
     ).split(","),
     allow_credentials=False,
     allow_methods=["GET", "POST", "DELETE"],
@@ -196,7 +207,7 @@ def health():
         ),
         "vta_stop_count": len(state["stops"]),
         "community_report_storage": database_durability(),
-        "reports_enabled": database_durability() == "filesystem-persistent",
+        "reports_enabled": database_durability() in {"filesystem-persistent", "postgresql"} and state.get("observations_ready", False),
         "gap_stops_evaluated": len(state["gaps"].cache) if state.get("gaps") else 0,
         "schedule_ready": state.get("schedule") is not None,
         "data_freshness": (
@@ -339,7 +350,7 @@ def observations(
 
 @app.post("/accessibility/observations", status_code=201)
 def submit_observation(payload: ObservationCreate, request: Request):
-    if database_durability() != "filesystem-persistent":
+    if database_durability() not in {"filesystem-persistent", "postgresql"} or not state.get("observations_ready", False):
         raise HTTPException(
             503,
             detail="Public reporting is paused until durable storage is connected. Your report has not been saved.",
@@ -357,9 +368,7 @@ def submit_observation(payload: ObservationCreate, request: Request):
     if len(attempts) >= 5:
         raise HTTPException(429, detail="Please wait before submitting another report.")
     attempts.append(now)
-    related = _groundtruth().find_candidate_for_point(
-        payload.latitude, payload.longitude
-    )
+    related = state["groundtruth"].find_candidate_for_point(payload.latitude, payload.longitude) if state.get("groundtruth") else None
     try:
         return create_observation(
             latitude=payload.latitude,
@@ -373,6 +382,67 @@ def submit_observation(payload: ObservationCreate, request: Request):
         raise HTTPException(
             503, detail="Community report storage is unavailable."
         ) from exc
+
+
+@app.get("/health/live")
+def liveness():
+    return {"alive":True,"ready":state["graph"] is not None,"reports_ready":state.get("observations_ready",False)}
+
+
+@app.get("/mobility-profiles")
+def mobility_profiles():
+    return {"assumptions":configuration(),"note":"Model assumptions, not legal compliance or a safety certification. Missing values remain unknown."}
+
+
+@app.get("/accessibility/observations/{identity}")
+def report_detail(identity: str):
+    try:return observation_detail(identity)
+    except LookupError as exc:raise HTTPException(404,detail=str(exc)) from exc
+    except Exception as exc:raise HTTPException(503,detail="Community report storage is unavailable.") from exc
+
+
+@app.post("/accessibility/observations/{identity}/review")
+def moderate_report(identity: str, payload: ObservationReview, request: Request):
+    token=os.getenv("TRANSITGAP_MODERATION_TOKEN","")
+    if len(token)<32:raise HTTPException(503,detail="Moderation is not configured.")
+    if not hmac.compare_digest(request.headers.get("authorization",""),"Bearer "+token):raise HTTPException(403,detail="Reviewer authorization required.")
+    expiry=payload.effective_until.astimezone(timezone.utc) if payload.effective_until else None
+    if payload.effective_until and payload.effective_until.tzinfo is None:raise HTTPException(422,detail="Review expiry must include a timezone.")
+    profiles={"standard","wheelchair","stroller","low_vision","prefer_documented_paths"}
+    if not set(payload.affected_profiles)<=profiles:raise HTTPException(422,detail="Unsupported affected mobility profile.")
+    if payload.routing_effect!="none":
+        if payload.status.value!="REVIEWED" or not payload.edge_reference or not payload.affected_profiles or not expiry or not datetime.now(timezone.utc)<expiry<=datetime.now(timezone.utc)+timedelta(days=30):raise HTTPException(422,detail="A routing effect needs reviewed status, a mapped edge, affected profiles and a future expiry within 30 days.")
+        try:
+            parts=json.loads(payload.edge_reference)
+            if len(parts)!=3:raise ValueError()
+            def node(value):return int(value) if str(value).isdigit() else str(value)
+            u,v,key=map(node,parts); graph=state["graph"]
+            attrs=graph.get_edge_data(u,v,key)
+            if not attrs:raise ValueError()
+            from .groundtruth import _project
+            from shapely.geometry import LineString
+            report=observation_detail(identity)
+            if _project(LineString(_edge_coords(graph,u,v,attrs))).distance(_project(Point(report["longitude"],report["latitude"])))>35:raise ValueError()
+            if report["category"] in {"curb_ramp_present","missing_tactile_paving"} and payload.routing_effect=="block":raise ValueError()
+        except Exception as exc:raise HTTPException(422,detail="The routing effect must reference an applicable mapped pedestrian edge within 35 metres of this report.") from exc
+    try:return review_observation(identity,status=payload.status.value,reviewer=payload.reviewer,reason=payload.reason,edge_reference=payload.edge_reference,routing_effect=payload.routing_effect,effective_until=expiry.isoformat() if expiry else None,affected_profiles=payload.affected_profiles)
+    except LookupError as exc:raise HTTPException(404,detail=str(exc)) from exc
+
+
+def calculate_route(*args,**kwargs):
+    effects={}
+    if state.get("observations_ready") and database_durability() in {"filesystem-persistent","postgresql"}:
+        try:effects=active_routing_effects()
+        except Exception as exc:raise HTTPException(503,detail="Reviewed report information is unavailable. Please retry before routing.") from exc
+    result=base_calculate_route(*args,**kwargs,report_effects=effects)
+    result["reviewed_report_effects"]=list(effects.values())
+    result["profile_assumptions"]=configuration().get(result["profile"],{})
+    if args[4] != Profile.standard:
+        baseline=base_calculate_route(args[0],args[1],args[2],args[3],Profile.standard,args[5],report_effects=effects)
+        result["same_mapped_route_as_standard"]=baseline["selected_edges"]==result["selected_edges"]
+        if result["same_mapped_route_as_standard"]:
+            result["profile_explanation"]="This profile and standard walking use the same mapped route under the recorded attributes. Accessibility information is incomplete, so this does not confirm suitability for every user."
+    return result
 
 
 @app.get("/stops")
@@ -577,6 +647,8 @@ def mobility_comparison(payload: RouteComparisonRequest):
             (alternative["duration_seconds"] - standard["duration_seconds"]) / 60, 2
         ),
         "ratio": round(alt / base, 3) if base else None,
+        "same_mapped_route":standard["selected_edges"]==alternative["selected_edges"],
+        "explanation":("Both profiles use the same mapped route under the recorded attributes and model assumptions. Missing accessibility information does not confirm suitability for every user." if standard["selected_edges"]==alternative["selected_edges"] else "The selected mobility rules choose different mapped edges. Additional time also reflects the profile's assumed speed."),
         "assumptions": {
             "standard_speed_mps": 1.2,
             "profile_speed_mps": SPEED_MPS[payload.profile.value],

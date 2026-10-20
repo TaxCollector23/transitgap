@@ -9,14 +9,15 @@ from backend.app.geospatial import nearest_graph_node
 
 def test_mapped_barriers_excluded_for_mobility_profiles():
     for profile in (Profile.wheelchair, Profile.avoid_mapped_stairs, Profile.stroller):
-        for edge in ({"highway": "steps"}, {"barrier": "stile"}, {"wheelchair": "no"}):
+        for edge in ({"highway": "steps"}, {"barrier": "stile"}):
             assert not evaluate(edge, {}, {}, profile)[0]
-        assert not evaluate(
+        assert evaluate({"wheelchair": "no"}, {}, {}, profile)[0] == (profile == Profile.stroller)
+        assert evaluate(
             {"highway": "footway"},
             {"highway": "crossing", "kerb": "raised"},
             {},
             profile,
-        )[0]
+        )[0] == (profile == Profile.stroller)
     assert evaluate({"highway": "steps"}, {}, {}, Profile.standard)[0]
 
 

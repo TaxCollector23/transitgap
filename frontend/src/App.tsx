@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { lazy, Suspense } from "react";
 import OriginSearch from "./OriginSearch";
-import AppLoading from "./AppLoading";
+import ReadAloud from "./ReadAloud";
 import StopService from "./StopService";
 import type { GapDetail } from "./GapPanel";
 const GapPanel = lazy(() => import("./GapPanel"));
@@ -11,9 +11,7 @@ const GroundTruthPanel = lazy(() => import("./GroundTruthPanel"));
 import type { Coverage, RouteResult, Stop } from "./types";
 import { plannerData, PREPARED, warmRouting } from "./data";
 
-const API =
-  import.meta.env.VITE_API_URL ||
-  (import.meta.env.PROD ? "" : "http://localhost:8000");
+import { API } from "./data";
 const METERS_PER_MILE = 1609.344;
 const algorithms = [
   {
@@ -148,6 +146,8 @@ export default function App() {
     extra_distance_m: number | null;
     extra_minutes: number | null;
     unavailable_reason?: string;
+    same_mapped_route?: boolean;
+    explanation?: string;
   } | null>(null);
   const [comparing, setComparing] = useState(false);
   const [benchmark, setBenchmark] = useState<
@@ -175,6 +175,7 @@ export default function App() {
   const [error, setError] = useState("");
   const [status, setStatus] = useState("");
   const [panelExpanded, setPanelExpanded] = useState(true);
+  const [reportFocus, setReportFocus] = useState(0);
   const [evidenceFeatures, setEvidenceFeatures] = useState<
     GeoJSON.FeatureCollection<GeoJSON.Point>
   >({ type: "FeatureCollection", features: [] });
@@ -276,7 +277,7 @@ export default function App() {
         resultKey.origin[0] !== currentKey.origin[0] ||
         resultKey.origin[1] !== currentKey.origin[1]),
   );
-  const canRoute = dataReady && Boolean(origin && destination) && !calculating;
+  const canRoute = dataReady && routingWarm && Boolean(origin && destination) && !calculating;
 
   const nearbyStops = useMemo(() => {
     const query = searchText.trim().toLocaleLowerCase();
@@ -405,6 +406,8 @@ export default function App() {
     requestRef.current = controller;
     inFlightRef.current = true;
     setCalculating(true);
+    setResultKey(null);
+    setComparison(null);
     setError("");
     try {
       const response = await fetch(`${API}/route`, {
@@ -638,16 +641,10 @@ export default function App() {
     [reportPlacement, setStart],
   );
 
-  const booting = !error && (!mapReady || loading);
   return (
     <main className={`app-shell ${panelExpanded ? "" : "sheet-is-collapsed"}`}>
-      {booting && (
-        <AppLoading
-          message={!mapReady ? "Loading the map…" : "Loading VTA stops…"}
-          detail={!mapReady && loading ? "Preparing your map and Santa Clara County transit stops." : !mapReady ? "Transit stops are ready. The map is still loading." : "The map is ready. Fetching Santa Clara County transit stops."}
-        />
-      )}
-      <section className="map-shell" aria-label="Map" inert={booting}>
+      <a href="#origin-title" className="app-skip" onClick={() => { setTab("route"); setPanelExpanded(true); requestAnimationFrame(()=>document.getElementById("origin-title")?.focus()); }}>Skip map to route controls</a>
+      <section className="map-shell" aria-label="Map">
         <Suspense fallback={null}>
           <MapView
             coverage={coverage}
@@ -702,13 +699,13 @@ export default function App() {
       <aside
         className={`panel ${panelExpanded ? "panel-expanded" : "panel-collapsed"}`}
         aria-label="Route planner"
-        inert={booting}
       >
         <div className="panel-scroll">
           <header className="panel-header">
             <a className="brand-lockup" href="/" aria-label="TransitGap home">
               <h1>TransitGap</h1>
             </a>
+            <button className="text-button report-shortcut" onClick={() => { setTab("evidence"); setPanelExpanded(true); setReportFocus(n => n + 1); }}>Report an issue</button>
             <button
               className="mobile-panel-toggle icon-button"
               onClick={() => setPanelExpanded(!panelExpanded)}
@@ -770,13 +767,21 @@ export default function App() {
                 {warmingRouting ? <><span className="spinner" aria-hidden="true" /><span>Starting county routing. You can choose your journey while it loads.</span></> : <><span>The routing service hasn't connected yet. You can still explore stops and access gaps.</span><button className="text-button" type="button" onClick={() => void startRouting()}>Retry connection</button></>}
               </div>
             )}
+            {loading && <p className="connection-message" role="status"><span className="spinner" aria-hidden="true" /> Connecting to TransitGap’s routing service…</p>}
+            {!mapReady && <p className="connection-message" role="status">Map tiles are loading. You can use the text controls while they load.</p>}
+            <ReadAloud resetKey={`${profile}-${tab}-${resultIsStale}`} text={() => result && !resultIsStale ? `Route to ${result.destination.stop_name}. ${(result.distance_m / METERS_PER_MILE).toFixed(2)} miles. Estimated ${Math.round(result.duration_seconds / 60)} minutes. ${result.accessibility_warning}` : `TransitGap. ${stops.length} VTA stops. Choose where you are starting, choose a VTA stop, choose how you travel, then find your route. ${destination ? `Selected stop: ${destination.stop_name}.` : ""}`} sections={[
+              {label:"Route summary",text:()=>result && !resultIsStale ? `Route to ${result.destination.stop_name}. ${(result.distance_m / METERS_PER_MILE).toFixed(2)} miles. ${Math.round(result.duration_seconds / 60)} minutes. ${result.accessibility_warning}` : ""},
+              {label:"Accessibility information",text:()=>result && !resultIsStale ? `${result.accessibility_warning} ${[...new Set(result.segments?.flatMap(s=>s.reasons) || [])].join('. ')}` : ""},
+              {label:"Directions",text:()=>result && !resultIsStale ? (result.directions || []).map(d=>`${d.instruction} ${(d.distance_m/METERS_PER_MILE).toFixed(2)} miles. ${d.warnings.join('. ')}`).join('. ') : ""},
+              {label:"Selected transit stop",text:()=>destination ? `${destination.stop_name}. VTA stop ${destination.stop_id}. Scheduled transit information is available below the stop selector.` : ""},
+            ]} />
             {tab === "route" && (
               <>
                 <section
                   className="step-section"
                   aria-labelledby="origin-title"
                 >
-                  <h2 id="origin-title">Where are you starting?</h2>
+                  <h2 id="origin-title" tabIndex={-1}>Where are you starting?</h2>
                   {origin && (
                     <div className="selection-card">
                       <strong>
@@ -974,13 +979,8 @@ export default function App() {
                         {result.algorithm_warning && (
                           <p role="status">{result.algorithm_warning}</p>
                         )}
-                        {result.data_confidence != null && (
-                          <p>
-                            {Math.round(result.data_confidence * 100)}% of
-                            applicable accessibility attributes documented,
-                            weighted by route length. Mapped, not field checked.
-                          </p>
-                        )}
+                        {result.profile_explanation && <p role="status">{result.profile_explanation}</p>}
+                        <p>Mapped information is incomplete. Review the documented attributes and missing information below.</p>
                         <button
                           className="button"
                           onClick={() => void compare()}
@@ -995,6 +995,7 @@ export default function App() {
                             className="mobility-comparison"
                             aria-label="Mobility detour"
                           >
+                            {comparison.explanation && <p>{comparison.explanation}</p>}
                             {comparison.alternative ? (
                               <>
                                 <h3>Mobility detour</h3>
@@ -1174,6 +1175,7 @@ export default function App() {
                     setSelectedCandidateId(null);
                   }}
                   selectedCandidateId={selectedCandidateId}
+                  focusReport={reportFocus}
                 />
               </Suspense>
             )}

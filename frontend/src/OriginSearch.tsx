@@ -1,7 +1,5 @@
 import { useState } from "react";
-const API =
-  import.meta.env.VITE_API_URL ||
-  (import.meta.env.PROD ? "" : "http://localhost:8000");
+import { API } from "./data";
 export default function OriginSearch({
   onChoose,
 }: {
@@ -55,6 +53,7 @@ export default function OriginSearch({
           {busy ? "Searching…" : "Search"}
         </button>
       </form>
+      <details className="plain-details"><summary>Enter coordinates instead</summary><form onSubmit={e => { e.preventDefault(); const data = new FormData(e.currentTarget); onChoose([Number(data.get("latitude")), Number(data.get("longitude"))]); }}><label>Starting latitude<input name="latitude" type="number" step="any" min="-90" max="90" required /></label><label>Starting longitude<input name="longitude" type="number" step="any" min="-180" max="180" required /></label><button className="button">Use coordinates</button></form></details>
       <p>
         Search text goes to OpenStreetMap’s Nominatim service. Choose on the map
         if you prefer not to share an address.

@@ -786,3 +786,17 @@ a:focus-visible {
   padding: 12px 0;
   border-top: 1px solid var(--line);
 }
+
+.app-skip { position:fixed; top:-100px; left:16px; z-index:30; background:#fff; padding:12px; color:#000; }
+.app-skip:focus { top:12px; }
+.connection-message { font-size:15px; line-height:1.6; margin:12px 0; }
+.speech-actions { display:flex; flex-wrap:wrap; gap:12px; }
+.read-aloud button,.speech-settings summary { min-height:44px; }
+.speech-settings { margin:8px 0 16px; }
+.speech-settings label { display:block; font-size:16px; margin:12px 0; }
+.speech-settings select { width:100%; max-width:420px; }
+.read-aloud { margin:12px 0 24px; }
+.read-aloud p { font-size:16px; }
+.report-shortcut { margin-left:auto; min-height:44px; }
+.landing .read-aloud button,.landing .speech-settings summary { color:#000; }
+@media(max-width:760px) { .panel,.panel-scroll { max-height:45dvh; } .panel-collapsed,.panel-collapsed .panel-scroll { max-height:64px; } }

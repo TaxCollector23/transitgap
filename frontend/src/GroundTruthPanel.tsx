@@ -1,9 +1,8 @@
 import { useEffect, useState, type FormEvent } from "react";
+import OriginSearch from "./OriginSearch";
 import type { GapFeature, Observation, SourceStatus } from "./types";
 
-const API =
-  import.meta.env.VITE_API_URL ||
-  (import.meta.env.PROD ? "" : "http://localhost:8000");
+import { API } from "./data";
 const METERS_PER_MILE = 1609.344;
 type Props = {
   onFeatures: (
@@ -15,12 +14,18 @@ type Props = {
   reportPoint: [number, number] | null;
   onFocusCandidate: (point: [number, number]) => void;
   selectedCandidateId: string | null;
+  focusReport?: number;
 };
 const emptyPolygons: GeoJSON.FeatureCollection = {
   type: "FeatureCollection",
   features: [],
 };
 const categories = [
+  ["pedestrian_pothole", "Pothole on a pedestrian path"],
+  ["broken_pavement", "Broken pavement"],
+  ["blocked_curb_ramp", "Blocked curb ramp"],
+  ["construction_obstruction", "Construction obstruction"],
+  ["missing_tactile_paving", "Missing tactile paving, observed in person"],
   ["curb_ramp_present", "Curb ramp present"],
   ["curb_ramp_appears_absent", "Curb ramp appears absent"],
   ["stairs", "Stairs"],
@@ -38,6 +43,7 @@ export default function GroundTruthPanel({
   reportPoint,
   onFocusCandidate,
   selectedCandidateId,
+  focusReport = 0,
 }: Props) {
   const [gaps, setGaps] = useState<GapFeature[]>([]);
   const [reports, setReports] = useState<Observation[]>([]);
@@ -131,6 +137,9 @@ export default function GroundTruthPanel({
     );
   }, []);
   useEffect(() => {
+    if (focusReport) document.getElementById("report-title")?.focus();
+  }, [focusReport, reportsEnabled]);
+  useEffect(() => {
     if (reportPoint) {
       setLatitude(String(reportPoint[0].toFixed(6)));
       setLongitude(String(reportPoint[1].toFixed(6)));
@@ -183,10 +192,10 @@ export default function GroundTruthPanel({
           description,
         }),
       });
-      if (!response.ok)
-        throw new Error(
-          "Report could not be saved. Check that its coordinates are inside the study area.",
-        );
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        throw new Error(typeof error.detail === "string" ? error.detail : "Report could not be saved. Check the location and try again.");
+      }
       setLatitude("");
       setLongitude("");
       setDescription("");
@@ -365,9 +374,11 @@ export default function GroundTruthPanel({
         </article>
       )}
       {reportsEnabled ? (
+        <>
+        <OriginSearch onChoose={([lat,lon]) => { setLatitude(String(lat)); setLongitude(String(lon)); }} />
         <form className="report-form" onSubmit={(event) => void submit(event)}>
           <div>
-            <h4>Report something you saw</h4>
+            <h3 id="report-title" tabIndex={-1}>Report an issue</h3>
             <p>
               R marks where the observation happened. Reports stay unverified
               until someone checks them.
@@ -442,6 +453,7 @@ export default function GroundTruthPanel({
             {busy ? "Saving…" : <>Submit report</>}
           </button>
         </form>
+        </>
       ) : (
         <p>
           Public reporting is paused until durable storage is connected. No
@@ -463,10 +475,11 @@ export default function GroundTruthPanel({
               <article key={report.id}>
                 <strong>{report.category.replace(/_/g, " ")}</strong>
                 <p>
-                  Unverified ·{" "}
+                  {report.review_status === "REVIEWED" ? "Reviewed community report" : report.review_status === "UNDER_REVIEW" ? "Under review" : "Unverified"} ·{" "}
                   {new Date(report.created_at).toLocaleDateString()}
                 </p>
                 {report.description && <p>{report.description}</p>}
+                <details><summary>Report details</summary><p>Report ID: {report.id}</p><p>Source: community observation. Last updated: {new Date(report.updated_at || report.created_at).toLocaleString()}.</p><a href={`${API}/accessibility/observations/${report.id}`} target="_blank" rel="noreferrer">Open report and review history</a></details>
               </article>
             ))}
             {reports.length === 0 && <p>No reports yet.</p>}

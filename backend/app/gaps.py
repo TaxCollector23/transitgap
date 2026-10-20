@@ -126,6 +126,7 @@ class GapIndex:
         )
         self.signature = [
             VERSION,
+            sha256((Path(__file__).parent / "profiles.py").read_bytes()).hexdigest(),
             digest,
             graph.number_of_nodes(),
             graph.number_of_edges(),

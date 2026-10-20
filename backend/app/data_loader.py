@@ -40,11 +40,11 @@ def load_county_boundary():
 USEFUL_WAY_TAGS = (
     "highway", "footway", "sidewalk", "crossing", "kerb", "surface", "smoothness",
     "incline", "wheelchair", "tactile_paving", "barrier", "width", "access", "foot",
-    "indoor",
+    "indoor", "lit", "crossing:signals", "traffic_signals:sound", "name",
 )
 USEFUL_NODE_TAGS = (
     "highway", "crossing", "kerb", "surface", "smoothness", "incline", "wheelchair",
-    "tactile_paving", "barrier", "width", "access", "foot",
+    "tactile_paving", "barrier", "width", "access", "foot", "lit", "crossing:signals", "traffic_signals:sound",
 )
 
 
@@ -288,7 +288,7 @@ def load_stops(graph: nx.MultiDiGraph, radius_m: int = DEFAULT_RADIUS_M,
                 for stop in cached_stops
             )
             if cached.get("metadata") == cache_meta and valid_stops:
-                return cached_stops
+                return _boarding_status(cached_stops, path)
     except (OSError, ValueError, TypeError):
         cache_meta = {}
     try:
@@ -314,7 +314,7 @@ def load_stops(graph: nx.MultiDiGraph, radius_m: int = DEFAULT_RADIUS_M,
                     distance = _distance_m((lat, lon), (float(n["y"]), float(n["x"])))
                     if distance > 150:
                         continue
-                    result.append({"stop_id": row.get("stop_id", ""), "stop_name": row.get("stop_name", ""), "latitude": lat, "longitude": lon, "graph_node": str(node), "connector_distance_m": round(distance, 1)})
+                    result.append({"stop_id": row.get("stop_id", ""), "stop_name": row.get("stop_name", ""), "latitude": lat, "longitude": lon, "graph_node": str(node), "connector_distance_m": round(distance, 1), "wheelchair_boarding": int(row.get("wheelchair_boarding") or 0)})
                 if not result:
                     raise DatasetError("The official VTA feed loaded, but it contains no stops connected to this map region.")
                 if cache_meta:
@@ -331,6 +331,16 @@ def load_stops(graph: nx.MultiDiGraph, radius_m: int = DEFAULT_RADIUS_M,
         raise
     except Exception as exc:
         raise DatasetError(f"Could not read stops.txt from the official VTA GTFS feed: {exc}") from exc
+
+def _boarding_status(stops, path):
+    with zipfile.ZipFile(path) as archive:
+        with archive.open("stops.txt") as source:
+            statuses = {r["stop_id"]: int(r.get("wheelchair_boarding") or 0)
+                        for r in csv.DictReader(io.TextIOWrapper(source, encoding="utf-8-sig"))}
+    for stop in stops:
+        stop["wheelchair_boarding"] = statuses.get(stop["stop_id"], 0)
+    return stops
+
 
 def initialize(radius_m: int | None = None) -> tuple[nx.MultiDiGraph, list[dict[str, Any]]]:
     configured_region = os.getenv("TRANSITGAP_REGION", "").strip().lower()

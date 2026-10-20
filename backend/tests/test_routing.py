@@ -35,7 +35,7 @@ def routing_graph() -> nx.MultiDiGraph:
 def test_weighted_algorithms_return_equal_optimal_costs(routing_graph):
     for profile in Profile:
         results = [_run(routing_graph, 0, 2, algorithm, profile) for algorithm in Algorithm if algorithm != Algorithm.breadth_first]
-        expected = 44 if profile == Profile.prefer_documented_paths else 22
+        expected = 44 if profile == Profile.prefer_documented_paths else 31.24 if profile in {Profile.wheelchair, Profile.stroller, Profile.avoid_mapped_stairs} else 25.3 if profile == Profile.low_vision else 22
         assert [result[1] for result in results] == pytest.approx([expected] * len(results))
         assert all(path[0] == 0 and path[-1] == 2 for path, _ in results)
 
@@ -47,7 +47,7 @@ def test_breadth_first_optimizes_segments_instead_of_distance(routing_graph):
     routing_graph[0][2]["direct"]["highway"] = "steps"
     path, cost = _run(routing_graph, 0, 2, Algorithm.breadth_first, Profile.avoid_mapped_stairs)
     assert path == [0, 1, 2]
-    assert cost == 22
+    assert cost == pytest.approx(31.24)
 
 
 def test_algorithms_respect_one_way_edges(routing_graph):

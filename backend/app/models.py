@@ -11,6 +11,9 @@ class Algorithm(str, Enum):
 
 class Profile(str, Enum):
     standard = "standard"
+    wheelchair = "wheelchair"
+    stroller = "stroller"
+    low_vision = "low_vision"
     avoid_mapped_stairs = "avoid_mapped_stairs"
     prefer_documented_paths = "prefer_documented_paths"
 
@@ -34,21 +37,11 @@ class RouteComparisonRequest(BaseModel):
     origin_longitude: float = Field(ge=-180, le=180)
     destination_stop_id: str = Field(min_length=1, max_length=100)
     algorithm: Algorithm = Algorithm.astar
+    profile: Profile = Profile.wheelchair
 
     @field_validator("origin_latitude", "origin_longitude")
     @classmethod
     def finite_origin(cls, value: float) -> float:
         if not isfinite(value):
             raise ValueError("Coordinates must be finite numbers")
-        return value
-
-class Coordinate(BaseModel):
-    latitude: float = Field(ge=-90, le=90)
-    longitude: float = Field(ge=-180, le=180)
-
-    @field_validator("latitude", "longitude")
-    @classmethod
-    def finite_coordinate(cls, value: float) -> float:
-        if not isfinite(value):
-            raise ValueError("Coordinate must be finite")
         return value

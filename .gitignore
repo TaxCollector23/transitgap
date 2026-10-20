@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+backend/data/*
+!backend/data/.gitkeep
+*.graphml
+*.zip
+*.part
+# Frontend
+node_modules/
+frontend/dist/
+*.tsbuildinfo
+# Vercel
+.vercel/
+# Local environment
+.env
+.env.*
+!.env.example
+.vercel

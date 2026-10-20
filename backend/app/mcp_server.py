@@ -116,7 +116,7 @@ def get_gap_details(candidate_id: str) -> dict[str, Any]:
 
 @server.tool()
 def get_inspection_priorities(limit: int = 50, offset: int = 0) -> dict[str, Any]:
-    """Rank places for human review using TransitGap's implemented priority score."""
+    """List existing route-proximity review suggestions; this is not reachability-change scoring."""
     if not 1 <= limit <= 200 or not 0 <= offset <= 100_000:
         raise ValueError("limit must be 1-200 and offset must be between 0 and 100000")
     return _api()._groundtruth().get_priorities(limit=limit, offset=offset)

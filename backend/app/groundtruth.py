@@ -455,6 +455,7 @@ class GroundTruthIndex:
         candidates = self.gaps[offset:offset + limit]
         return {"count": len(self.gaps), "limit": limit, "offset": offset,
                 "evaluated_routes": len(self.sample_routes), "route_sample_seed": ROUTE_SAMPLE_SEED,
+                "metric": "route_proximity_weighted_review_score",
                 "weights": dict(PRIORITY_WEIGHTS),
                 "note": "Inspection suggestions only, not an official government priority and not a measure of pedestrian traffic or ridership.",
                 "candidates": [self._public_candidate(item, include_geometry=False) for item in candidates],

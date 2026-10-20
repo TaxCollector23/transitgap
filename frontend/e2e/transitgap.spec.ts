@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-const api = "http://127.0.0.1:8000";
+const api = process.env.TRANSITGAP_E2E_URL || "http://127.0.0.1:8000";
 async function open(page: Page) {
   await page.goto("/app");
   await expect(page.locator(".dataset-status.is-ready")).toBeVisible({
@@ -155,6 +155,9 @@ test("network gaps render and create an editable factual letter", async ({
   await expect(page.locator(".scenario-toggles")).toBeVisible({ timeout: 30_000 });
   await expect(page.locator(".scenario-toggles")).toContainText("Documented routes");
   await expect(page.locator(".scenario-toggles")).toContainText("unknown conditions");
+  await expect(page.getByRole("region", { name: "Inspection reachability impact" })).toContainText("sampled journeys change");
+  await page.getByRole("region", { name: "Inspection reachability impact" }).scrollIntoViewIfNeeded();
+  await page.screenshot({ path: "test-artifacts/screenshots/inspection-impact.png" });
   await page.locator(".gap-ranking button").first().click();
   await expect(page.locator(".study-detail")).toContainText(
     "Standard network",

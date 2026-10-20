@@ -93,3 +93,25 @@ def test_invalid_study_bounds_are_rejected():
     index = index_for(graph, [stop])
     with pytest.raises(ValueError, match="Time budget"):
         index.analyze("s", Profile.wheelchair, 16, 20)
+
+
+def test_toward_stop_partial_geometry_is_adjacent_to_destination_and_difference_is_retained():
+    from backend.app.reachability import _feature
+    graph = nx.MultiDiGraph()
+    graph.add_node(0, x=-121.903, y=37.3296)
+    graph.add_node(1, x=-121.902, y=37.3296)
+    data = edge()
+    partial = _feature(graph, 0, 1, 0, data, .25)
+    coords = partial['geometry']['coordinates']
+    assert coords[0][0] == pytest.approx(-121.90225)
+    assert coords[-1][0] == pytest.approx(-121.902)
+    difference = _feature(graph, 0, 1, 0, data, .5, .1)
+    assert difference['geometry']['coordinates'][0][0] == pytest.approx(-121.9025)
+    assert difference['geometry']['coordinates'][-1][0] == pytest.approx(-121.9021)
+
+
+def test_width_sensitivity_does_not_remove_known_barriers_or_surface_requirement():
+    attrs = {'highway': 'footway', 'surface': 'concrete'}
+    assert critical_unknowns(attrs, {}, {}, Profile.wheelchair) == ('width',)
+    assert critical_unknowns(attrs, {}, {}, Profile.wheelchair, 'width_optional_sensitivity') == ()
+    assert critical_unknowns({'highway':'footway'}, {}, {}, Profile.wheelchair, 'width_optional_sensitivity') == ('surface',)

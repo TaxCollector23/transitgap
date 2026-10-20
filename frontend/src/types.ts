@@ -122,6 +122,11 @@ export type ReachabilityAnalysis = {
   possible: { reachable_sample_origins: number; reachable_graph_nodes: number; reachable_edge_count: number; geometry: GeoJSON.FeatureCollection };
   unknown_gap: { sample_origin_count: number; edge_count: number; critical_unknown_edge_count: number; geometry: GeoJSON.FeatureCollection; examples: Array<{ osm_way_id: string; source_url: string; missing_critical_attributes: string[]; evidence_status: string }> };
   example_paths: Array<{ origin_node: string; time_seconds: number; geometry: GeoJSON.Geometry; source_refs: Array<{ osm_way_id: string; url: string }> }>;
+  inspection_priorities: {
+    metric: string; method: string; candidate_limit: number; candidate_count_on_sample_paths: number;
+    evaluated_candidate_count: number; sample_pair_count: number; parallel_edge_policy: string;
+    candidates: Array<{ candidate_id: string; source_url: string; score: number | null; sample_count: number; status: string; affected_pairs: Array<[string, string]>; missing_critical_attributes: string[]; assumptions: string }>;
+  };
   warnings: string[];
   message?: string;
 };

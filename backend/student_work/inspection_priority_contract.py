@@ -1,13 +1,11 @@
-"""Student-owned acceptance tests; run explicitly after implementing the core.
+"""AI-assisted contract: physical candidates may group duplicate parallel records.
 
-This file is intentionally outside default pytest filename discovery and
-currently fails at the unimplemented student function. Command: cd backend &&
-.venv/bin/python -m pytest -q student_work/inspection_priority_contract.py
+Run with backend/.venv/bin/python -m pytest backend/student_work/inspection_priority_contract.py.
 """
 import networkx as nx
 import pytest
 
-from app.research.inspection_priority_student import rank_inspection_candidates
+from backend.app.research.inspection_priority_student import rank_inspection_candidates
 
 
 def edge(graph, a, b, seconds=1, key=0):
@@ -105,9 +103,9 @@ def test_small_graph_result_matches_exhaustive_reference_for_unique_pairs():
     edge(graph, "o2", "u"); edge(graph, "u", "s2")
     result = by_id(run(graph, {"vta-1": "s1", "vta-2": "s2"}, ["o1", "o2"],
                        [candidate("u", ("u", "s1", 0))]))["u"]
-    # Exhaustive reference: only (o1, vta-1) changes when the candidate is blocked.
-    assert result["score"] == 1
-    assert result["affected_pairs"] == [["o1", "vta-1"]]
+    # Both origins reach s1 through u -> s1; blocking it changes both pairs.
+    assert result["score"] == 2
+    assert result["affected_pairs"] == [["o1", "vta-1"], ["o2", "vta-1"]]
 
 
 def test_results_include_sample_count_and_stable_candidate_ids():

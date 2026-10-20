@@ -295,7 +295,8 @@ export default function GroundTruthPanel({
           City sidewalk record
         </span>
       </div>
-      <div className="gap-list" aria-label="Priority inspection suggestions">
+      <p>These comparison scores use proximity to sampled routes. For computed journey reachability changes, use the stop study in Access gaps.</p>
+      <div className="gap-list" aria-label="Route-proximity review suggestions">
         {gaps.slice(0, 12).map((gap) => (
           <button
             key={gap.id}
@@ -363,7 +364,7 @@ export default function GroundTruthPanel({
               </dd>
             </div>
             <div>
-              <dt>Priority score</dt>
+              <dt>Route-proximity score</dt>
               <dd>
                 {selected.priority_score == null
                   ? "Unavailable"
@@ -422,9 +423,9 @@ export default function GroundTruthPanel({
               />
             </label>
           </div>
-          <label>
-            Observation
+          <label htmlFor="report-observation">Observation</label>
             <select
+              id="report-observation"
               value={category}
               onChange={(event) => setCategory(event.target.value)}
             >
@@ -434,7 +435,6 @@ export default function GroundTruthPanel({
                 </option>
               ))}
             </select>
-          </label>
           <label>
             Details <span className="optional-label">optional</span>
             <textarea

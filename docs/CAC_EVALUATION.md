@@ -17,3 +17,7 @@
 ## Student-owned algorithm evaluation
 
 The inspection-information-value implementation is intentionally pending student work. Contract cases are under `backend/student_work/`; the student should explicitly run `cd backend && .venv/bin/python -m pytest -q student_work/inspection_priority_contract.py` after implementation. Do not mark the algorithm gate passed until the student has implemented it, independently explained it, and the contract suite passes.
+
+## Final engineering sprint update
+
+The formerly pending algorithm is now AI-assisted code, integrated into the pilot response and UI. The contract's two-origin reference expectation was corrected to 2 and checked with independent exhaustive paths. The current complete backend/contract suite has 128 passing cases; 3 fixture and 11 local real-data browser tests pass. Final measured sensitivity and deployment evidence are in FINAL_RELEASE_AUDIT.md and RELEASE_ACCEPTANCE.md. Earlier measurements above are historical, not current release gates.

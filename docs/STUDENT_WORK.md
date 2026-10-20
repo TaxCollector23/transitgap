@@ -1,11 +1,5 @@
-# Student work and AI disclosure
+# Student work status
 
-## Student-owned work to complete
+The current release sprint implements the previously missing core with AI assistance, as authorized by the new brief. See AI_ASSISTANCE.md and STUDENT_CONTRIBUTIONS.md. The old module filename is retained for compatibility; it does not mean the student authored its implementation.
 
-The student must implement the core information-value inspection-priority algorithm in `backend/app/research/inspection_priority_student.py`, run and understand `backend/student_work/inspection_priority_contract.py`, choose and justify a score, explain data structures/directionality/complexity/limitations, and keep an accurate contribution log. The stub deliberately raises `NotImplementedError`.
-
-No student-authored algorithm, student commit, personal inspiration, field observation, or user session is verified in this checkout. Git authorship alone is not sufficient evidence.
-
-## AI assistance
-
-Codex materially assisted with repository audit, this sprint’s bounded reachability/API/UI/test work, and supporting documentation. Earlier contribution history is not reconstructed here. The student must review all generated code, independently make a substantial technical contribution, understand it, and disclose the tools and assistance accurately in the CAC entry. Do not reuse this text as a claim of student authorship.
+No independent student code, personal debugging story, field observation or usability session has been verified. The student must document actual contributions and understanding before claiming CAC submission readiness. The test contract is now active in ordinary GitHub Actions, alongside independent exhaustive-reference tests.

@@ -144,6 +144,16 @@ export default function GapPanel({
             <label><input type="checkbox" checked={showUnknown} disabled={reachability.unknown_gap.edge_count === 0} onChange={(e) => updateLayers(showDocumented, e.target.checked)} /> Routes that depend on unknown conditions ({reachability.unknown_gap.edge_count} segments)</label>
           </div>
           {reachability.unknown_gap.examples.length > 0 && <div><h4>Source records with missing conditions</h4><ul>{reachability.unknown_gap.examples.slice(0, 3).map((item) => <li key={`${item.osm_way_id}-${item.source_url}`}><a href={item.source_url} target="_blank" rel="noreferrer">OpenStreetMap way {item.osm_way_id}</a>: missing {item.missing_critical_attributes.join(", ")}</li>)}</ul></div>}
+          <section aria-label="Inspection reachability impact">
+            <h4>Where another inspection would help most</h4>
+            <p>These scores count sampled journeys that change if one unknown connection is blocked. Other unknown conditions remain usable in both scenarios. They do not measure ridership or official priority.</p>
+            <p>{reachability.inspection_priorities.evaluated_candidate_count} candidates evaluated from {reachability.inspection_priorities.candidate_count_on_sample_paths} connections on sampled paths; limited to {reachability.inspection_priorities.candidate_limit} candidates.</p>
+            <ol>{reachability.inspection_priorities.candidates.slice(0, 5).map(candidate => <li key={candidate.candidate_id}>
+              <a href={candidate.source_url} target="_blank" rel="noreferrer">OSM connection {candidate.candidate_id}</a>: {candidate.score === null ? "impact unavailable" : `${candidate.score} of ${candidate.sample_count} sampled journeys change`}. Missing {candidate.missing_critical_attributes.join(", ")}.
+              <details><summary>Calculation details</summary><p>{candidate.assumptions}</p><p>{reachability.inspection_priorities.parallel_edge_policy}</p><p>Changed origin/stop pairs: {candidate.affected_pairs.map(pair => pair.join(" → ")).join("; ") || "none"}.</p></details>
+            </li>)}</ol>
+            {reachability.inspection_priorities.candidates.length === 0 && <p>No source-linked unknown connections occur on the sampled possible paths.</p>}
+          </section>
           {reachability.example_paths.length > 0 && <div><h4>Example paths in the sample</h4><ul>{reachability.example_paths.map((path) => <li key={path.origin_node}>Sample origin node {path.origin_node} · {(path.time_seconds / 60).toFixed(1)} minutes to this stop · {path.source_refs.slice(0, 2).map((ref) => <a key={ref.osm_way_id} href={ref.url} target="_blank" rel="noreferrer"> OSM way {ref.osm_way_id}</a>)}</li>)}</ul></div>}
           <p>OSM source snapshot date: {reachability.osm_source.source_snapshot_date || "not recorded"}; cache file modified: {reachability.osm_source.cache_file_modified_at || "unknown"}; manifest generated: {reachability.osm_source.manifest_generated_at || "unknown"}. Field observation time: none recorded. VTA feed version: {reachability.gtfs_source.feed_info[0]?.feed_version || "not recorded"}.</p>
           {reachability.warnings.map((warning) => <p key={warning}>{warning}</p>)}

@@ -27,6 +27,16 @@ async def main() -> None:
         stops = await client.call_tool("search_transit_stops", {"query": "Diridon", "limit": 5})
         if stops.is_error or not stops.structured_content:
             raise SystemExit("search_transit_stops did not return structured stop data")
+        route = await client.call_tool("plan_route", {"origin_latitude": 37.32875,
+            "origin_longitude": -121.90442, "destination_stop_id": "4514", "profile": "wheelchair"})
+        if route.is_error or not route.structured_content or not route.structured_content.get("segments"):
+            raise SystemExit("plan_route did not return real graph segments")
+        gaps = await client.call_tool("find_accessibility_gaps", {"limit": 1})
+        if gaps.is_error or not gaps.structured_content:
+            raise SystemExit("Gap retrieval failed")
+        invalid = await client.call_tool("search_transit_stops", {"limit": 0})
+        if not invalid.is_error:
+            raise SystemExit("Invalid tool arguments were accepted")
         print(f"Protocol: {client.protocol_version}")
         print(f"Server: {client.server_info.name if client.server_info else 'unknown'}")
         print(f"Region: {coverage.structured_content.get('region', 'not reported')}")

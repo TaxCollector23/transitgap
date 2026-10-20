@@ -1,5 +1,7 @@
 import { defineConfig } from "@playwright/test";
 
+const remote = process.env.TRANSITGAP_E2E_URL;
+
 export default defineConfig({
   testDir: "./e2e",
   fullyParallel: false,
@@ -15,14 +17,14 @@ export default defineConfig({
   ],
   outputDir: "test-artifacts/test-results",
   use: {
-    baseURL: "http://127.0.0.1:5173",
+    baseURL: remote || "http://127.0.0.1:5173",
     viewport: { width: 1440, height: 900 },
     screenshot: "only-on-failure",
     trace: "retain-on-failure",
     video: "retain-on-failure",
     actionTimeout: 10_000,
   },
-  webServer: [
+  webServer: remote ? undefined : [
     {
       command: "npm run preview -- --host 127.0.0.1 --port 4173",
       url: "http://127.0.0.1:4173",

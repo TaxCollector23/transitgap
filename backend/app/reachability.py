@@ -5,6 +5,7 @@ small set of explicit mobility predicates. It does not identify safe routes.
 """
 from __future__ import annotations
 
+from collections import Counter
 from hashlib import sha256
 import json
 import math
@@ -19,8 +20,8 @@ from shapely.ops import substring
 
 from .accessibility import _crossing_applies, _values
 from .data_loader import CENTER
-from .geospatial import distance_m
-from .geospatial import nearest_graph_node
+from .geospatial import distance_m, nearest_graph_node
+from .research.inspection_study import analyze_inspections
 from .models import Profile
 from .profiles import SPEED_MPS, assess, incline_percent, width_m
 from .routing import _edge_coords, _edge_options, _length_m, _public_access, _weight
@@ -29,7 +30,8 @@ PILOT_RADIUS_M = 1500
 MAX_STOP_CONNECTOR_M = 35
 MAX_SAMPLE_SIZE = 300
 MAX_MINUTES = 15
-VERSION = "diridon-documented-possible-v1"
+VERSION = "diridon-documented-possible-v2"
+SAMPLING_VERSION = "diridon-documented-possible-v1"
 WARNING = (
     "Documented means recorded in the source data, not field checked or proven usable. "
     "The possible scenario assumes selected unknown conditions are usable; it is not a safe-route guarantee. "
@@ -68,7 +70,7 @@ def pilot_gtfs_stops(graph: nx.MultiDiGraph, archive_path) -> list[dict[str, Any
     return result
 
 
-def critical_unknowns(edge: dict[str, Any], start: dict[str, Any], end: dict[str, Any], profile: Profile) -> tuple[str, ...]:
+def critical_unknowns(edge: dict[str, Any], start: dict[str, Any], end: dict[str, Any], profile: Profile, documentation_policy: str = "profile_required") -> tuple[str, ...]:
     """Return missing predicates relevant to this edge and profile only.
 
     Surface is relevant on mapped pedestrian paths. Width is checked on
@@ -115,14 +117,18 @@ def critical_unknowns(edge: dict[str, Any], start: dict[str, Any], end: dict[str
                 unknown.append("tactile_paving")
             if not any(_values(place.get("crossing:signals")) or _values(place.get("traffic_signals:sound")) for place in places):
                 unknown.append("crossing_signals")
+    if documentation_policy == "width_optional_sensitivity":
+        unknown = [field for field in unknown if field != "width"]
+    elif documentation_policy != "profile_required":
+        raise ValueError("Unsupported documentation policy")
     return tuple(dict.fromkeys(unknown))
 
 
-def _scenario_weight(graph: nx.MultiDiGraph, u: Any, v: Any, data: dict, profile: Profile, scenario: str) -> float | None:
+def _scenario_weight(graph: nx.MultiDiGraph, u: Any, v: Any, data: dict, profile: Profile, scenario: str, documentation_policy: str = "profile_required") -> float | None:
     """NetworkX-compatible weight, retaining MultiDiGraph parallel-edge semantics."""
     choices = []
     for key, edge in _edge_options(graph, data):
-        if scenario == "documented" and critical_unknowns(edge, graph.nodes[u], graph.nodes[v], profile):
+        if scenario == "documented" and critical_unknowns(edge, graph.nodes[u], graph.nodes[v], profile, documentation_policy):
             continue
         value = _weight(graph, u, v, {key: edge}, profile, {})
         if value is not None:
@@ -130,11 +136,11 @@ def _scenario_weight(graph: nx.MultiDiGraph, u: Any, v: Any, data: dict, profile
     return min(choices) if choices else None
 
 
-def _feature(graph: nx.MultiDiGraph, u: Any, v: Any, key: Any, edge: dict, fraction: float = 1.0) -> dict | None:
-    if fraction <= 0:
+def _feature(graph: nx.MultiDiGraph, u: Any, v: Any, key: Any, edge: dict, fraction: float = 1.0, excluded_fraction: float = 0.0) -> dict | None:
+    if fraction <= excluded_fraction:
         return None
     coords = _edge_coords(graph, u, v, edge)
-    line = LineString(coords) if fraction >= 1 else substring(LineString(coords), 0, fraction, normalized=True)
+    line = substring(LineString(coords), 1 - fraction, 1 - excluded_fraction, normalized=True)
     if line.is_empty or line.geom_type != "LineString" or line.length <= 0:
         return None
     way_ids = _values(edge.get("osmid"))
@@ -148,6 +154,7 @@ def _feature(graph: nx.MultiDiGraph, u: Any, v: Any, key: Any, edge: dict, fract
             "osm_way_ids": way_ids,
             "source_url": f"{SOURCE_OSM}{refs[0]}" if refs else None,
             "source_status": "SOURCE_DOCUMENTED",
+            "reachable_fraction": fraction,
         },
     }
 
@@ -204,13 +211,15 @@ class ReachabilityIndex:
             for stop in sorted(self.stops.values(), key=lambda item: (item["stop_name"].casefold(), item["stop_id"]))
         ]
 
-    def analyze(self, stop_id: str, profile: Profile = Profile.wheelchair, minutes: int = 10, sample_size: int = 150) -> dict[str, Any]:
+    def analyze(self, stop_id: str, profile: Profile = Profile.wheelchair, minutes: int = 10, sample_size: int = 150, documentation_policy: str = "profile_required") -> dict[str, Any]:
         if profile.value not in {"standard", "wheelchair", "stroller", "low_vision"}:
             raise ValueError(f"Profile {profile.value!r} is not supported by this study")
         if not 1 <= minutes <= MAX_MINUTES:
             raise ValueError(f"Time budget must be between 1 and {MAX_MINUTES} minutes")
         if not 20 <= sample_size <= MAX_SAMPLE_SIZE:
             raise ValueError(f"Origin sample size must be between 20 and {MAX_SAMPLE_SIZE}")
+        if documentation_policy not in {"profile_required", "width_optional_sensitivity"}:
+            raise ValueError("Unsupported documentation policy")
         stop = self.stops.get(str(stop_id))
         if stop is None:
             raise KeyError(stop_id)
@@ -236,15 +245,15 @@ class ReachabilityIndex:
         seconds = minutes * 60
         documented_dist = nx.single_source_dijkstra_path_length(
             reverse, node, cutoff=seconds,
-            weight=lambda v, u, data: _scenario_weight(graph, u, v, data, profile, "documented"),
+            weight=lambda v, u, data: _scenario_weight(graph, u, v, data, profile, "documented", documentation_policy),
         )
-        possible_dist = nx.single_source_dijkstra_path_length(
+        possible_dist, possible_paths = nx.single_source_dijkstra(
             reverse, node, cutoff=seconds,
             weight=lambda v, u, data: _scenario_weight(graph, u, v, data, profile, "possible"),
         )
         if not set(documented_dist).issubset(possible_dist):
             raise RuntimeError("Internal scenario invariant failed: documented graph reach is not a subset of possible reach")
-        ordered_nodes = sorted((candidate for candidate in self.nodes if candidate != node), key=lambda item: sha256(f"{VERSION}:{item}".encode()).digest())[:sample_size]
+        ordered_nodes = sorted((candidate for candidate in self.nodes if candidate != node), key=lambda item: sha256(f"{SAMPLING_VERSION}:{item}".encode()).digest())[:sample_size]
         documented_origins = {sample for sample in ordered_nodes if documented_dist.get(sample, math.inf) <= seconds}
         possible_origins = {sample for sample in ordered_nodes if possible_dist.get(sample, math.inf) <= seconds}
         if not documented_origins.issubset(possible_origins):
@@ -252,27 +261,31 @@ class ReachabilityIndex:
 
         documented_features = []
         possible_features = []
+        edge_by_public_id = {}
         critical_unknown_count = 0
+        missing_attribute_counts = Counter()
         unknown_examples = []
         crossing_unknown_examples = []
         for u, v, key, edge in graph.edges(keys=True, data=True):
+            edge_by_public_id[json.dumps([str(u), str(v), str(key)], separators=(",", ":"))] = (u, v, key, edge)
             end_cost = possible_dist.get(v, math.inf)
             possible_weight = _scenario_weight(graph, u, v, {key: edge}, profile, "possible")
             if possible_weight is not None and end_cost < seconds:
-                fraction = min(1.0, (seconds - end_cost) / possible_weight)
+                fraction = min(1.0, (seconds - end_cost) / possible_weight) if possible_weight > 0 else 1.0
                 feature = _feature(graph, u, v, key, edge, fraction)
                 if feature:
                     possible_features.append(feature)
             doc_end_cost = documented_dist.get(v, math.inf)
-            doc_weight = _scenario_weight(graph, u, v, {key: edge}, profile, "documented")
+            doc_weight = _scenario_weight(graph, u, v, {key: edge}, profile, "documented", documentation_policy)
             if doc_weight is not None and doc_end_cost < seconds:
-                fraction = min(1.0, (seconds - doc_end_cost) / doc_weight)
+                fraction = min(1.0, (seconds - doc_end_cost) / doc_weight) if doc_weight > 0 else 1.0
                 feature = _feature(graph, u, v, key, edge, fraction)
                 if feature:
                     documented_features.append(feature)
-            missing = critical_unknowns(edge, graph.nodes[u], graph.nodes[v], profile)
+            missing = critical_unknowns(edge, graph.nodes[u], graph.nodes[v], profile, documentation_policy)
             if missing and possible_weight is not None and end_cost < seconds:
                 critical_unknown_count += 1
+                missing_attribute_counts.update(missing)
                 if len(unknown_examples) < 8:
                     way_ids = _values(edge.get("osmid"))
                     for way_id in way_ids[:1]:
@@ -282,10 +295,24 @@ class ReachabilityIndex:
                         else:
                             unknown_examples.append(example)
 
-        documented_refs = {feature["id"] for feature in documented_features}
-        unknown_features = [feature for feature in possible_features if feature["id"] not in documented_refs]
+        documented_refs = {feature["id"]: feature["properties"]["reachable_fraction"] for feature in documented_features}
+        unknown_features = []
+        for feature in possible_features:
+            props = feature["properties"]
+            documented_fraction = documented_refs.get(feature["id"], 0.0)
+            possible_fraction = props["reachable_fraction"]
+            if possible_fraction > documented_fraction + 1e-9:
+                u, v, key, edge = edge_by_public_id[feature["id"]]
+                difference = _feature(graph, u, v, key, edge, possible_fraction, documented_fraction)
+                if difference:
+                    unknown_features.append(difference)
+        inspections = analyze_inspections(
+            graph, stop_id=stop_id, stop_node=node, origins=ordered_nodes,
+            possible_dist=possible_dist, possible_paths=possible_paths, seconds=seconds,
+            profile=profile, weight=_scenario_weight, unknowns=critical_unknowns, osm_values=_values,
+        )
         example_paths = []
-        for origin in sorted(possible_origins, key=lambda item: sha256(f"{VERSION}:{item}".encode()).digest()):
+        for origin in sorted(possible_origins, key=lambda item: sha256(f"{SAMPLING_VERSION}:{item}".encode()).digest()):
             if origin == node:
                 continue
             try:
@@ -306,11 +333,12 @@ class ReachabilityIndex:
             "gtfs_source": {"url": SOURCE_GTFS, "feed_info": self.feed_info},
             "osm_source": {"url": self.metadata.get("source_url") or SOURCE_OSM, "source_name": self.metadata.get("source", "OpenStreetMap"), "cache_file_modified_at": self.metadata.get("graph_modified_at"), "manifest_generated_at": self.metadata.get("manifest_generated_at"), "source_snapshot_date": self.metadata.get("source_snapshot_date"), "observation_timestamp": None},
             "profile": profile.value,
-            "profile_assumptions": {"speed_mps": SPEED_MPS[profile.value], "time_budget_minutes": minutes, "maximum_stop_connector_m": MAX_STOP_CONNECTOR_M},
+            "profile_assumptions": {"speed_mps": SPEED_MPS[profile.value], "time_budget_minutes": minutes, "maximum_stop_connector_m": MAX_STOP_CONNECTOR_M, "documentation_policy": documentation_policy},
             "sampling": {"method": "Deterministic SHA-256 ordering of OSM node IDs; first N nodes; no population weighting", "origin_sample_count": len(ordered_nodes), "not_population_estimate": True},
             "documented": {"reachable_sample_origins": len(documented_origins), "reachable_graph_nodes": len(documented_dist), "reachable_edge_count": len(documented_features), "geometry": {"type": "FeatureCollection", "features": documented_features}},
             "possible": {"reachable_sample_origins": len(possible_origins), "reachable_graph_nodes": len(possible_dist), "reachable_edge_count": len(possible_features), "geometry": {"type": "FeatureCollection", "features": possible_features}},
-            "unknown_gap": {"sample_origin_count": len(possible_origins - documented_origins), "edge_count": len(unknown_features), "critical_unknown_edge_count": critical_unknown_count, "geometry": {"type": "FeatureCollection", "features": unknown_features}, "examples": (crossing_unknown_examples + unknown_examples)[:8]},
+            "unknown_gap": {"sample_origin_count": len(possible_origins - documented_origins), "edge_count": len(unknown_features), "critical_unknown_edge_count": critical_unknown_count, "missing_attribute_edge_counts": dict(sorted(missing_attribute_counts.items())), "geometry": {"type": "FeatureCollection", "features": unknown_features}, "examples": (crossing_unknown_examples + unknown_examples)[:8]},
+            "inspection_priorities": inspections,
             "example_paths": example_paths,
             "warnings": [WARNING, "Origin sampling is deterministic but not statistically representative.", "Missing fields are evaluated only for the documented predicates defined by this model; unmodeled conditions can still affect access."],
         }

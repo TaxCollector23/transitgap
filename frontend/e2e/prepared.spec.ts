@@ -12,7 +12,7 @@ test("prepared production views work while the route engine is unavailable", asy
       return route.abort();
     return route.continue();
   });
-  await page.goto("http://127.0.0.1:4173/");
+  await page.goto(process.env.TRANSITGAP_E2E_URL || "http://127.0.0.1:4173/");
   await expect(page.locator(".landing-art")).toBeVisible({
     timeout: 8000,
   });

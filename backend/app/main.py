@@ -15,6 +15,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, PlainTextResponse
 from pathlib import Path
+from typing import Literal
 from shapely.geometry import Point, mapping
 from .data_loader import (
     CENTER,
@@ -200,6 +201,7 @@ def health():
     graph = state["graph"]
     return {
         "ready": graph is not None and bool(state["stops"]),
+        "build_sha": os.getenv("TRANSITGAP_BUILD_SHA") or os.getenv("VERCEL_GIT_COMMIT_SHA"),
         "datasets": {
             "osm_walk_graph": "ready" if graph is not None else "unavailable",
             "vta_gtfs_stops": "ready" if state["stops"] else "unavailable",
@@ -351,7 +353,7 @@ def reachability_stops():
         "study_area": {"name": "Diridon Station pilot", "radius_m": 1500},
         "stop_count": len(index.stops),
         "stops": index.stop_list(),
-        "source": "VTA GTFS stops connected to the separate 1,500 m OpenStreetMap walking graph; connections are nearest-node matches, not field checked.",
+        "source": "Actual VTA GTFS stops in the 1,500 m Diridon view of the county walking graph; nearest-node matches are not field checked.",
     }
 
 
@@ -361,10 +363,11 @@ def stop_reachability(
     profile: Profile = Profile.wheelchair,
     minutes: int = Query(10, ge=1, le=REACHABILITY_MAX_MINUTES),
     sample_size: int = Query(150, ge=20, le=REACHABILITY_MAX_SAMPLE),
+    documentation_policy: Literal["profile_required", "width_optional_sensitivity"] = "profile_required",
 ):
     """Compare source-documented and permissive reach toward one real pilot stop."""
     try:
-        return _reachability_study().analyze(stop_id, profile, minutes, sample_size)
+        return _reachability_study().analyze(stop_id, profile, minutes, sample_size, documentation_policy)
     except KeyError as exc:
         raise HTTPException(404, detail="VTA stop is outside the Diridon reachability pilot.") from exc
     except ValueError as exc:

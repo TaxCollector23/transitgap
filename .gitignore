@@ -31,3 +31,5 @@ frontend/public/bootstrap.json
 frontend/public/study-summary.json
 frontend/public/studies/
 frontend/public/prepared-letters/
+frontend/test-artifacts/fixture-results/
+frontend/test-artifacts/

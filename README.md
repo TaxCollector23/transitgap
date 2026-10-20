@@ -1,6 +1,6 @@
 # TransitGap
 
-**[Open the site](https://transitgap.vercel.app/) · [Open the map](https://transitgap.vercel.app/app) **
+[Open the site](https://transitgap.vercel.app/) · [Open the map](https://transitgap.vercel.app/app)
 
 
 TransitGap is an open-source application that helps people find walking routes to public transit based on their accessibility needs. It identifies potential barriers and highlights missing accessibility information.

@@ -11,7 +11,7 @@ test("landing, planner and gap study meet automated WCAG AA checks", async ({
       });
     else
       await expect(
-        page.getByRole("heading", { name: /The shortest route/ }),
+        page.getByRole("heading", { name: /A city for all/ }),
       ).toBeVisible();
     const result = await new AxeBuilder({ page })
       .withTags(["wcag2a", "wcag2aa", "wcag21aa"])

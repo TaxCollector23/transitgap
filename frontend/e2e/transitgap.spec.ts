@@ -33,14 +33,14 @@ async function route(page: Page) {
   return r.json();
 }
 
-test("landing scrolls on desktop and phone, contains real study and opens app", async ({
+test("landing scrolls on desktop and phone, explains the project and opens app", async ({
   page,
 }) => {
   for (const width of [1440, 390]) {
     await page.setViewportSize({ width, height: 844 });
     await page.goto("/");
     await expect(
-      page.getByRole("heading", { name: /The shortest route/ }),
+      page.getByRole("heading", { name: /A city for all/ }),
     ).toBeVisible();
     await page.locator(".landing-footer").scrollIntoViewIfNeeded();
     expect(await page.evaluate(() => scrollY)).toBeGreaterThan(200);

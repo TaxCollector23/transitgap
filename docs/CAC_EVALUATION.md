@@ -16,4 +16,4 @@ For 5459, the top evaluated source-linked connection is OSM way 674154528 betwee
 
 Candidate selection is capped at 12 by occurrence on deterministic shortest possible sampled paths. Ranking then recomputes exact bounded reachability for each chosen candidate. Other unknowns stay usable in both scenarios. Equivalent records are grouped; distinct mapped ways remain alternatives. This is not a full ranking of all local infrastructure or a probability of accessibility.
 
-Local correctness evidence: 131 backend/contract tests, independent exhaustive forward-path reference, 3 fixture browser tests and 11 real-data browser tests. No field truth set, consented rider session, physical accuracy percentage, adoption claim or completed CAC entry is available. See RELEASE_ACCEPTANCE.md for final hosted and CI outcomes.
+Local correctness evidence: 131 backend/contract tests, independent exhaustive forward-path reference, 4 fixture browser tests and 11 real-data browser tests. No field truth set, consented rider session, physical accuracy percentage, adoption claim or completed CAC entry is available. See RELEASE_ACCEPTANCE.md for final hosted and CI outcomes.

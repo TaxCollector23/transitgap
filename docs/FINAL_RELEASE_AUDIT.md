@@ -20,8 +20,14 @@ The inspection algorithm was a `NotImplementedError` stub; no separately authore
 
 ## Checks at this point
 
-131 backend/contract tests pass (existing Shapely deprecation warnings remain). ESLint and production build pass; MapLibre retains its >500 kB bundle advisory. The expanded fixture suite passes 3 tests; the complete real-data local browser suite passes 11. GitHub run 39512410549 passes both required jobs. Final CI, live deployment, and measurements are recorded in RELEASE_ACCEPTANCE.md after completion.
+131 backend/contract tests pass (existing Shapely deprecation warnings remain). ESLint and production build pass; MapLibre retains its >500 kB bundle advisory. The expanded fixture suite passes 4 tests; the complete real-data local browser suite passes 11. GitHub run 39512410549 passes both required jobs. Final CI, live deployment, and measurements are recorded in RELEASE_ACCEPTANCE.md after completion.
 
 ## Boundaries
 
 Scores are hypothetical reachability sensitivity on sampled graph journeys. They are not riders, physical accessibility verification, or official priorities. At most 12 candidates on deterministic shortest possible paths are evaluated; tied alternate paths may contain other useful inspection opportunities. OSM source snapshot date and human observations remain unknown. Durable production reporting, real screen-reader/voice-control validation, field studies, student contribution, video, deadline confirmation, and CAC submission are not fabricated or claimed complete.
+
+## External browser recovery fixes
+
+The first public deployment (`cfc74c6`) passed HTTP and MCP smoke but its full browser run had 8 passed / 3 failed. Two checks used a development-only MapLibre handle absent in production. The camera-stability test now pans with keyboard controls and checks the actual origin marker stays in place during stop search. The gap/mobile test uses visible canvas and internal content-width assertions.
+
+The third failure revealed an application issue: `/accessibility/priorities?limit=80` returned in 109 ms, but a stalled `/data-sources` request held the entire evidence panel in loading because of `Promise.all`. Loads are now independent with bounded retry, separate candidate/report/availability states, and explicit optional-source failure/retry. Saving a report no longer waits for unrelated metadata. A fixture regression verifies that candidates and report controls remain usable when metadata requests fail. Local reruns: 4 fixture tests and all 11 real-data tests pass. Initial public failure traces are retained locally under `frontend/test-artifacts/production-before-fix/`.

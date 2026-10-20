@@ -2,7 +2,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import OriginSearch from "./OriginSearch";
 import type { GapFeature, Observation, SourceStatus } from "./types";
 
-import { API } from "./data";
+import { API, serviceJSON } from "./data";
 const METERS_PER_MILE = 1609.344;
 type Props = {
   onFeatures: (
@@ -60,7 +60,10 @@ export default function GroundTruthPanel({
   const [category, setCategory] = useState("sidewalk_condition_issue");
   const [description, setDescription] = useState("");
   const [busy, setBusy] = useState(false);
-  const [reportsEnabled, setReportsEnabled] = useState(false);
+  const [reportsEnabled, setReportsEnabled] = useState<boolean | null>(null);
+  const [reportsState, setReportsState] = useState<"loading" | "ready" | "unavailable">("loading");
+  const [sourcesUnavailable, setSourcesUnavailable] = useState(false);
+  const [reportAvailabilityError, setReportAvailabilityError] = useState(false);
   const [message, setMessage] = useState("");
 
   function evidenceData(
@@ -94,40 +97,33 @@ export default function GroundTruthPanel({
 
   async function refresh() {
     setEvidenceState("loading");
-    try {
-      const [sourceResponse, gapResponse, reportResponse, healthResponse] =
-        await Promise.all([
-          fetch(`${API}/data-sources`),
-          fetch(`${API}/accessibility/priorities?limit=80`),
-          fetch(`${API}/accessibility/observations?limit=100`),
-          fetch(`${API}/health`),
-        ]);
-      if (!sourceResponse.ok || !gapResponse.ok || !reportResponse.ok)
-        throw new Error("Accessibility evidence could not be loaded.");
-      if (healthResponse.ok)
-        setReportsEnabled(
-          (await healthResponse.json()).reports_enabled === true,
-        );
-      const nextSources = (await sourceResponse.json()) as SourceStatus;
-      const nextGaps = (
-        (await gapResponse.json()) as { candidates: GapFeature[] }
-      ).candidates;
-      const nextReports = (
-        (await reportResponse.json()) as { observations: Observation[] }
-      ).observations;
-      setSources(nextSources);
-      setGaps(nextGaps);
-      setReports(nextReports);
-      setEvidenceState("ready");
-      onFeatures(
-        evidenceData(nextGaps, nextReports),
-        showSidewalks ? sidewalks : emptyPolygons,
-      );
-    } catch (error) {
-      setEvidenceState("unavailable");
-      throw error;
-    }
+    setReportsState("loading");
+    setSourcesUnavailable(false);
+    setReportAvailabilityError(false);
+    // Source metadata and community/health requests must not hold back the
+    // independently available source-linked candidate records.
+    await Promise.allSettled([
+      serviceJSON(`${API}/data-sources`).then(data => setSources(data as SourceStatus))
+        .catch(() => setSourcesUnavailable(true)),
+      serviceJSON(`${API}/accessibility/priorities?limit=80`).then(data => {
+        setGaps(data.candidates as GapFeature[]);
+        setEvidenceState("ready");
+      }).catch(error => {
+        setEvidenceState("unavailable");
+        setMessage(error instanceof Error ? error.message : "Accessibility evidence unavailable.");
+      }),
+      serviceJSON(`${API}/accessibility/observations?limit=100`).then(data => {
+        setReports(data.observations as Observation[]);
+        setReportsState("ready");
+      }).catch(() => setReportsState("unavailable")),
+      serviceJSON(`${API}/health`).then(data => setReportsEnabled(data.reports_enabled === true))
+        .catch(() => { setReportsEnabled(null); setReportAvailabilityError(true); }),
+    ]);
   }
+
+  useEffect(() => {
+    onFeatures(evidenceData(gaps, reports), showSidewalks ? sidewalks : emptyPolygons);
+  }, [gaps, reports, showSidewalks, sidewalks, onFeatures]);
 
   useEffect(() => {
     void refresh().catch((error: unknown) =>
@@ -201,7 +197,7 @@ export default function GroundTruthPanel({
       setDescription("");
       onClearReportPoint();
       setMessage("Report saved as unverified community evidence.");
-      await refresh();
+      void refresh();
     } catch (error) {
       setMessage(
         error instanceof Error ? error.message : "Report could not be saved.",
@@ -237,13 +233,14 @@ export default function GroundTruthPanel({
           {message}
         </p>
       )}
+      {sourcesUnavailable && <p role="status">Source metadata is unavailable. Candidate records still include their individual source details.</p>}
       {evidenceState === "loading" && (
         <p className="evidence-message" role="status">
           <span className="spinner" />
           Loading sidewalk evidence…
         </p>
       )}
-      {evidenceState === "unavailable" && (
+      {(evidenceState === "unavailable" || sourcesUnavailable || reportsState === "unavailable" || reportAvailabilityError) && (
         <button
           className="text-button"
           type="button"
@@ -323,7 +320,7 @@ export default function GroundTruthPanel({
           <p className="evidence-empty">
             {message
               ? "Evidence could not be loaded. Try again after the service is available."
-              : "No review candidates are available for this area right now."}
+              : evidenceState === "loading" ? "Loading review candidates…" : "No review candidates are available for this area right now."}
           </p>
         )}
       </div>
@@ -456,18 +453,17 @@ export default function GroundTruthPanel({
         </>
       ) : (
         <p>
-          Public reporting is paused until durable storage is connected. No
-          report will be saved here.
+          {reportsEnabled === false ? "Public reporting is paused until durable storage is connected. No report will be saved here." : reportAvailabilityError ? "Reporting availability could not be checked. No report can be submitted until the service responds." : "Checking report availability…"}
         </p>
       )}
       <div className="community-reports">
         <h4>
           Community reports{" "}
-          {evidenceState === "ready" && <span>{reports.length}</span>}
+          {reportsState === "ready" && <span>{reports.length}</span>}
         </h4>
-        {evidenceState === "loading" ? (
+        {reportsState === "loading" ? (
           <p role="status">Loading community reports…</p>
-        ) : evidenceState === "unavailable" ? (
+        ) : reportsState === "unavailable" ? (
           <p>Community reports are unavailable. Their count is unknown.</p>
         ) : (
           <>

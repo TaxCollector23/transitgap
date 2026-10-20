@@ -73,3 +73,24 @@ test('local speech controls pause, resume and stop',async({page})=>{
  expect(await page.evaluate(()=>(window as any).__speechCalls)).toEqual(expect.arrayContaining(['speak','pause','resume','cancel']));
  await expect(page.getByRole('button',{name:'Stop reading',exact:true})).toHaveCount(0);
 });
+
+test('source metadata failure does not hide available candidates or report controls',async({page})=>{
+ await page.route('**/data-sources',route=>route.abort());
+ await page.route('**/accessibility/priorities?*',route=>route.fulfill({json:{candidates:[{
+  id:'gap:synthetic-ci',latitude:37.32875,longitude:-121.90442,
+  classification:'UNKNOWN_DATA',category:'synthetic_ci',priority_score:1,
+  explanation:'Synthetic CI candidate, not a real observation.',affected_vta_stop_count:1,
+  missing_information:['width'],matched_distance_m:null,
+  provenance:{municipal_source:null,osm_source:{status:'SOURCE_DOCUMENTED'},interpretation:'Synthetic test only.'}
+ }]}}));
+ await page.goto('/app');await expect(page.locator('.dataset-status.is-ready')).toBeVisible();
+ await page.getByRole('button',{name:'Evidence',exact:true}).click();
+ await expect(page.locator('.gap-item').first()).toBeVisible();
+ await expect(page.getByLabel('Observation',{exact:true})).toBeEnabled();
+ await expect(page.getByText('Source metadata is unavailable. Candidate records still include their individual source details.')).toBeVisible();
+ await page.locator('.gap-item').first().click();
+ await expect(page.getByText('Evidence detail',{exact:true})).toBeVisible();
+ await page.unroute('**/data-sources');
+ await page.getByRole('button',{name:'Try loading evidence again'}).click();
+ await expect(page.getByText('Source metadata is unavailable. Candidate records still include their individual source details.')).toHaveCount(0);
+});

@@ -1,0 +1,132 @@
+{
+  "url": "https://transitgap.vercel.app",
+  "verified_at": "2026-10-20T23:17:48.458765+00:00",
+  "result": "PASS",
+  "checks": [
+    {
+      "path": "/",
+      "http_status": 200,
+      "seconds": 0.329,
+      "bytes": 2140
+    },
+    {
+      "path": "/app",
+      "http_status": 200,
+      "seconds": 0.178,
+      "bytes": 2140
+    },
+    {
+      "path": "/assets/index-DcEPeeET.js",
+      "http_status": 200,
+      "seconds": 0.191,
+      "bytes": 239615
+    },
+    {
+      "path": "/health",
+      "http_status": 200,
+      "seconds": 0.913,
+      "bytes": 751,
+      "build_sha": "cfc74c6",
+      "initialization_seconds": 37.644,
+      "reports_enabled": false,
+      "storage": "instance-local"
+    },
+    {
+      "path": "/stops",
+      "http_status": 200,
+      "seconds": 0.352,
+      "bytes": 407986,
+      "count": 3348
+    },
+    {
+      "path": "/coverage",
+      "http_status": 200,
+      "seconds": 0.268,
+      "bytes": 283625,
+      "region": "Santa Clara County"
+    },
+    {
+      "path": "/accessibility/reachability/stops",
+      "http_status": 200,
+      "seconds": 0.786,
+      "bytes": 12791,
+      "count": 99
+    },
+    {
+      "path": "/accessibility/reachability/5459?profile=wheelchair&minutes=10&sample_size=150",
+      "http_status": 200,
+      "seconds": 1.841,
+      "bytes": 336423,
+      "study_status": "INSUFFICIENT_DOCUMENTED_DATA",
+      "documented": 0,
+      "possible": 7,
+      "sample_count": 150,
+      "inspections": 12,
+      "top_candidate": [
+        {
+          "candidate_id": "osm-way:674154528:nodes:5681153689:6313417227",
+          "source_url": "https://www.openstreetmap.org/way/674154528",
+          "score": 7,
+          "affected_pairs": [
+            [
+              13318505817,
+              "5459"
+            ],
+            [
+              2748923772,
+              "5459"
+            ],
+            [
+              3215349497,
+              "5459"
+            ],
+            [
+              5127932187,
+              "5459"
+            ],
+            [
+              5225235596,
+              "5459"
+            ],
+            [
+              6313610229,
+              "5459"
+            ],
+            [
+              7100985709,
+              "5459"
+            ]
+          ],
+          "sample_count": 150,
+          "assumptions": "Directed travel toward each stop; walk_seconds includes the selected profile cost. Other unknown connections remain usable in both hypothetical scenarios. Counts describe sampled graph journeys, not people, ridership, safety or official priority.",
+          "status": "MODELED",
+          "missing_critical_attributes": [
+            "width"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "/route",
+      "http_status": 200,
+      "seconds": 0.198,
+      "bytes": 26451,
+      "distance_m": 390.1,
+      "segment_count": 16,
+      "profile": "wheelchair"
+    },
+    {
+      "path": "/accessibility/priorities?limit=1",
+      "http_status": 200,
+      "seconds": 0.151,
+      "bytes": 2388,
+      "metric": "route_proximity_weighted_review_score"
+    },
+    {
+      "path": "/data-sources",
+      "http_status": 200,
+      "seconds": 0.147,
+      "bytes": 2174
+    }
+  ]
+}

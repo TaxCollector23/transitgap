@@ -100,20 +100,22 @@ test("real county routes, all five algorithms, mobility profiles and no repeated
     result = await route(page);
     expect(result.profile).toBe(profile);
   }
-  await page.waitForTimeout(650);
-  await page.evaluate(() => {
-    const w = window as any;
-    w.__fitCalls = 0;
-    const map = w.__transitGapMap;
-    const old = map.fitBounds.bind(map);
-    map.fitBounds = (...args: any[]) => {
-      w.__fitCalls++;
-      return old(...args);
-    };
-  });
+  // Pan first so an accidental fit-to-route would visibly reset the camera.
+  const marker = page.locator(".map-marker-origin");
+  const initialStyle = await marker.getAttribute("style");
+  await page.locator(".maplibregl-canvas").focus();
+  await page.keyboard.press("ArrowRight");
+  await expect(marker).not.toHaveAttribute("style", initialStyle || "");
+  let settledStyle = "";
+  await expect.poll(async () => {
+    const current = await marker.getAttribute("style") || "";
+    const settled = current === settledStyle;
+    settledStyle = current;
+    return settled;
+  }).toBe(true);
   await page.getByLabel("Search VTA stops").fill("Mountain View");
   await expect(page.locator(".stop-option").first()).toBeVisible();
-  expect(await page.evaluate(() => (window as any).__fitCalls)).toBe(0);
+  await expect(marker).toHaveAttribute("style", settledStyle);
   expect(errors).toEqual([]);
 });
 
@@ -162,7 +164,7 @@ test("network gaps render and create an editable factual letter", async ({
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
   const impactBox = await page.getByRole("region", { name: "Inspection reachability impact" }).evaluate(element => ({ width: element.clientWidth, contentWidth: element.scrollWidth }));
   expect(impactBox.contentWidth).toBeLessThanOrEqual(impactBox.width);
-  await expect.poll(() => page.evaluate(() => (window as any).__transitGapMap?.areTilesLoaded())).toBe(true);
+  await expect(page.locator(".maplibregl-canvas")).toBeVisible();
   await page.screenshot({ path: "test-artifacts/screenshots/inspection-impact-mobile.png" });
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.locator(".gap-ranking button").first().click();

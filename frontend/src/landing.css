@@ -21,8 +21,9 @@ html:has(.landing) { scroll-behavior:smooth; }
 .landing-copy { text-align:center; margin:clamp(24px,5vh,64px) auto 0; padding:0 24px 48px; max-width:850px; }
 .landing h1 { font-size:clamp(64px,7.2vw,112px); font-weight:500; letter-spacing:-.065em; line-height:1.05; }
 .landing-copy > p { max-width:660px; margin:24px auto 0; font-size:clamp(18px,1.4vw,21px); line-height:1.6; }
-.landing-actions { display:flex; justify-content:center; gap:16px; margin-top:30px; flex-wrap:wrap; }
+.landing-actions { display:flex; justify-content:center; gap:18px; margin-top:40px; flex-wrap:wrap; }
 .landing-primary,.landing-secondary { display:inline-flex; justify-content:center; align-items:center; min-height:52px; padding:13px 25px; border:1px solid #000; border-radius:3px; font-weight:600; font-size:16px; text-decoration:none; background:#fff; }
+.landing-actions a { min-height:62px; padding:18px 32px; border-radius:999px; font-size:17px; }
 .landing .landing-primary { background:#000; color:#fff; }
 .landing-primary:hover { background:#252525; }
 .landing-secondary:hover { background:#f1f1f1; }
@@ -61,7 +62,7 @@ html:has(.landing) { scroll-behavior:smooth; }
  .landing-copy { margin-top:26px; padding:0 24px 40px; }
  .landing h1 { font-size:62px; }
  .landing-copy > p { margin-top:20px; font-size:18px; line-height:1.6; }
- .landing-actions { gap:12px; margin-top:24px; }
+ .landing-actions { gap:14px; margin-top:32px; }
  .landing-actions a { width:100%; }
  .landing-art { object-position:53% bottom; }
  .landing-sky { height:79%; background:linear-gradient(#ffffffd9 0%,#ffffffd9 74%,#ffffff00 100%); }

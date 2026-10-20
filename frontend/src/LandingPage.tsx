@@ -30,7 +30,7 @@ export default function LandingPage() {
         </header>
         <div className="landing-copy">
           <h1 id="landing-title">A city for all.</h1>
-          <p>Getting to public transit shouldn't be harder than it needs to be. TransitGap helps you explore walking routes, understand accessibility barriers, and see where important information is still missing.</p>
+          <p>A bus stop can be close and still hard to reach. TransitGap helps you find walking routes, identify accessibility barriers, and understand what's missing from the map.</p>
           <div className="landing-actions">
             <a className="landing-primary" href="/app">Explore the map</a>
             <a className="landing-secondary" href="#how-it-works">How TransitGap works</a>

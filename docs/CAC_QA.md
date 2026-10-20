@@ -3,6 +3,7 @@
 Date: October 20, 2026. Local checkout only.
 
 - Backend: **96 passed**, 121 Shapely deprecation warnings.
+- Student algorithm contract: 12 cases are specified, but the implementation is a deliberate `NotImplementedError` stub. During setup pytest initially auto-collected them and reported **12 failed / 96 passed**; the file was renamed outside default discovery. Those 12 failures are the pending student implementation gate, not regressions in the default suite.
 - Focused pilot/API/gap tests: **14 passed**, 20 warnings.
 - ESLint: passed.
 - Vite production build: passed; MapLibre JS chunk advisory at 1,086.49 kB.

@@ -1,17 +1,28 @@
-# Testing and verification
+# Verification
 
-## Local commands
+Run from the repository root unless stated otherwise:
 
 ```sh
-python -m pytest backend/tests
-cd frontend && npm ci && npm run build
-cd frontend && npx playwright test
+backend/.venv/bin/python -m pytest backend/tests -q --disable-warnings
+backend/.venv/bin/python -m pytest backend/tests -m 'not integration' -q --disable-warnings
+npm --prefix frontend run build
+npm --prefix frontend run test:e2e
+git diff --check
 ```
 
-Run the FastAPI backend and Vite frontend using the commands in `README.md` before the browser suite. Playwright exercises the real local API; the integration flow should not mock route or GroundTruth endpoints.
+Integration tests need prepared real OSM/VTA datasets. Offline unit tests use synthetic graphs and GTFS fixtures. Playwright starts or reuses the local API and Vite server. Install Chromium with `cd frontend && npx playwright install chromium` when necessary.
 
-## Phase 4 coverage
+The suite covers directed and parallel edges, profile costs, exclusions, unknown tags, geometry continuity, connectors, detour availability, GTFS calendars and overnight service, partial walkshed edges, reciprocal geometry, source-cache invalidation, PII normalization, read-only MCP and ephemeral report rejection. A 5,000-node route has a two-second request budget.
 
-The Phase 4 suite should cover ArcGIS metadata, bounded ID batching, cache fallback, geometry conversion, correspondence thresholds, source availability, deterministic route impact, report validation and persistence, and the existing route algorithms. Desktop and mobile browser flows should cover route calculation, overlay toggles, candidate provenance, report placement/submission, and reload persistence.
+Eight browser checks cover desktop/mobile scrolling, the five algorithms, mobility profiles, route comparison, directions, service details, sharing, real network studies, editable letters, map selection, failure recovery, evidence loading and automated WCAG A/AA rules on three views. Automated accessibility checks do not replace keyboard, screen-reader or real-world user evaluation.
 
-No Phase 4 test or production build result is claimed in this document until commands have run in an environment that can execute the project toolchain. SQLite reports on Vercel are instance-local unless a durable storage path is configured; local SQLite restart persistence does not prove hosted durability.
+MCP verification:
+
+```sh
+TRANSITGAP_MCP_URL=http://127.0.0.1:8000/mcp backend/.venv/bin/python scripts/smoke_mcp.py
+TRANSITGAP_MCP_URL=https://transitgap.vercel.app/mcp backend/.venv/bin/python scripts/smoke_mcp.py
+```
+
+The official SDK also exercises the in-memory server in pytest. The local `python -m mcp_server` stdio transport was tested with the official SDK client and discovered 13 tools.
+
+See `docs/RELEASE_STATUS.md` for actual run results and release gaps. Test reports, screenshots, videos and traces are generated under `frontend/test-artifacts` and are not committed. Public browser checks must not create fabricated community reports.

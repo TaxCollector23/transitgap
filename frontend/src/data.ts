@@ -19,12 +19,16 @@ export async function serviceJSON(path: string) {
   for (let attempt=0; attempt<3; attempt++) {
     const controller = new AbortController();
     const timer = window.setTimeout(() => controller.abort(), 15000);
+    let response: Response | null = null;
     try {
-      const response = await fetch(path, {signal:controller.signal,cache:"no-store"});
-      if (response.status < 500 && response.status !== 429) return await json(response);
-      last = Error("The routing service is starting or temporarily unavailable.");
+      response = await fetch(path, {signal:controller.signal,cache:"no-store"});
     } catch (error) { last=error; }
     finally { window.clearTimeout(timer); }
+    // Do not retry a valid client error or malformed response. Only repeat a
+    // network failure, 429, or server error.
+    if (response && response.status < 500 && response.status !== 429)
+      return json(response);
+    if (response) last = Error("The routing service is starting or temporarily unavailable.");
     if (attempt<2) await new Promise(resolve=>window.setTimeout(resolve,800*2**attempt));
   }
   throw last instanceof Error ? last : Error("The routing service could not be reached. Try again.");
@@ -65,11 +69,19 @@ export async function plannerData(): Promise<{
   return {coverage,stops:data.stops};
 }
 export async function studySummary(limit = 10, signal?: AbortSignal) {
-  const data = await prepared(
-    "/study-summary.json",
-    `/gaps?limit=${limit}`,
-    signal,
-  );
+  let data: any;
+  if (PREPARED) {
+    try {
+      const response = await fetch("/study-summary.json", { signal });
+      if (response.ok) {
+        const snapshot = await response.json();
+        if (Array.isArray(snapshot.features) && snapshot.features.length) data = snapshot;
+      }
+    } catch (error) {
+      if (signal?.aborted) throw error;
+    }
+  }
+  if (!data) data = await json(await fetch(`${API}/gaps?limit=${limit}`, { signal }));
   return { ...data, features: data.features.slice(0, limit) };
 }
 export function stopAccess(id: string, signal?: AbortSignal) {
@@ -78,6 +90,13 @@ export function stopAccess(id: string, signal?: AbortSignal) {
     `/stops/${encodeURIComponent(id)}/access`,
     signal,
   );
+}
+export function reachabilityStops() {
+  return serviceJSON(`${API}/accessibility/reachability/stops`);
+}
+export function stopReachability(id: string, profile: string, minutes = 10) {
+  const query = new URLSearchParams({ profile, minutes: String(minutes), sample_size: "150" });
+  return serviceJSON(`${API}/accessibility/reachability/${encodeURIComponent(id)}?${query}`);
 }
 export async function civicLetter(id: string) {
   if (PREPARED) {

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { studySummary, stopAccess, civicLetter } from "./data";
+import { studySummary, stopAccess, civicLetter, reachabilityStops, stopReachability } from "./data";
+import type { ReachabilityAnalysis, ReachabilityStop } from "./types";
 export type GapDetail = {
   stop_id: string;
   stop_name: string;
@@ -14,8 +15,10 @@ export type GapDetail = {
 type Item = { properties: GapDetail };
 export default function GapPanel({
   onStudy,
+  onReachability,
 }: {
   onStudy: (detail: GapDetail | null) => void;
+  onReachability: (analysis: ReachabilityAnalysis | null, layers: { documented: boolean; unknown: boolean }) => void;
 }) {
   const [items, setItems] = useState<Item[]>([]),
     [count, setCount] = useState(0),
@@ -23,10 +26,56 @@ export default function GapPanel({
   const [busy, setBusy] = useState(false),
     [error, setError] = useState(""),
     [letter, setLetter] = useState("");
+  const [summaryBusy, setSummaryBusy] = useState(true);
+  const [pilotStops, setPilotStops] = useState<ReachabilityStop[]>([]);
+  const [pilotStopId, setPilotStopId] = useState("");
+  const [reachProfile, setReachProfile] = useState("wheelchair");
+  const [reachMinutes, setReachMinutes] = useState(10);
+  const [reachability, setReachability] = useState<ReachabilityAnalysis | null>(null);
+  const [reachBusy, setReachBusy] = useState(false);
+  const [reachError, setReachError] = useState("");
+  const [showDocumented, setShowDocumented] = useState(false);
+  const [showUnknown, setShowUnknown] = useState(false);
+  useEffect(() => {
+    reachabilityStops()
+      .then((data) => {
+        setPilotStops(data.stops);
+        const connected = (data.stops as ReachabilityStop[]).find((stop) => stop.connector_distance_m <= 35);
+        setPilotStopId(connected?.stop_id || data.stops[0]?.stop_id || "");
+      })
+      .catch((e) => setReachError(e instanceof Error ? e.message : "Pilot data unavailable."));
+  }, []);
+  async function analyzeReachability() {
+    if (!pilotStopId) return;
+    setReachBusy(true);
+    setReachError("");
+    setReachability(null);
+    onStudy(null);
+    try {
+      const data = await stopReachability(pilotStopId, reachProfile, reachMinutes) as ReachabilityAnalysis;
+      const documented = data.status !== "STOP_CONNECTION_UNKNOWN" && data.documented.reachable_edge_count > 0;
+      const unknown = data.status !== "STOP_CONNECTION_UNKNOWN" && data.unknown_gap.edge_count > 0;
+      setReachability(data);
+      setShowDocumented(documented);
+      setShowUnknown(unknown);
+      onReachability(data, { documented, unknown });
+    } catch (e) {
+      setReachError(e instanceof Error ? e.message : "Reachability study unavailable.");
+    } finally {
+      setReachBusy(false);
+    }
+  }
+  function updateLayers(documented: boolean, unknown: boolean) {
+    setShowDocumented(documented);
+    setShowUnknown(unknown);
+    if (reachability) onReachability(reachability, { documented, unknown });
+  }
   async function select(id: string) {
     setBusy(true);
     setError("");
     setLetter("");
+    setReachability(null);
+    onReachability(null, { documented: false, unknown: false });
     try {
       const data = await stopAccess(id);
       setDetail(data);
@@ -46,13 +95,62 @@ export default function GapPanel({
       })
       .catch((e) => {
         if (!controller.signal.aborted) setError(e.message);
-      });
+      })
+      .finally(() => { if (!controller.signal.aborted) setSummaryBusy(false); });
     const id = new URLSearchParams(location.search).get("stop");
     if (id) void select(id);
     return () => controller.abort();
   }, []);
   return (
     <section className="gap-study" aria-label="Stop access gap study">
+      <h2>Diridon stop access study</h2>
+      <p>
+        Compare a source-documented network with paths that could work if selected unknown conditions prove usable. Neither result is field verified.
+      </p>
+      <label htmlFor="reachability-stop">VTA stop</label>
+      <select id="reachability-stop" value={pilotStopId} onChange={(e) => { setPilotStopId(e.target.value); setReachability(null); onReachability(null, { documented: false, unknown: false }); }}>
+        {pilotStops.map((stop) => <option key={stop.stop_id} value={stop.stop_id}>{stop.stop_name} · {stop.stop_id}</option>)}
+      </select>
+      <label htmlFor="reachability-profile">Mobility profile</label>
+      <select id="reachability-profile" value={reachProfile} onChange={(e) => { setReachProfile(e.target.value); setReachability(null); onReachability(null, { documented: false, unknown: false }); }}>
+        <option value="wheelchair">Wheelchair</option>
+        <option value="stroller">Stroller</option>
+        <option value="low_vision">Low vision</option>
+        <option value="standard">Standard walking</option>
+      </select>
+      <label htmlFor="reachability-minutes">Walking time budget</label>
+      <select id="reachability-minutes" value={reachMinutes} onChange={(e) => { setReachMinutes(Number(e.target.value)); setReachability(null); onReachability(null, { documented: false, unknown: false }); }}>
+        <option value={5}>5 minutes</option>
+        <option value={10}>10 minutes</option>
+        <option value={15}>15 minutes</option>
+      </select>
+      <button className="button" disabled={!pilotStopId || reachBusy} onClick={() => void analyzeReachability()}>
+        {reachBusy ? "Analyzing the pilot network…" : "Compare scenarios"}
+      </button>
+      {reachError && <p role="alert">{reachError}</p>}
+      {reachBusy && <p role="status"><span className="spinner" /> Measuring paths toward this stop…</p>}
+      {reachability && reachability.status !== "STOP_CONNECTION_UNKNOWN" && (
+        <article className="study-detail" aria-live="polite">
+          <h3>{reachability.stop.stop_name}</h3>
+          <p>{reachability.status === "NO_SAMPLED_ORIGINS" ? "No origin nodes were available in this bounded sample." : reachability.status === "INSUFFICIENT_DOCUMENTED_DATA" ? "No sampled origins meet this model’s documentation requirements." : "Source-documented reach is available in this sample."}</p>
+          <dl>
+            <div><dt>Documented origins</dt><dd>{reachability.documented.reachable_sample_origins} / {reachability.sampling.origin_sample_count}</dd></div>
+            <div><dt>Possible origins</dt><dd>{reachability.possible.reachable_sample_origins} / {reachability.sampling.origin_sample_count}</dd></div>
+            <div><dt>Origins depending on unknowns</dt><dd>{reachability.unknown_gap.sample_origin_count}</dd></div>
+          </dl>
+          <p>{reachability.profile_assumptions.time_budget_minutes} minute model at {(reachability.profile_assumptions.speed_mps * 2.23694).toFixed(1)} mph. Sample: {reachability.sampling.method.toLowerCase()}.</p>
+          <div className="scenario-toggles" aria-label="Map overlays">
+            <label><input type="checkbox" checked={showDocumented} disabled={reachability.documented.reachable_edge_count === 0} onChange={(e) => updateLayers(e.target.checked, showUnknown)} /> Documented routes ({reachability.documented.reachable_edge_count} segments)</label>
+            <label><input type="checkbox" checked={showUnknown} disabled={reachability.unknown_gap.edge_count === 0} onChange={(e) => updateLayers(showDocumented, e.target.checked)} /> Routes that depend on unknown conditions ({reachability.unknown_gap.edge_count} segments)</label>
+          </div>
+          {reachability.unknown_gap.examples.length > 0 && <div><h4>Source records with missing conditions</h4><ul>{reachability.unknown_gap.examples.slice(0, 3).map((item) => <li key={`${item.osm_way_id}-${item.source_url}`}><a href={item.source_url} target="_blank" rel="noreferrer">OpenStreetMap way {item.osm_way_id}</a>: missing {item.missing_critical_attributes.join(", ")}</li>)}</ul></div>}
+          {reachability.example_paths.length > 0 && <div><h4>Example paths in the sample</h4><ul>{reachability.example_paths.map((path) => <li key={path.origin_node}>Sample origin node {path.origin_node} · {(path.time_seconds / 60).toFixed(1)} minutes to this stop · {path.source_refs.slice(0, 2).map((ref) => <a key={ref.osm_way_id} href={ref.url} target="_blank" rel="noreferrer"> OSM way {ref.osm_way_id}</a>)}</li>)}</ul></div>}
+          <p>OSM source snapshot date: {reachability.osm_source.source_snapshot_date || "not recorded"}; cache file modified: {reachability.osm_source.cache_file_modified_at || "unknown"}; manifest generated: {reachability.osm_source.manifest_generated_at || "unknown"}. Field observation time: none recorded. VTA feed version: {reachability.gtfs_source.feed_info[0]?.feed_version || "not recorded"}.</p>
+          {reachability.warnings.map((warning) => <p key={warning}>{warning}</p>)}
+        </article>
+      )}
+      {reachability?.status === "STOP_CONNECTION_UNKNOWN" && <p role="status">{reachability.message}</p>}
+
       <h2>Ten-minute access gaps</h2>
       <p>
         Measured differences in reachable walking-network length, using standard
@@ -65,6 +163,7 @@ export default function GapPanel({
         affect the results. Missing data is not a confirmed barrier.
       </p>
       {error && <p role="alert">{error}</p>}
+      {summaryBusy && <p role="status"><span className="spinner" /> Loading the sampled stop study…</p>}
       {busy && (
         <p role="status">
           <span className="spinner" /> Computing network reach…

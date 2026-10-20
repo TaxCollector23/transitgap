@@ -45,6 +45,12 @@ from .observations import (
     review_observation,
     active_routing_effects,
 )
+from .reachability import (
+    MAX_MINUTES as REACHABILITY_MAX_MINUTES,
+    MAX_SAMPLE_SIZE as REACHABILITY_MAX_SAMPLE,
+    build_reachability_index,
+    pilot_gtfs_stops,
+)
 from .mcp_server import asgi_app as mcp_asgi_app, server as mcp_server
 
 logger = logging.getLogger(__name__)
@@ -56,6 +62,7 @@ state = {
     "region": "diridon",
     "groundtruth": None,
     "groundtruth_error": None,
+    "reachability_index": None,
 }
 _report_rate: dict[str, deque[float]] = defaultdict(deque)
 
@@ -121,6 +128,7 @@ def _load() -> None:
             region=region,
             groundtruth=index,
             groundtruth_error=gt_error,
+            reachability_index=None,
             gaps=gaps,
             schedule=schedule,
             observations_ready=observations_ready,
@@ -312,6 +320,58 @@ def accessibility_priorities(
     limit: int = Query(50, ge=1, le=200), offset: int = Query(0, ge=0)
 ):
     return _groundtruth().get_priorities(limit=limit, offset=offset)
+
+
+def _reachability_study():
+    _ready()
+    if state.get("reachability_index") is None:
+        graph_path = graph_cache_path(data_dir(), state["radius_m"], state["region"])
+        metadata_path = graph_path.with_suffix(".metadata.json")
+        try:
+            metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            metadata = {"source": "OpenStreetMap", "graph_modified_at": None, "manifest_generated_at": None}
+        schedule = state.get("schedule")
+        state["reachability_index"] = build_reachability_index(
+            state["graph"], pilot_gtfs_stops(state["graph"], data_dir() / "gtfs_vta.zip"), metadata,
+            schedule.feed_info if schedule else [],
+        )
+    return state["reachability_index"]
+
+
+@app.get("/accessibility/reachability/stops")
+def reachability_stops():
+    """Actual VTA stops connected to the bounded Diridon pilot graph."""
+    try:
+        index = _reachability_study()
+    except Exception as exc:
+        logger.exception("Diridon reachability data is unavailable")
+        raise HTTPException(503, detail="The Diridon OSM and VTA pilot data could not be loaded.") from exc
+    return {
+        "study_area": {"name": "Diridon Station pilot", "radius_m": 1500},
+        "stop_count": len(index.stops),
+        "stops": index.stop_list(),
+        "source": "VTA GTFS stops connected to the separate 1,500 m OpenStreetMap walking graph; connections are nearest-node matches, not field checked.",
+    }
+
+
+@app.get("/accessibility/reachability/{stop_id}")
+def stop_reachability(
+    stop_id: str,
+    profile: Profile = Profile.wheelchair,
+    minutes: int = Query(10, ge=1, le=REACHABILITY_MAX_MINUTES),
+    sample_size: int = Query(150, ge=20, le=REACHABILITY_MAX_SAMPLE),
+):
+    """Compare source-documented and permissive reach toward one real pilot stop."""
+    try:
+        return _reachability_study().analyze(stop_id, profile, minutes, sample_size)
+    except KeyError as exc:
+        raise HTTPException(404, detail="VTA stop is outside the Diridon reachability pilot.") from exc
+    except ValueError as exc:
+        raise HTTPException(422, detail=str(exc)) from exc
+    except Exception as exc:
+        logger.exception("Bounded stop reachability analysis failed")
+        raise HTTPException(503, detail="The bounded reachability analysis is unavailable.") from exc
 
 
 @app.get("/accessibility/municipal-sidewalks")

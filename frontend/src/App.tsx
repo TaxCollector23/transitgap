@@ -8,7 +8,7 @@ import type { GapDetail } from "./GapPanel";
 const GapPanel = lazy(() => import("./GapPanel"));
 const MapView = lazy(() => import("./MapView"));
 const GroundTruthPanel = lazy(() => import("./GroundTruthPanel"));
-import type { Coverage, RouteResult, Stop } from "./types";
+import type { Coverage, ReachabilityAnalysis, RouteResult, Stop } from "./types";
 import { plannerData, PREPARED, warmRouting } from "./data";
 
 import { API } from "./data";
@@ -140,6 +140,8 @@ export default function App() {
       : "route",
   );
   const [study, setStudy] = useState<GapDetail | null>(null);
+  const [reachabilityStudy, setReachabilityStudy] = useState<ReachabilityAnalysis | null>(null);
+  const [reachabilityLayers, setReachabilityLayers] = useState({ documented: false, unknown: false });
   const [comparison, setComparison] = useState<{
     standard: RouteResult;
     alternative: RouteResult | null;
@@ -511,7 +513,12 @@ export default function App() {
     () => ({
       type: "FeatureCollection",
       features:
-        study && tab === "gaps"
+        tab === "gaps" && reachabilityStudy
+          ? [
+              ...(reachabilityLayers.documented ? reachabilityStudy.documented.geometry.features.map(feature => ({ ...feature, properties: { ...feature.properties, profile: "documented" } })) : []),
+              ...(reachabilityLayers.unknown ? reachabilityStudy.unknown_gap.geometry.features.map(feature => ({ ...feature, properties: { ...feature.properties, profile: "unknown" } })) : []),
+            ]
+          : study && tab === "gaps"
           ? [
               {
                 type: "Feature",
@@ -526,15 +533,22 @@ export default function App() {
             ]
           : [],
     }),
-    [study, tab],
+    [study, reachabilityStudy, reachabilityLayers, tab],
   );
   const studyFocus = useMemo<[number, number] | null>(
     () =>
-      study && tab === "gaps"
+      reachabilityStudy && tab === "gaps"
+        ? [reachabilityStudy.stop.latitude, reachabilityStudy.stop.longitude]
+        : study && tab === "gaps"
         ? [study.latitude, study.longitude]
         : candidateFocus,
-    [study, tab, candidateFocus],
+    [study, reachabilityStudy, tab, candidateFocus],
   );
+  const updateReachability = useCallback((analysis: ReachabilityAnalysis | null, layers: { documented: boolean; unknown: boolean }) => {
+    setStudy(null);
+    setReachabilityStudy(analysis);
+    setReachabilityLayers(layers);
+  }, []);
   useEffect(() => {
     setComparison(null);
     setBenchmark([]);
@@ -1157,7 +1171,7 @@ export default function App() {
             )}
             {tab === "gaps" && (
               <Suspense fallback={<p role="status">Loading access study…</p>}>
-                <GapPanel onStudy={setStudy} />
+                <GapPanel onStudy={setStudy} onReachability={updateReachability} />
               </Suspense>
             )}
             {tab === "evidence" && (

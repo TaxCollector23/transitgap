@@ -395,6 +395,20 @@ export default function MapView({
           filter: ["==", ["get", "profile"], "wheelchair"],
           paint: { "line-color": "#176b5b", "line-width": 2.5 },
         });
+        map.addLayer({
+          id: "study-documented",
+          type: "line",
+          source: "study",
+          filter: ["==", ["get", "profile"], "documented"],
+          paint: { "line-color": "#176b5b", "line-width": 3, "line-opacity": 0.8 },
+        });
+        map.addLayer({
+          id: "study-unknown",
+          type: "line",
+          source: "study",
+          filter: ["==", ["get", "profile"], "unknown"],
+          paint: { "line-color": "#98603a", "line-width": 3, "line-dasharray": [1.5, 1.5] },
+        });
       }
     };
 

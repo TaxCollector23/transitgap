@@ -75,7 +75,7 @@ test("real county routes, all five algorithms, mobility profiles and no repeated
   expect(result.segments.length).toBeGreaterThan(0);
   await expect(page.locator(".route-result")).toContainText("mi");
   await expect(page.locator(".route-result")).toContainText(
-    "not field checked",
+    "not verified accessible",
   );
   await page.locator(".advanced-settings summary").click();
   for (const algorithm of [
@@ -129,7 +129,7 @@ test("mobility detour, actual directions, scheduled service and share links", as
   await expect(
     page.getByRole("heading", { name: "Mobility detour" }),
   ).toBeVisible({ timeout: 15_000 });
-  await page.getByText("Directions", { exact: true }).click();
+  await page.locator(".route-result details.plain-details > summary").first().click();
   await expect(page.locator(".directions>li").first()).toContainText(/Head/);
   await page.getByText("Stop service & boarding", { exact: true }).click();
   await expect(
@@ -150,6 +150,11 @@ test("network gaps render and create an editable factual letter", async ({
   await open(page);
   await page.getByRole("button", { name: "Access gaps", exact: true }).click();
   await expect(page.locator(".gap-ranking li")).toHaveCount(10);
+  await expect(page.getByLabel("VTA stop", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Compare scenarios" }).click();
+  await expect(page.locator(".scenario-toggles")).toBeVisible({ timeout: 30_000 });
+  await expect(page.locator(".scenario-toggles")).toContainText("Documented routes");
+  await expect(page.locator(".scenario-toggles")).toContainText("unknown conditions");
   await page.locator(".gap-ranking button").first().click();
   await expect(page.locator(".study-detail")).toContainText(
     "Standard network",

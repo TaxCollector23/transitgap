@@ -213,6 +213,11 @@ class GapIndex:
             pass
 
     def summary(self, limit=10):
+        # A source/profile change invalidates the prepared sample. In local
+        # development (or after a cache miss), rebuild the same bounded sample
+        # on demand instead of returning a successful but empty study.
+        if not self.prepared_ids:
+            self.prepare(32)
         ranked = sorted(
             (
                 r

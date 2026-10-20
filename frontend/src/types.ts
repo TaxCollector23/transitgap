@@ -99,6 +99,32 @@ export type GapFeature = {
     interpretation: string;
   };
 };
+
+export type ReachabilityStop = {
+  stop_id: string;
+  stop_name: string;
+  latitude: number;
+  longitude: number;
+  connector_distance_m: number;
+};
+
+export type ReachabilityAnalysis = {
+  status: "OK" | "INSUFFICIENT_DOCUMENTED_DATA" | "STOP_CONNECTION_UNKNOWN" | "NO_SAMPLED_ORIGINS";
+  version: string;
+  study_area: { name: string; radius_m: number; center: { latitude: number; longitude: number } };
+  stop: ReachabilityStop & { wheelchair_boarding?: number };
+  gtfs_source: { url: string; feed_info: Array<Record<string, string>> };
+  osm_source: { url: string; source_name: string; cache_file_modified_at: string | null; manifest_generated_at: string | null; source_snapshot_date: string | null; observation_timestamp: string | null };
+  profile: string;
+  profile_assumptions: { speed_mps: number; time_budget_minutes: number; maximum_stop_connector_m: number };
+  sampling: { method: string; origin_sample_count: number; not_population_estimate: boolean };
+  documented: { reachable_sample_origins: number; reachable_graph_nodes: number; reachable_edge_count: number; geometry: GeoJSON.FeatureCollection };
+  possible: { reachable_sample_origins: number; reachable_graph_nodes: number; reachable_edge_count: number; geometry: GeoJSON.FeatureCollection };
+  unknown_gap: { sample_origin_count: number; edge_count: number; critical_unknown_edge_count: number; geometry: GeoJSON.FeatureCollection; examples: Array<{ osm_way_id: string; source_url: string; missing_critical_attributes: string[]; evidence_status: string }> };
+  example_paths: Array<{ origin_node: string; time_seconds: number; geometry: GeoJSON.Geometry; source_refs: Array<{ osm_way_id: string; url: string }> }>;
+  warnings: string[];
+  message?: string;
+};
 export type Observation = {
   id: string;
   latitude: number;

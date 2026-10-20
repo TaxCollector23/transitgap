@@ -37,3 +37,17 @@ if os.environ["TRANSITGAP_REGION"] == COUNTY_REGION and county_graph.exists():
     print(f"Packed county graph: {compact.stat().st_size / 1_000_000:.1f} MB", flush=True)
 sidewalks = load_sidewalks(radius_m=DEFAULT_RADIUS_M, directory=root / "backend" / "data")
 print(f"Prepared City of San Jose sidewalk comparison snapshot: {len(sidewalks.get('features', []))} features ({sidewalks.get('metadata', {}).get('availability', 'unavailable')}); other county municipalities are not covered by this source")
+
+from backend.app.transit import TransitSchedule
+from backend.app.gaps import GapIndex
+print("Preparing static GTFS schedule joins…", flush=True)
+TransitSchedule(root / "backend" / "data" / "gtfs_vta.zip", [s['stop_id'] for s in stops])
+print("Preparing a spatial sample of 32 ten-minute stop access studies…", flush=True)
+gaps = GapIndex(graph, stops, root / "backend" / "data")
+gaps.prepare(32)
+print(f"Prepared {len(gaps.cache)} network walksheds", flush=True)
+
+from backend.app.groundtruth_cache import load_groundtruth
+print("Preparing immutable municipal evidence index…", flush=True)
+index = load_groundtruth(graph, stops, sidewalks, root / "backend" / "data", gaps.signature)
+print(f"Prepared {len(index.gaps)} municipal review candidates", flush=True)

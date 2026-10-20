@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from enum import Enum
 from math import isfinite
+import re
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -38,4 +39,6 @@ class ObservationCreate(BaseModel):
         normalized = value.strip()
         if any(ord(char) < 32 and char not in "\t\n\r" for char in normalized):
             raise ValueError("Description contains unsupported control characters")
+        normalized = re.sub(r"[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}", "[email removed]", normalized)
+        normalized = re.sub(r"(?<!\w)(?:\+?1[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}(?!\w)", "[phone removed]", normalized)
         return normalized or None

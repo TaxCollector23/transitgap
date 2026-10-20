@@ -6,7 +6,6 @@ import csv
 import random
 import statistics
 import sys
-from itertools import permutations
 from pathlib import Path
 from time import perf_counter
 
@@ -41,9 +40,19 @@ def choose_pairs(stops: list[dict], count: int, seed: int) -> list[tuple[dict, d
         if isinstance(node, str) and node.isdigit():
             node = int(node)
         unique.setdefault(node, stop)
-    candidates = list(permutations(unique.values(), 2))
-    random.Random(seed).shuffle(candidates)
-    return candidates[:min(count, len(candidates))]
+    values = list(unique.values())
+    n = len(values)
+    if n < 2:
+        return []
+    # Sample ordered pairs without allocating O(stops squared) combinations.
+    indices = random.Random(seed).sample(range(n * (n - 1)), min(count, n * (n - 1)))
+    result = []
+    for index in indices:
+        first, second = divmod(index, n - 1)
+        if second >= first:
+            second += 1
+        result.append((values[first], values[second]))
+    return result
 
 
 def run_benchmark(pair_count: int = 30, repeats: int = 5, seed: int = SEED) -> tuple[Path, Path]:

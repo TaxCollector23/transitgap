@@ -488,14 +488,14 @@ class GroundTruthIndex:
 
     def route_evidence(self, route_geometry: dict[str, Any], limit: int = 20):
         if not self.city_available:
-            return {"status": "unavailable", "nearby_feature_count": 0, "features": [],
+            return {"status": "unavailable", "nearby_feature_count": None, "features": [],
                     "message": "Municipal sidewalk data is unavailable; no comparison is inferred."}
         try:
             route = _project(shape(route_geometry))
         except (TypeError, ValueError, KeyError):
-            return {"status": "unavailable", "nearby_feature_count": 0, "features": [], "message": "Route geometry could not be compared."}
+            return {"status": "unavailable", "nearby_feature_count": None, "features": [], "message": "Route geometry could not be compared."}
         if not route.buffer(15).intersects(self.analysis_area_m):
-            return {"status": "outside_municipal_snapshot", "nearby_feature_count": 0, "features": [],
+            return {"status": "outside_municipal_snapshot", "nearby_feature_count": None, "features": [],
                     "message": "No City of San Jose sidewalk comparison is available along this route. The current municipal evidence snapshot is limited to the Diridon pilot area."}
         nearby = self._query(self.city_tree, self.city_records, route, 15)
         selected = []

@@ -1,3 +1,25 @@
+[project]
+name = "transitgap"
+version = "0.1.0"
+description = "Open-source sidewalk access coverage for public transit stops"
+requires-python = ">=3.12"
+dependencies = [
+  "fastapi>=0.115,<1",
+  "uvicorn[standard]>=0.30,<1",
+  "osmnx>=2.0,<3",
+  "networkx>=3.3,<4",
+  "shapely>=2.0,<3",
+  "pydantic>=2.8,<3",
+  "httpx>=0.27,<1",
+]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["backend*"]
+
 [tool.vercel]
 entrypoint = "index:app"
 

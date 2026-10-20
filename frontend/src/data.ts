@@ -76,9 +76,23 @@ export async function civicLetter(id: string) {
   if (!r.ok) throw Error("Letter unavailable.");
   return r.text();
 }
+let routingWarmup: Promise<boolean> | null = null;
 export function warmRouting() {
-  return fetch(`${API}/health`, { keepalive: true, cache: "no-store" })
+  // StrictMode and overlapping callers share one cold-start request.
+  if (routingWarmup) return routingWarmup;
+  const controller = new AbortController();
+  const timeout = window.setTimeout(() => controller.abort(), 60000);
+  routingWarmup = fetch(`${API}/health`, {
+    keepalive: true,
+    cache: "no-store",
+    signal: controller.signal,
+  })
     .then(json)
     .then((data) => Boolean(data.ready))
-    .catch(() => false);
+    .catch(() => false)
+    .finally(() => {
+      window.clearTimeout(timeout);
+      routingWarmup = null;
+    });
+  return routingWarmup;
 }

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { lazy, Suspense } from "react";
 import OriginSearch from "./OriginSearch";
+import AppLoading from "./AppLoading";
 import StopService from "./StopService";
 import type { GapDetail } from "./GapPanel";
 const GapPanel = lazy(() => import("./GapPanel"));
@@ -164,6 +165,7 @@ export default function App() {
   const [mapReady, setMapReady] = useState(false);
   const [dataReady, setDataReady] = useState(false);
   const [routingWarm, setRoutingWarm] = useState(!PREPARED);
+  const [warmingRouting, setWarmingRouting] = useState(PREPARED);
   const [calculating, setCalculating] = useState(false);
   const [mapMode, setMapMode] = useState<"idle" | "origin" | "report">("idle");
   const selecting = mapMode !== "idle";
@@ -194,13 +196,20 @@ export default function App() {
   const compareRef = useRef<AbortController | null>(null);
   const inFlightRef = useRef(false);
 
+  const startRouting = useCallback(async () => {
+    setWarmingRouting(true);
+    const ready = await warmRouting();
+    setRoutingWarm((wasReady) => wasReady || ready);
+    setWarmingRouting(false);
+  }, []);
+
   const loadData = useCallback(() => {
     if (dataLoadRef.current) return dataLoadRef.current;
     setLoading(true);
     setError("");
     const request = (async () => {
       try {
-        if (PREPARED) void warmRouting().then(setRoutingWarm);
+        if (PREPARED) void startRouting();
         const { coverage: nextCoverage, stops: loadedStops } =
           await plannerData();
         const stopData = { stops: loadedStops };
@@ -246,7 +255,7 @@ export default function App() {
     })();
     dataLoadRef.current = request;
     return request;
-  }, []);
+  }, [startRouting]);
 
   useEffect(() => {
     void loadData();
@@ -413,6 +422,7 @@ export default function App() {
       const data = await response.json();
       if (!response.ok) throw new Error(detailOf(data));
       if (controller.signal.aborted) return;
+      setRoutingWarm(true);
       setResult(data as RouteResult);
       setResultKey(key);
       setStatus("Route calculated on the mapped walking network");
@@ -628,9 +638,16 @@ export default function App() {
     [reportPlacement, setStart],
   );
 
+  const booting = !error && (!mapReady || loading);
   return (
     <main className={`app-shell ${panelExpanded ? "" : "sheet-is-collapsed"}`}>
-      <section className="map-shell" aria-label="Map">
+      {booting && (
+        <AppLoading
+          message={!mapReady ? "Loading the map…" : "Loading VTA stops…"}
+          detail={!mapReady && loading ? "Preparing your map and Santa Clara County transit stops." : !mapReady ? "Transit stops are ready. The map is still loading." : "The map is ready. Fetching Santa Clara County transit stops."}
+        />
+      )}
+      <section className="map-shell" aria-label="Map" inert={booting}>
         <Suspense fallback={null}>
           <MapView
             coverage={coverage}
@@ -680,16 +697,12 @@ export default function App() {
             </button>
           </div>
         )}
-        {(!mapReady || loading) && (
-          <div className="map-loading" role="status">
-            <span className="spinner" />
-            {!mapReady ? "Preparing map…" : "Loading transit data…"}
-          </div>
-        )}
+
       </section>
       <aside
         className={`panel ${panelExpanded ? "panel-expanded" : "panel-collapsed"}`}
         aria-label="Route planner"
+        inert={booting}
       >
         <div className="panel-scroll">
           <header className="panel-header">
@@ -752,6 +765,11 @@ export default function App() {
                   ? `${stops.length.toLocaleString()} VTA stops`
                   : "Data unavailable"}
             </span>
+            {PREPARED && dataReady && !routingWarm && (
+              <div className="routing-startup" role="status" aria-live="polite">
+                {warmingRouting ? <><span className="spinner" aria-hidden="true" /><span>Starting county routing. You can choose your journey while it loads.</span></> : <><span>The routing service hasn't connected yet. You can still explore stops and access gaps.</span><button className="text-button" type="button" onClick={() => void startRouting()}>Retry connection</button></>}
+              </div>
+            )}
             {tab === "route" && (
               <>
                 <section

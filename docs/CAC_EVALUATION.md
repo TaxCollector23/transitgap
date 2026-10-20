@@ -10,8 +10,9 @@
 ## Not evaluated / no evidence available
 
 - No geospatial field truth set, route-ground-truth accuracy, consented rider sessions, or comparative user study.
+- Hosted Vercel `/`, `/app`, `/health`, pilot stop list and sample reachability all returned HTTP 200. Health reported a 34.76-second backend initialization and instance-local report storage with reports disabled.
 - No claim that wheelchair routes are physically usable or that OSM unknown tags indicate real barriers.
-- No deployment verification in this sprint and no CAC submission confirmation.
+- No CAC submission confirmation.
 
 ## Student-owned algorithm evaluation
 

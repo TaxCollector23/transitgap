@@ -13,10 +13,10 @@ test("prepared production views work while the route engine is unavailable", asy
     return route.continue();
   });
   await page.goto("http://127.0.0.1:4173/");
-  await expect(page.locator(".network-preview svg")).toBeVisible({
+  await expect(page.locator(".landing-art")).toBeVisible({
     timeout: 8000,
   });
-  await page.getByRole("link", { name: "Open the map" }).click();
+  await page.getByRole("link", { name: "Open the map", exact: true }).first().click();
   await expect(page.locator(".dataset-status.is-ready")).toContainText(
     "3,348",
     { timeout: 8000 },

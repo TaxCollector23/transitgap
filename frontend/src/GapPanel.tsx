@@ -40,7 +40,7 @@ export default function GapPanel({
     reachabilityStops()
       .then((data) => {
         setPilotStops(data.stops);
-        const connected = (data.stops as ReachabilityStop[]).find((stop) => stop.connector_distance_m <= 35);
+        const connected = (data.stops as ReachabilityStop[]).find((stop) => typeof stop.connector_distance_m === "number" && stop.connector_distance_m <= 35);
         setPilotStopId(connected?.stop_id || data.stops[0]?.stop_id || "");
       })
       .catch((e) => setReachError(e instanceof Error ? e.message : "Pilot data unavailable."));

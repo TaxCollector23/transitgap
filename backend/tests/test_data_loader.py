@@ -68,3 +68,20 @@ def test_stops_still_load_when_bundled_cache_is_read_only(tmp_path, monkeypatch)
     assert len(stops) == 1
     assert stops[0]["stop_id"] == "fixture"
     assert stops[0]["graph_node"] == "123"
+
+
+def test_compact_graph_certifies_admissible_geographic_scale(tmp_path):
+    import networkx as nx
+    from backend.app.routing import _heuristic, _run
+    from backend.app.models import Algorithm, Profile
+    graph=nx.MultiDiGraph()
+    for node,x in [('o',0),('x',1),('s',.001)]:graph.add_node(node,x=x,y=0)
+    graph.add_edge('o','s',length=10)
+    graph.add_edge('o','x',length=1)
+    graph.add_edge('x','s',length=1)
+    path=tmp_path/'short-lengths.jsonl.gz'
+    data_loader.write_compact_graph(graph,path)
+    loaded=data_loader.read_compact_graph(path)
+    assert 0 < loaded.graph['transitgap_heuristic_scale'] < 1
+    assert _heuristic(loaded,'x','s')<=1
+    assert _run(loaded,'o','s',Algorithm.astar,Profile.standard)[1]==2

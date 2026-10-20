@@ -41,7 +41,7 @@ digest=sha256()
 with path.open('rb') as source:
     for block in iter(lambda:source.read(1024*1024),b''):digest.update(block)
 results=[]
-for stop_id in ['5459','4514','4513']:
+for stop_id in ['5459','4514','5460']:
     if stop_id not in index.stops:
         continue
     for policy in ['profile_required','width_optional_sensitivity']:
@@ -65,7 +65,7 @@ for profile in [Profile.standard,Profile.wheelchair,Profile.stroller,Profile.low
         row['runs'].append({'wall_seconds':round(time.perf_counter()-start,4),'distance_m':route['distance_m']})
     routes.append(row)
 report={'dataset_sha256':digest.hexdigest(),'graph_file':path.name,'graph_nodes':len(index.graph),
-        'directed_edges':index.graph.number_of_edges(),'pilot_radius_m':1500,'pilot_stop_count':len(index.stops),
+        'directed_edges':index.graph.number_of_edges(),'astar_geographic_lower_bound_scale':index.graph.graph.get('transitgap_heuristic_scale',0),'pilot_radius_m':1500,'pilot_stop_count':len(index.stops),
         'gtfs':index.feed_info,'source_metadata':index.metadata,'sampling':'SHA256 ordering v1, 150 nodes per stop, excluding stop node',
         'first_prepared_process_startup_seconds':first_startup,'second_in_process_startup_seconds':warm_startup,
         'phase_seconds':dict(timings),'peak_rss_mib':round(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss/(1024**2 if sys.platform=='darwin' else 1024),2),

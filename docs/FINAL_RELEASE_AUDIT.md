@@ -15,11 +15,12 @@ The inspection algorithm was a `NotImplementedError` stub; no separately authore
 - Integrated bounded real OSM connection scoring into the existing reachability API and Access gaps view. Existing municipal proximity scores are labeled separately. No landing or map redesign.
 - Corrected toward-stop partial-edge clipping and retained unknown-only portions when documented reach covers only part of the same edge.
 - Added a named width-optional sensitivity policy, explicit missing-attribute counts, and dataset/build provenance. The default conservative policy remains unchanged.
+- Added an A* lower-bound certification for compact snapshots; arbitrary nonmetric graphs use a zero heuristic. The reproduced 10-versus-2 cost error is covered by regression tests.
 - Isolated fixture SQLite files per process; production reporting remains disabled without durable storage.
 
 ## Checks at this point
 
-128 backend/contract tests pass (121 existing Shapely deprecation warnings). ESLint and production build pass; MapLibre retains its >500 kB bundle advisory. Fixture browser passed after the label fix; expanded fixture and complete real-data browser reruns are in progress. Final CI, live deployment, and measurements are recorded in RELEASE_ACCEPTANCE.md after completion.
+131 backend/contract tests pass (existing Shapely deprecation warnings remain). ESLint and production build pass; MapLibre retains its >500 kB bundle advisory. The expanded fixture suite passes 3 tests; the complete real-data local browser suite passes 11. GitHub run 39512410549 passes both required jobs. Final CI, live deployment, and measurements are recorded in RELEASE_ACCEPTANCE.md after completion.
 
 ## Boundaries
 

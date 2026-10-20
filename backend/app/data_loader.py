@@ -1,6 +1,7 @@
 from __future__ import annotations
 import csv, gzip, io, json, logging, os, zipfile
 import sys
+import math
 from datetime import datetime, timezone
 from functools import lru_cache
 from pathlib import Path
@@ -167,6 +168,7 @@ def write_compact_graph(graph: nx.MultiDiGraph, path: Path) -> None:
 
 def read_compact_graph(path: Path) -> nx.MultiDiGraph:
     graph = nx.MultiDiGraph()
+    metric_scale = 1.0
     canonical_nodes = {}
     def share_strings(record):
         return {sys.intern(key): sys.intern(value) if isinstance(value, str) and len(value) <= 128 else value
@@ -185,6 +187,19 @@ def read_compact_graph(path: Path) -> nx.MultiDiGraph:
             else:
                 u, v, key = record["edge"]
                 graph.add_edge(canonical_nodes[u], canonical_nodes[v], key=key, **record["attributes"])
+                # Verify a lower bound while reading the immutable source snapshot.
+                # Arbitrary input graphs do not receive this certification.
+                try:
+                    a, b = graph.nodes[u], graph.nodes[v]
+                    chord = distance_m((float(a["y"]), float(a["x"])), (float(b["y"]), float(b["x"])))
+                    length = float(record["attributes"]["length"])
+                    if not math.isfinite(length) or length < 0:
+                        metric_scale = 0.0
+                    elif chord > 0:
+                        metric_scale = min(metric_scale, length / chord)
+                except (KeyError, ValueError, TypeError):
+                    metric_scale = 0.0
+    graph.graph["transitgap_heuristic_scale"] = max(0.0, metric_scale * (1 - 1e-12))
     return graph
 
 

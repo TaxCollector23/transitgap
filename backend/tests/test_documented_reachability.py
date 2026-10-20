@@ -115,3 +115,13 @@ def test_width_sensitivity_does_not_remove_known_barriers_or_surface_requirement
     assert critical_unknowns(attrs, {}, {}, Profile.wheelchair) == ('width',)
     assert critical_unknowns(attrs, {}, {}, Profile.wheelchair, 'width_optional_sensitivity') == ()
     assert critical_unknowns({'highway':'footway'}, {}, {}, Profile.wheelchair, 'width_optional_sensitivity') == ('surface',)
+
+
+def test_missing_stop_connector_distance_remains_unknown():
+    graph=nx.MultiDiGraph();graph.add_node('s',x=-121.903,y=37.3296)
+    stop={'stop_id':'s','stop_name':'Synthetic stop','latitude':37.3296,'longitude':-121.903,
+          'graph_node':'s','connector_distance_m':None}
+    result=index_for(graph,[stop]).analyze('s')
+    assert result['status']=='STOP_CONNECTION_UNKNOWN'
+    assert result['stop']['connector_distance_m'] is None
+    assert 'No usable mapped-node connection' in result['message']

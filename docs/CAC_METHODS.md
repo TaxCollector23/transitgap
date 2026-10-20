@@ -24,3 +24,11 @@ Each stop is associated with its nearest graph node for analysis. If the straigh
 ## Interpretation
 
 Reach counts are graph nodes in a deterministic pilot sample, not riders, residents, people, or an official statistic. OSM tags are source documentation only. Cache generation/modification timestamps are not OSM extraction timestamps; no field observation timestamp is present.
+
+## Inspection sensitivity and sensitivity policy
+
+The current analysis version is v2, with the original v1 SHA-256 sampling order preserved for comparison. Each selected unknown physical OSM segment is evaluated as usable versus blocked while other unknowns stay usable. A source way plus unordered endpoint pair groups both mapped directions. Candidate output includes exact changed origin/stop pairs, sample count, source URL and assumptions. Existing municipal route-proximity scores remain separately named.
+
+`documentation_policy=width_optional_sensitivity` is a named API experiment; the default `profile_required` policy is unchanged. Only missing width ceases to exclude a documented edge; known barriers still exclude it. Missing-attribute counts make the result explainable. Neither policy is field validated.
+
+Toward-stop edge geometry is clipped from the destination end. If documented and possible reach cover different fractions of the same directed edge, the unknown-only remainder is retained. Compact snapshots certify a conservative geometric A* lower-bound scale while loading; arbitrary input graphs use zero heuristic to preserve optimality even for nonmetric lengths. Runtime dataset graphs are treated as immutable; source edits require reloading the graph.

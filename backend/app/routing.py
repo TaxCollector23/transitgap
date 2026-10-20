@@ -222,9 +222,11 @@ def _weight(
 
 
 def _heuristic(graph: nx.MultiDiGraph, a: Any, b: Any) -> float:
-    # Every optimization edge costs length * (1 + nonnegative penalty), so this
-    # straight-line physical distance is admissible for every supported profile.
-    return distance_m(
+    # Only the loaded immutable snapshot has a verified length/chord lower bound.
+    # Uncertified/mutable input graphs use zero (A* becomes Dijkstra), so short
+    # synthetic or malformed stored lengths cannot cause a suboptimal result.
+    scale = graph.graph.get("transitgap_heuristic_scale", 0.0)
+    return scale * distance_m(
         (float(graph.nodes[a]["y"]), float(graph.nodes[a]["x"])),
         (float(graph.nodes[b]["y"]), float(graph.nodes[b]["x"])),
     )

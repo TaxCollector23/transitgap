@@ -1,23 +1,19 @@
-# Evaluation plan and observed results
+# Reproducible pilot evaluation
 
-## Reproducible checks
+Run `backend/.venv/bin/python scripts/evaluate_pilot.py` against the prepared, cache-only county snapshot. Actual output, graph SHA-256, feed version, bounds, phase timings, memory and candidate results are in `docs/benchmarks/final-pilot.json`.
 
-- Backend unit/API suite: `cd backend && .venv/bin/python -m pytest -q` — 96 passed, 121 Shapely deprecation warnings.
-- Frontend static checks: `cd frontend && npm run lint && npm run build` — passed. Build has a MapLibre chunk-size advisory.
-- Local real-data browser suite: initial run 10 passed / 1 failed on an ambiguous test selector; after correction the targeted gap flow passed (1 passed) and the final full suite passed (11 passed).
-- Documented/possible API smoke: stop 5459, wheelchair, 10 minutes, 150 sampled nodes returned 0 documented and 7 possible sampled origins; 7 origins depended on unknown conditions. The sample is not population weighted.
+All rows use wheelchair rules, 10 minutes, and 150 deterministically selected graph origins in the fixed 1,500 m Diridon pilot. These nodes are not people or a population estimate.
 
-## Not evaluated / no evidence available
+| Actual VTA stop | Default documented / possible | Width-optional sensitivity documented / possible |
+|---|---:|---:|
+| 5459 | 0 / 7 | 1 / 7 |
+| 4514 | 0 / 0 | 0 / 0 |
+| 5460 | 0 / 9 | 0 / 9 |
 
-- No geospatial field truth set, route-ground-truth accuracy, consented rider sessions, or comparative user study.
-- Hosted Vercel `/`, `/app`, `/health`, pilot stop list and sample reachability all returned HTTP 200. Health reported a 34.76-second backend initialization and instance-local report storage with reports disabled.
-- No claim that wheelchair routes are physically usable or that OSM unknown tags indicate real barriers.
-- No CAC submission confirmation.
+The first default result is reproduced; missing width contributes to the restrictive documented network. The alternative removes only missing width as a required predicate; known width barriers, other relevant unknowns and all profile rules remain. It is a sensitivity experiment, not a validated replacement policy. Stop 4514 has no sampled reachable origins at this budget; that can arise from the bounded deterministic sample and does not imply nobody can reach it.
 
-## Student-owned algorithm evaluation
+For 5459, the top evaluated source-linked connection is OSM way 674154528 between nodes 5681153689 and 6313417227. Blocking this one physical segment changes 7 of 150 sampled journeys in the possible model. The default reachable network contains 311 directed segments with width unknown, 27 with surface unknown, 157 with crossing kerb unknown and one with unparseable incline grade. These categories overlap and describe stored tags, not field findings.
 
-The inspection-information-value implementation is intentionally pending student work. Contract cases are under `backend/student_work/`; the student should explicitly run `cd backend && .venv/bin/python -m pytest -q student_work/inspection_priority_contract.py` after implementation. Do not mark the algorithm gate passed until the student has implemented it, independently explained it, and the contract suite passes.
+Candidate selection is capped at 12 by occurrence on deterministic shortest possible sampled paths. Ranking then recomputes exact bounded reachability for each chosen candidate. Other unknowns stay usable in both scenarios. Equivalent records are grouped; distinct mapped ways remain alternatives. This is not a full ranking of all local infrastructure or a probability of accessibility.
 
-## Final engineering sprint update
-
-The formerly pending algorithm is now AI-assisted code, integrated into the pilot response and UI. The contract's two-origin reference expectation was corrected to 2 and checked with independent exhaustive paths. The current complete backend/contract suite has 128 passing cases; 3 fixture and 11 local real-data browser tests pass. Final measured sensitivity and deployment evidence are in FINAL_RELEASE_AUDIT.md and RELEASE_ACCEPTANCE.md. Earlier measurements above are historical, not current release gates.
+Local correctness evidence: 131 backend/contract tests, independent exhaustive forward-path reference, 3 fixture browser tests and 11 real-data browser tests. No field truth set, consented rider session, physical accuracy percentage, adoption claim or completed CAC entry is available. See RELEASE_ACCEPTANCE.md for final hosted and CI outcomes.

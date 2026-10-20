@@ -105,7 +105,7 @@ export type ReachabilityStop = {
   stop_name: string;
   latitude: number;
   longitude: number;
-  connector_distance_m: number;
+  connector_distance_m: number | null;
 };
 
 export type ReachabilityAnalysis = {

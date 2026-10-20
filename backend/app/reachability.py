@@ -231,7 +231,7 @@ class ReachabilityIndex:
             return {
                 "status": "STOP_CONNECTION_UNKNOWN",
                 "stop": {key: stop[key] for key in ("stop_id", "stop_name", "latitude", "longitude", "connector_distance_m")},
-                "message": f"The nearest mapped pedestrian node is more than {MAX_STOP_CONNECTOR_M} m from this GTFS stop. This study does not infer a path across that gap.",
+                "message": (f"The nearest mapped pedestrian node is more than {MAX_STOP_CONNECTOR_M} m from this GTFS stop." if math.isfinite(connector_distance) else "No usable mapped-node connection is recorded for this GTFS stop.") + " This study does not infer a path across that gap.",
                 "warnings": [WARNING],
             }
         node = stop["graph_node"]

@@ -1,0 +1,5 @@
+[tool.vercel]
+entrypoint = "index:app"
+
+[tool.vercel.scripts]
+build = "python scripts/prepare_deployment_data.py && cd frontend && npm ci && npm run build"

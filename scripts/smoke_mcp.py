@@ -10,7 +10,7 @@ from mcp import Client
 EXPECTED_TOOLS = {
     "get_coverage", "search_transit_stops", "plan_route", "compare_routes",
     "analyze_route_accessibility", "find_accessibility_gaps", "get_gap_details",
-    "get_inspection_priorities", "get_data_sources",
+    "get_inspection_priorities", "get_data_sources", "compare_access", "worst_stops", "stop_access_report", "stop_service",
 }
 
 

@@ -25,7 +25,7 @@ build-backend = "setuptools.build_meta"
 markers = ["integration: starts the API with real prepared OSM and VTA datasets"]
 
 [tool.setuptools.packages.find]
-include = ["backend*"]
+include = ["backend*", "mcp_server*"]
 
 [tool.setuptools.package-data]
 "backend.app.data_sources" = ["*.geojson"]
@@ -35,3 +35,6 @@ entrypoint = "index:app"
 
 [tool.vercel.scripts]
 build = "python scripts/prepare_deployment_data.py && cd frontend && npm ci && npm run build"
+
+[tool.vercel.fastapi.static]
+cdn = true

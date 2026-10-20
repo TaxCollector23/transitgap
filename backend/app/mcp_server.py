@@ -128,6 +128,39 @@ def get_data_sources() -> dict[str, Any]:
     return _api()._groundtruth().source_status()
 
 
+@server.tool()
+def compare_access(origin_latitude: float, origin_longitude: float, destination_stop_id: str,
+                   profile: str = 'wheelchair') -> dict[str, Any]:
+    """Compare standard and mobility routes with measured distance/time differences and explicit assumptions."""
+    from .models import RouteComparisonRequest
+    return _api().mobility_comparison(RouteComparisonRequest(origin_latitude=origin_latitude,
+        origin_longitude=origin_longitude, destination_stop_id=destination_stop_id, profile=profile))
+
+
+@server.tool()
+def worst_stops(limit: int = 10) -> dict[str, Any]:
+    """Largest modelled ten-minute reach gaps in the evaluated sample, not a countywide infrastructure ranking."""
+    if not 1 <= limit <= 100:
+        raise ValueError('limit must be 1-100')
+    return _api().stop_gaps(limit)
+
+
+@server.tool()
+def stop_access_report(stop_id: str) -> dict[str, Any]:
+    """Reverse-network walksheds, gap methodology, GTFS boarding status and uncertainty for a real VTA stop."""
+    if not 1 <= len(stop_id) <= 100:
+        raise ValueError('stop_id must be 1-100 characters')
+    return _api().stop_access(stop_id)
+
+
+@server.tool()
+def stop_service(stop_id: str) -> dict[str, Any]:
+    """GTFS routes and next scheduled departures, explicitly not real-time predictions."""
+    if not 1 <= len(stop_id) <= 100:
+        raise ValueError('stop_id must be 1-100 characters')
+    return _api().stop_detail(stop_id)
+
+
 def _csv_setting(name: str, default: str) -> list[str]:
     return [item.strip() for item in os.getenv(name, default).split(",") if item.strip()]
 

@@ -15,7 +15,7 @@ def test_mcp_discovers_only_read_only_transitgap_tools():
             assert names == {
                 "get_coverage", "search_transit_stops", "plan_route", "compare_routes",
                 "analyze_route_accessibility", "find_accessibility_gaps", "get_gap_details",
-                "get_inspection_priorities", "get_data_sources",
+                "get_inspection_priorities", "get_data_sources", "compare_access", "worst_stops", "stop_access_report", "stop_service",
             }
             coverage = await client.call_tool("get_coverage", {})
             assert not coverage.is_error

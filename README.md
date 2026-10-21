@@ -12,8 +12,8 @@ It uses actual OpenStreetMap paths and official VTA GTFS across Santa Clara Coun
 - A standard/profile mobility comparison with actual distance and time differences, stated speed assumptions and both routes on the map.
 - A ten-minute network access study of 32 sampled stops, including partial edges, directionality and reciprocal-edge deduplication. Additional stops can be evaluated individually. Rankings apply only to evaluated stops.
 - GTFS route joins, boarding status, service calendars and scheduled departures. These are not live arrivals.
-- Directions from selected edge geometry, explicit address search, shareable journey links and editable civic letters.
-- Five real graph algorithms under “Under the hood”: Dijkstra, bidirectional Dijkstra, A*, queue-based Bellman-Ford and breadth-first search. BFS minimizes segments, not walking distance.
+- Grouped walking directions: consecutive map edges merge into one step unless the data shows a real decision (a differently named street, a turn where another mapped path branches, a crossing at an angle, stairs or an unmapped connector). Street names appear only when the edge carries one. Edge-level segments stay in every response for auditing. Also explicit address search, shareable trip links and editable civic letters.
+- Five real graph algorithms under “Advanced options”: Dijkstra, bidirectional Dijkstra, A*, queue-based Bellman-Ford and breadth-first search. BFS minimizes segments, not walking distance.
 - A scrolling landing page, a separate planner at `/app`, miles, loading states and mobile map controls. Evidence and the map renderer load separately from the core planner. Prepared stop data, sampled studies and letters are served as CDN snapshots while the county engine warms.
 - A public read-only MCP server, plus a local stdio entrypoint.
 
@@ -47,8 +47,8 @@ County preparation downloads a real Geofabrik Northern California extract when n
 | `GET /health` | Dataset, schedule and report-storage readiness; GTFS feed dates. |
 | `GET /coverage` | Exact supported county polygon and source limitations. |
 | `GET /stops` | Loaded VTA stops, coordinates and boarding status. |
-| `GET /stops/{id}` | Routes and next three scheduled departures, with calendar awareness. |
-| `POST /route` | Selected algorithm and mobility profile, ordered geometry, segment evidence and directions. |
+| `GET /stops/{id}` | Routes and next three scheduled departures, with calendar awareness. Departures are withheld when today is outside the publisher's declared feed period (`schedule_validity`). |
+| `POST /route` | Selected algorithm and mobility profile, ordered geometry, segment evidence, grouped `directions` (each with its `segment_range`), a route-level `accessibility_summary`, a `geometry_audit`, and the `arrival` point (a GTFS station entrance when the feed records one). |
 | `POST /compare` | Standard versus selected-profile route and measured mobility detour. |
 | `POST /route/compare` | All supported profile objectives, including the legacy alias. |
 | `POST /algorithms/compare` | Per-request measurements for all five algorithms. |

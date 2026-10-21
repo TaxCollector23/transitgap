@@ -15,6 +15,8 @@ type Props = {
   onFocusCandidate: (point: [number, number]) => void;
   selectedCandidateId: string | null;
   focusReport?: number;
+  mode?: "evidence" | "report";
+  onReport?: () => void;
 };
 const emptyPolygons: GeoJSON.FeatureCollection = {
   type: "FeatureCollection",
@@ -44,6 +46,8 @@ export default function GroundTruthPanel({
   onFocusCandidate,
   selectedCandidateId,
   focusReport = 0,
+  mode = "evidence",
+  onReport,
 }: Props) {
   const [gaps, setGaps] = useState<GapFeature[]>([]);
   const [reports, setReports] = useState<Observation[]>([]);
@@ -65,6 +69,7 @@ export default function GroundTruthPanel({
   const [sourcesUnavailable, setSourcesUnavailable] = useState(false);
   const [reportAvailabilityError, setReportAvailabilityError] = useState(false);
   const [message, setMessage] = useState("");
+  const [saved, setSaved] = useState("");
 
   function evidenceData(
     items: GapFeature[],
@@ -122,8 +127,8 @@ export default function GroundTruthPanel({
   }
 
   useEffect(() => {
-    onFeatures(evidenceData(gaps, reports), showSidewalks ? sidewalks : emptyPolygons);
-  }, [gaps, reports, showSidewalks, sidewalks, onFeatures]);
+    onFeatures(evidenceData(mode === "report" ? [] : gaps, reports), showSidewalks ? sidewalks : emptyPolygons);
+  }, [gaps, reports, showSidewalks, sidewalks, onFeatures, mode]);
 
   useEffect(() => {
     void refresh().catch((error: unknown) =>
@@ -177,6 +182,7 @@ export default function GroundTruthPanel({
     event.preventDefault();
     setBusy(true);
     setMessage("");
+    setSaved("");
     try {
       const response = await fetch(`${API}/accessibility/observations`, {
         method: "POST",
@@ -196,7 +202,7 @@ export default function GroundTruthPanel({
       setLongitude("");
       setDescription("");
       onClearReportPoint();
-      setMessage("Report saved as unverified community evidence.");
+      setSaved("Report saved as unverified community evidence.");
       void refresh();
     } catch (error) {
       setMessage(
@@ -207,16 +213,71 @@ export default function GroundTruthPanel({
     }
   }
 
+  const locationText = latitude && longitude ? `${Number(latitude).toFixed(5)}, ${Number(longitude).toFixed(5)}` : "";
+  if (mode === "report")
+    return (
+      <section className="groundtruth-panel report-panel" aria-labelledby="report-title">
+        <h2 id="report-title" tabIndex={-1}>Report an issue</h2>
+        <p>Tell others about a sidewalk or crossing problem. Reports are shown as unverified until someone reviews them. Please don't include personal details.</p>
+        {reportsEnabled === false ? (
+          <p role="status" className="notice">Public reporting is paused until durable storage is connected. No report will be saved here.</p>
+        ) : reportsEnabled === null ? (
+          <p role="status">{reportAvailabilityError ? "Reporting availability could not be checked. No report can be submitted until the service responds." : "Checking report availability…"}</p>
+        ) : (
+          <>
+            <section className="report-step" aria-labelledby="report-where">
+              <h3 id="report-where">1. Where is the problem?</h3>
+              {locationText ? (
+                <div className="field-value">
+                  <span className="field-value-text"><strong>{reportPoint ? "Point chosen on the map" : "Chosen location"}</strong><span>{locationText}</span></span>
+                  <button type="button" className="text-button field-change" onClick={() => { setLatitude(""); setLongitude(""); onClearReportPoint(); }}>Change<span className="sr-only"> report location</span></button>
+                </div>
+              ) : (
+                <>
+                  <div className="origin-actions">
+                    <button type="button" className="button" onClick={() => {
+                      if (!navigator.geolocation) { setMessage("Location is not available in this browser. Choose on the map or search an address."); return; }
+                      navigator.geolocation.getCurrentPosition(
+                        (position) => { setLatitude(String(position.coords.latitude)); setLongitude(String(position.coords.longitude)); },
+                        () => setMessage("Your location couldn't be used. Choose on the map or search an address."),
+                        { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 },
+                      );
+                    }}>Use my location</button>
+                    <button type="button" className="button" onClick={onRequestLocation}>Choose on map</button>
+                  </div>
+                  <OriginSearch label="Address or place of the problem" onChoose={([lat, lon]) => { setLatitude(String(lat)); setLongitude(String(lon)); }} />
+                </>
+              )}
+            </section>
+            <form className="report-form" onSubmit={(event) => void submit(event)}>
+              <label htmlFor="report-observation"><span className="report-step-title">2. What's the problem?</span></label>
+              <select id="report-observation" value={category} onChange={(event) => setCategory(event.target.value)}>
+                {categories.map(([value, label]) => (
+                  <option key={value} value={value}>{label}</option>
+                ))}
+              </select>
+              <label htmlFor="report-details"><span className="report-step-title">3. Details</span> (optional)</label>
+              <textarea id="report-details" maxLength={500} rows={3} value={description} onChange={(event) => setDescription(event.target.value)} placeholder="What did you see? For example: the curb ramp is blocked by a pole." />
+              <button className="button button-primary report-submit" disabled={busy || !latitude || !longitude} aria-describedby="report-submit-hint" type="submit">
+                {busy ? "Saving…" : "Submit report"}
+              </button>
+              {(!latitude || !longitude) && <p className="field-hint" id="report-submit-hint">Choose where the problem is (step 1) to submit.</p>}
+            </form>
+          </>
+        )}
+        {message && <p className="notice error" role="alert">{message}</p>}
+        {saved && <p className="notice success" role="status">{saved}</p>}
+      </section>
+    );
   return (
     <section className="groundtruth-panel" aria-label="Accessibility evidence">
       <div className="groundtruth-heading">
         <div>
-          <h3>Sidewalk data gaps</h3>
+          <h2>Sidewalk records that need review</h2>
           <p>
-            These are places where records disagree or leave questions. They are
-            suggestions for review, not confirmed barriers. Countywide routes
-            use OSM walking paths; City sidewalk comparisons currently cover the
-            Diridon pilot area.
+            Places where map and city records disagree or leave questions. These
+            are suggestions for an in-person check, not confirmed barriers. City
+            sidewalk records currently cover the Diridon area only.
           </p>
         </div>
         <button
@@ -371,89 +432,10 @@ export default function GroundTruthPanel({
           </dl>
         </article>
       )}
-      {reportsEnabled ? (
-        <>
-        <OriginSearch onChoose={([lat,lon]) => { setLatitude(String(lat)); setLongitude(String(lon)); }} />
-        <form className="report-form" onSubmit={(event) => void submit(event)}>
-          <div>
-            <h3 id="report-title" tabIndex={-1}>Report an issue</h3>
-            <p>
-              R marks where the observation happened. Reports stay unverified
-              until someone checks them.
-            </p>
-          </div>
-          <button
-            className="evidence-toggle"
-            type="button"
-            onClick={onRequestLocation}
-          >
-            {reportPoint ? "Move report pin on map" : "Place report pin on map"}
-          </button>
-          {reportPoint && (
-            <p className="report-point-selected" role="status">
-              Report location: {latitude}, {longitude}
-            </p>
-          )}
-          <div className="report-coordinates">
-            <label>
-              Latitude
-              <input
-                required
-                type="number"
-                step="any"
-                min="-90"
-                max="90"
-                value={latitude}
-                onChange={(event) => setLatitude(event.target.value)}
-              />
-            </label>
-            <label>
-              Longitude
-              <input
-                required
-                type="number"
-                step="any"
-                min="-180"
-                max="180"
-                value={longitude}
-                onChange={(event) => setLongitude(event.target.value)}
-              />
-            </label>
-          </div>
-          <label htmlFor="report-observation">Observation</label>
-            <select
-              id="report-observation"
-              value={category}
-              onChange={(event) => setCategory(event.target.value)}
-            >
-              {categories.map(([value, label]) => (
-                <option key={value} value={value}>
-                  {label}
-                </option>
-              ))}
-            </select>
-          <label>
-            Details <span className="optional-label">optional</span>
-            <textarea
-              maxLength={500}
-              rows={2}
-              value={description}
-              onChange={(event) => setDescription(event.target.value)}
-              placeholder="Describe what you observed. Avoid personal details."
-            />
-          </label>
-          <button
-            className="button button-primary report-submit"
-            disabled={busy || !latitude || !longitude}
-            type="submit"
-          >
-            {busy ? "Saving…" : <>Submit report</>}
-          </button>
-        </form>
-        </>
-      ) : (
+      {mode === "evidence" && onReport && (
         <p>
-          {reportsEnabled === false ? "Public reporting is paused until durable storage is connected. No report will be saved here." : reportAvailabilityError ? "Reporting availability could not be checked. No report can be submitted until the service responds." : "Checking report availability…"}
+          Noticed a problem on a sidewalk or crossing?{" "}
+          <button type="button" className="text-button" onClick={onReport}>Report an issue</button>
         </p>
       )}
       <div className="community-reports">

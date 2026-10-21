@@ -30,6 +30,7 @@ class ObservationCreate(BaseModel):
     longitude: float = Field(ge=-180, le=180)
     category: ObservationCategory
     description: str | None = Field(default=None, max_length=500)
+    website: str = Field(default="", max_length=0, exclude=True)
 
     @field_validator("latitude", "longitude")
     @classmethod

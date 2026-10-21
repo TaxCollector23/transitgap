@@ -1,0 +1,108 @@
+{
+  "url": "https://transitgap-6ntdst0md-rangan-alt.vercel.app",
+  "status": "passed",
+  "warmup": [
+    {
+      "status": 200,
+      "body": {
+        "alive": true,
+        "ready": true,
+        "reports_ready": true,
+        "error": null,
+        "phase": "ready"
+      },
+      "cli_request_seconds": 1.831
+    }
+  ],
+  "health": {
+    "ready": true,
+    "build_sha": "a5d818577e9dfa874abb336e66b7357ff4ee93eb",
+    "datasets": {
+      "osm_walk_graph": "ready",
+      "vta_gtfs_stops": "ready",
+      "caltrain_gtfs_stops": "ready",
+      "bart_gtfs_stops": "ready"
+    },
+    "graph": {
+      "type": "directed_multigraph",
+      "nodes": 291569,
+      "directed_edges": 811314
+    },
+    "vta_stop_count": 3234,
+    "transit_stop_counts": {
+      "VTA": 3234,
+      "Caltrain": 34,
+      "BART": 4
+    },
+    "community_report_storage": "postgresql",
+    "reports_enabled": true,
+    "gap_stops_evaluated": 32,
+    "schedule_ready": true,
+    "data_freshness": [
+      {
+        "feed_publisher_name": "Santa Clara Valley Transportation Authority",
+        "feed_publisher_url": "https://www.vta.org",
+        "feed_lang": "EN",
+        "feed_start_date": "20261026",
+        "feed_end_date": "20270110",
+        "feed_version": "2026-10-09_14:57",
+        "feed_contact_email": "customer.service@vta.org",
+        "feed_contact_url": "https://www.vta.org/about/contact"
+      }
+    ],
+    "groundtruth_ready": true,
+    "groundtruth_error": null,
+    "error": null,
+    "initialization_seconds": 48.245,
+    "initialization_cpu_seconds": 18.813,
+    "initialization_timings": {
+      "walking_network": {
+        "wall_seconds": 14.121,
+        "cpu_seconds": 14.012
+      },
+      "rail_stops_and_schedules": {
+        "wall_seconds": 0.502,
+        "cpu_seconds": 0.498
+      },
+      "spatial_index": {
+        "wall_seconds": 0.0,
+        "cpu_seconds": 0.0
+      },
+      "prepared_gap_cache": {
+        "wall_seconds": 1.598,
+        "cpu_seconds": 1.576
+      },
+      "vta_schedule": {
+        "wall_seconds": 0.878,
+        "cpu_seconds": 0.876
+      },
+      "municipal_snapshot": {
+        "wall_seconds": 0.096,
+        "cpu_seconds": 0.095
+      },
+      "evidence_index": {
+        "wall_seconds": 30.847,
+        "cpu_seconds": 1.609
+      },
+      "report_storage": {
+        "wall_seconds": 0.204,
+        "cpu_seconds": 0.146
+      }
+    },
+    "schedule_cache_hits": {
+      "VTA": true,
+      "caltrain": true,
+      "bart": true
+    },
+    "process_memory": {
+      "rss_mib": 1242.5,
+      "peak_rss_mib": 1248.39
+    }
+  },
+  "real_route": {
+    "status": 200,
+    "distance_m": 390.1,
+    "profile": "wheelchair",
+    "cli_request_seconds": 1.131
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "region": "diridon",
+  "import_graph_stops_seconds": 1.243,
+  "nodes": 5809,
+  "directed_edges": 15770,
+  "stops": 94,
+  "peak_rss_mib": 202.3,
+  "deployment_change": false
+}

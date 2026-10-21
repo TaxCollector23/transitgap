@@ -21,7 +21,15 @@ from backend.app.routing import calculate_route
 
 parser=argparse.ArgumentParser()
 parser.add_argument('--output', default='docs/benchmarks/final-pilot.json')
+parser.add_argument('--snapshot', help='Optional legacy snapshot control; same analysis and source data')
 args=parser.parse_args()
+if args.snapshot:
+    from functools import lru_cache
+    from backend.app.data_loader import read_compact_graph, load_stops, COUNTY_RADIUS_M, COUNTY_REGION
+    @lru_cache(maxsize=1)
+    def control_graph():
+        return read_compact_graph(Path(args.snapshot))
+    main.initialize=lambda: (control_graph(),load_stops(control_graph(),COUNTY_RADIUS_M,region=COUNTY_REGION))
 timings=defaultdict(list)
 for name in ['initialize','nearest_graph_node','GapIndex','TransitSchedule','load_sidewalks','load_groundtruth','initialize_observations']:
     original=getattr(main,name)
@@ -36,7 +44,7 @@ first_startup=main.state['initialization_seconds']
 main._load()
 warm_startup=main.state['initialization_seconds']
 index=main._reachability_study()
-path=graph_cache_path(data_dir(),main.state['radius_m'],main.state['region'])
+path=Path(args.snapshot) if args.snapshot else graph_cache_path(data_dir(),main.state['radius_m'],main.state['region'])
 digest=sha256()
 with path.open('rb') as source:
     for block in iter(lambda:source.read(1024*1024),b''):digest.update(block)

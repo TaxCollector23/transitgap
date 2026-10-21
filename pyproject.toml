@@ -16,6 +16,7 @@ dependencies = [
   "osmium>=4.3,<5",
   "pykdtree>=1.4,<2",
   "psycopg[binary]>=3.2,<4",
+  "orjson>=3.10,<4",
 ]
 
 [build-system]

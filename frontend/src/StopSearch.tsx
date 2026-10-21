@@ -99,6 +99,10 @@ export default function StopSearch({
   const activeId = open && results[active] ? `${id}-option-${active}` : undefined;
   return (
     <div className="stop-search">
+      <details className="quiet-details agency-options" onBlur={(event) => {
+        if (!event.currentTarget.parentElement?.contains(event.relatedTarget as Node)) setOpen(false);
+      }}>
+      <summary>Filter by agency</summary>
       <div className="agency-filter" role="radiogroup" aria-label="Transit agency">
         {FILTERS.map((filter) => (
           <label key={filter.value}>
@@ -117,6 +121,7 @@ export default function StopSearch({
           </label>
         ))}
       </div>
+      </details>
       <input
         ref={inputRef}
         id="stop-search"
@@ -128,7 +133,7 @@ export default function StopSearch({
         aria-controls={listId}
         aria-activedescendant={activeId}
         aria-describedby={`${id}-hint`}
-        placeholder="Station or stop name"
+        placeholder="Search VTA, Caltrain or BART"
         autoComplete="off"
         disabled={disabled}
         value={query}
@@ -158,7 +163,7 @@ export default function StopSearch({
           }
         }}
       />
-      <p className="field-hint" id={`${id}-hint`}>
+      <p className="sr-only" role="status" id={`${id}-hint`}>
         {query
           ? `${results.length ? results.length : "No"} matching ${results.length === 1 ? "place" : "places"}`
           : `Type a name, or pick from places closest to ${referenceLabel}.`}

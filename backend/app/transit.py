@@ -9,7 +9,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from zoneinfo import ZoneInfo
 from zipfile import ZipFile
-from .data_loader import data_dir
+from .data_loader import data_dir, file_signature
 
 TIMEZONE = ZoneInfo("America/Los_Angeles")
 ROUTE_TYPES = {"0": "light_rail", "1": "subway", "2": "rail", "3": "bus", "11": "trolleybus"}
@@ -47,8 +47,7 @@ class TransitSchedule:
         self.feed_info = []
         cache_path = cache_path or archive_path.with_name("schedule-v2.json.gz")
         signature = [
-            archive_path.stat().st_size,
-            archive_path.stat().st_mtime_ns,
+            *file_signature(archive_path),
             sorted(stop_ids),
         ]
         if cache_path.exists():
@@ -57,9 +56,11 @@ class TransitSchedule:
                     cached = json.load(source)
                 if cached["signature"] == signature:
                     self.__dict__.update(cached["schedule"])
+                    self.cache_hit = True
                     return
             except (OSError, ValueError, KeyError):
                 pass
+        self.cache_hit = False
         selected = set(stop_ids)
         with ZipFile(archive_path) as archive:
             self.routes = {

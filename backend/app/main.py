@@ -1,6 +1,9 @@
 from __future__ import annotations
 import json
+import asyncio
 import hmac
+import hashlib
+import uuid
 from datetime import datetime, timezone, timedelta
 import logging
 import math
@@ -47,6 +50,7 @@ from .observations import (
     observation_detail,
     review_observation,
     active_routing_effects,
+    consume_report_quota,
 )
 from .reachability import (
     MAX_MINUTES as REACHABILITY_MAX_MINUTES,
@@ -88,10 +92,13 @@ def _arrival_targets(stop: dict, profile: Profile) -> list[tuple[str, dict, dict
     coordinate. Step-free profiles use entrances the feed marks accessible
     when it records that; entrances marked inaccessible are never used for
     them. Stops without recorded entrances route to the stop itself."""
-    entrances = [e for e in stop.get("entrances") or [] if e.get("graph_node")]
+    entrances = [e for e in stop.get("entrances") or [] if e.get("graph_node") is not None]
     if profile in STEP_FREE_PROFILES:
+        recorded_entrances = entrances
         accessible = [e for e in entrances if e.get("wheelchair_boarding") == 1]
         entrances = accessible or [e for e in entrances if e.get("wheelchair_boarding") != 2]
+        if recorded_entrances and not entrances:
+            raise LookupError("The agency marks every recorded station entrance as not step-free. TransitGap cannot infer another accessible entrance; choose another destination or confirm access with the agency.")
     label = stop.get("station_name") or stop["stop_name"]
     targets = [
         (e["graph_node"],
@@ -112,8 +119,20 @@ def _arrival_targets(stop: dict, profile: Profile) -> list[tuple[str, dict, dict
 
 def _load() -> None:
     started = time.perf_counter()
+    cpu_started=time.process_time()
+    phase_wall,phase_cpu=started,cpu_started
+    timings={}
+    phase_name="walking_network"
+    def phase(name):
+        nonlocal phase_wall,phase_cpu,phase_name
+        wall,cpu=time.perf_counter(),time.process_time()
+        timings[phase_name]={"wall_seconds":round(wall-phase_wall,3),"cpu_seconds":round(cpu-phase_cpu,3)}
+        phase_wall,phase_cpu,phase_name=wall,cpu,name
+        state["initialization_phase"]=name
     try:
+        state.update(initialization_phase="walking_network", error=None)
         graph, stops = initialize()
+        phase("rail_stops_and_schedules")
         configured_region = os.getenv("TRANSITGAP_REGION", "").strip().lower()
         region = configured_region or (
             COUNTY_REGION
@@ -142,9 +161,12 @@ def _load() -> None:
         for stop in rail_stops:
             agency_schedule = agency_schedules.get(stop["agency"])
             stop["modes"] = _modes(agency_schedule.route_types(stop["source_stop_id"])) if agency_schedule else []
+        phase("spatial_index")
         # Prepare the spherical index once, rather than in the first route.
         nearest_graph_node(graph, CENTER[0], CENTER[1])
+        phase("prepared_gap_cache")
         gaps = GapIndex(graph, stops, data_dir())
+        phase("vta_schedule")
         try:
             schedule = TransitSchedule(
                 data_dir() / "gtfs_vta.zip", [s["stop_id"] for s in stops]
@@ -154,6 +176,7 @@ def _load() -> None:
             schedule = None
         for stop in stops:
             stop["modes"] = _modes(schedule.route_types(stop["stop_id"])) if schedule else []
+        phase("municipal_snapshot")
         evidence_radius = DEFAULT_RADIUS_M
         try:
             city = load_sidewalks(radius_m=evidence_radius, allow_network=False)
@@ -171,6 +194,7 @@ def _load() -> None:
                     "error": str(exc),
                 },
             }
+        phase("evidence_index")
         try:
             index = load_groundtruth(graph, stops, city, data_dir(), gaps.signature)
             gt_error = None
@@ -178,11 +202,13 @@ def _load() -> None:
             logger.exception("TransitGap accessibility evidence index failed")
             index, gt_error = None, str(exc)
         try:
+            phase("report_storage")
             initialize_observations()
             observations_ready = True
         except Exception:
             observations_ready = False
             logger.exception("TransitGap community report store initialization failed")
+        phase("ready")
         state.update(
             graph=graph,
             stops=stops,
@@ -199,17 +225,24 @@ def _load() -> None:
             schedule=schedule,
             observations_ready=observations_ready,
             initialization_seconds=round(time.perf_counter() - started, 3),
+            initialization_phase="ready",
+            initialization_cpu_seconds=round(time.process_time()-cpu_started,3),
+            initialization_timings=timings,
+            schedule_cache_hits={"VTA":getattr(schedule,"cache_hit",None),**{k:getattr(v,"cache_hit",None) for k,v in agency_schedules.items()}},
         )
     except Exception as exc:
         logger.exception("TransitGap data initialization failed")
-        state.update(graph=None, stops=[], error=str(exc))
+        state.update(graph=None, stops=[], error=str(exc), initialization_phase="failed")
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    if os.getenv("VERCEL"):
+        os.environ.setdefault("TRANSITGAP_CACHE_ONLY", "1")
     pool = ThreadPoolExecutor(max_workers=1)
     initialization = __import__("asyncio").get_running_loop().run_in_executor(pool, _load)
-    if os.getenv("TRANSITGAP_ASYNC_STARTUP") != "1":
+    app.state.initialization = initialization
+    if os.getenv("TRANSITGAP_ASYNC_STARTUP", "1" if os.getenv("VERCEL") else "0") != "1":
         await initialization
     try:
         async with mcp_server.session_manager.run():
@@ -261,6 +294,28 @@ def _inside(lat: float, lon: float) -> bool:
     return 6371000 * 2 * math.asin(math.sqrt(a)) <= state["radius_m"]
 
 
+def _reporting_enabled():
+    durability=database_durability()
+    return bool(state.get("observations_ready",False) and durability in {"filesystem-persistent","postgresql"}
+                and (durability!="postgresql" or len(os.getenv("TRANSITGAP_REPORT_RATE_SECRET",""))>=32))
+
+
+def _process_memory():
+    import sys
+    peak=current=None
+    try:
+        import resource
+        peak=round(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss/(1024**2 if sys.platform=="darwin" else 1024),2)
+    except ImportError:
+        pass
+    try:
+        resident=int(Path('/proc/self/statm').read_text().split()[1])
+        current=round(resident*os.sysconf('SC_PAGE_SIZE')/1024**2,2)
+    except (OSError,ValueError,IndexError):
+        pass
+    return {"rss_mib":current,"peak_rss_mib":peak}
+
+
 @app.get("/health")
 def health():
     graph = state["graph"]
@@ -288,7 +343,7 @@ def health():
             **{source["name"]: source["stop_count"] for source in state.get("transit_sources", {}).values()},
         },
         "community_report_storage": database_durability(),
-        "reports_enabled": database_durability() in {"filesystem-persistent", "postgresql"} and state.get("observations_ready", False),
+        "reports_enabled": _reporting_enabled(),
         "gap_stops_evaluated": len(state["gaps"].cache) if state.get("gaps") else 0,
         "schedule_ready": state.get("schedule") is not None,
         "data_freshness": (
@@ -298,6 +353,10 @@ def health():
         "groundtruth_error": state["groundtruth_error"],
         "error": state["error"],
         "initialization_seconds": state.get("initialization_seconds"),
+        "initialization_cpu_seconds": state.get("initialization_cpu_seconds"),
+        "initialization_timings": state.get("initialization_timings"),
+        "schedule_cache_hits": state.get("schedule_cache_hits"),
+        "process_memory": _process_memory(),
     }
 
 
@@ -497,7 +556,7 @@ def observations(
 
 @app.post("/accessibility/observations", status_code=201)
 def submit_observation(payload: ObservationCreate, request: Request):
-    if database_durability() not in {"filesystem-persistent", "postgresql"} or not state.get("observations_ready", False):
+    if not _reporting_enabled():
         raise HTTPException(
             503,
             detail="Public reporting is paused until durable storage is connected. Your report has not been saved.",
@@ -508,13 +567,39 @@ def submit_observation(payload: ObservationCreate, request: Request):
             detail=f"Reports must be within the supported {state['region'].replace('_', ' ')} area.",
         )
     client = request.client.host if request.client else "unknown"
-    now = time.monotonic()
-    attempts = _report_rate[client]
-    while attempts and now - attempts[0] >= 60:
-        attempts.popleft()
-    if len(attempts) >= 5:
-        raise HTTPException(429, detail="Please wait before submitting another report.")
-    attempts.append(now)
+    if os.getenv("VERCEL"):
+        client = request.headers.get("x-vercel-forwarded-for", client)
+    secret = os.getenv("TRANSITGAP_REPORT_RATE_SECRET", "")
+    if database_durability() == "postgresql":
+        if len(secret) < 32:
+            raise HTTPException(503, detail="Report spam protection is not configured. Your report has not been saved.")
+        fingerprint = hmac.new(secret.encode(), client.encode(), hashlib.sha256).hexdigest()
+        try:
+            allowed = consume_report_quota(fingerprint)
+        except Exception as exc:
+            raise HTTPException(503, detail="Community report storage is unavailable. Your report has not been saved.") from exc
+        if not allowed:
+            raise HTTPException(429, detail="Please wait before submitting another report.", headers={"Retry-After":"60"})
+    submission_key = request.headers.get("idempotency-key")
+    if submission_key:
+        try:
+            submission_key = str(uuid.UUID(submission_key))
+        except ValueError as exc:
+            raise HTTPException(422, detail="Invalid submission key.") from exc
+    if database_durability() != "postgresql":
+        now = time.monotonic()
+        if len(_report_rate) >= 10000:
+            for key in list(_report_rate):
+                if not _report_rate[key] or now-_report_rate[key][-1]>=60:
+                    _report_rate.pop(key,None)
+            if len(_report_rate)>=10000:
+                raise HTTPException(429,detail="Please wait before submitting another report.")
+        attempts = _report_rate[client]
+        while attempts and now - attempts[0] >= 60:
+            attempts.popleft()
+        if len(attempts) >= 5:
+            raise HTTPException(429, detail="Please wait before submitting another report.")
+        attempts.append(now)
     related = state["groundtruth"].find_candidate_for_point(payload.latitude, payload.longitude) if state.get("groundtruth") else None
     try:
         return create_observation(
@@ -523,7 +608,10 @@ def submit_observation(payload: ObservationCreate, request: Request):
             category=payload.category.value,
             description=payload.description,
             related_feature_id=related,
+            submission_key=submission_key,
         )
+    except ValueError as exc:
+        raise HTTPException(409, detail=str(exc)) from exc
     except Exception as exc:
         logger.exception("Community report submission failed")
         raise HTTPException(
@@ -533,7 +621,27 @@ def submit_observation(payload: ObservationCreate, request: Request):
 
 @app.get("/health/live")
 def liveness():
-    return {"alive":True,"ready":state["graph"] is not None,"reports_ready":state.get("observations_ready",False)}
+    return {"alive":True,"ready":state["graph"] is not None,"reports_ready":state.get("observations_ready",False),"error":state.get("error"),"phase":state.get("initialization_phase","starting")}
+
+
+INITIALIZATION_REQUEST_SECONDS = 18
+
+
+@app.post("/routing/initialize")
+async def initialize_routing():
+    """Keep compute active during a bounded serverless warmup request.
+
+    A thread alone can be suspended after the last response. Awaiting the same
+    future keeps the invocation alive; shielding preserves it across timeouts.
+    Other requests, CDN stop search and the map remain independent.
+    """
+    initialization = getattr(app.state, "initialization", None)
+    if initialization is not None and not initialization.done():
+        try:
+            await asyncio.wait_for(asyncio.shield(initialization), INITIALIZATION_REQUEST_SECONDS)
+        except TimeoutError:
+            pass
+    return liveness()
 
 
 @app.get("/mobility-profiles")
@@ -548,36 +656,56 @@ def report_detail(identity: str):
     except Exception as exc:raise HTTPException(503,detail="Community report storage is unavailable.") from exc
 
 
-@app.post("/accessibility/observations/{identity}/review")
-def moderate_report(identity: str, payload: ObservationReview, request: Request):
+def _require_reviewer(request: Request):
     token=os.getenv("TRANSITGAP_MODERATION_TOKEN","")
     if len(token)<32:raise HTTPException(503,detail="Moderation is not configured.")
     if not hmac.compare_digest(request.headers.get("authorization",""),"Bearer "+token):raise HTTPException(403,detail="Reviewer authorization required.")
+
+
+@app.get("/admin/observations")
+def review_queue(request: Request, limit: int = Query(100,ge=1,le=500), offset: int = Query(0,ge=0)):
+    _require_reviewer(request)
+    try:
+        return list_observations(limit=limit,offset=offset,include_inactive=True)
+    except Exception as exc:
+        raise HTTPException(503,detail="Community report storage is unavailable.") from exc
+
+
+@app.post("/accessibility/observations/{identity}/review")
+def moderate_report(identity: str, payload: ObservationReview, request: Request):
+    _require_reviewer(request)
+    reference=payload.edge_reference
     expiry=payload.effective_until.astimezone(timezone.utc) if payload.effective_until else None
     if payload.effective_until and payload.effective_until.tzinfo is None:raise HTTPException(422,detail="Review expiry must include a timezone.")
     profiles={"standard","wheelchair","stroller","low_vision","prefer_documented_paths"}
     if not set(payload.affected_profiles)<=profiles:raise HTTPException(422,detail="Unsupported affected mobility profile.")
     if payload.routing_effect!="none":
         if payload.status.value!="REVIEWED" or not payload.edge_reference or not payload.affected_profiles or not expiry or not datetime.now(timezone.utc)<expiry<=datetime.now(timezone.utc)+timedelta(days=30):raise HTTPException(422,detail="A routing effect needs reviewed status, a mapped edge, affected profiles and a future expiry within 30 days.")
+        report=report_detail(identity)
+        if state["graph"] is None:
+            raise HTTPException(503,detail="The walking network is still starting. Retry before applying a routing effect.")
         try:
             parts=json.loads(payload.edge_reference)
-            if len(parts)!=3:raise ValueError()
+            if not isinstance(parts,list) or len(parts)!=3:raise ValueError()
             def node(value):return int(value) if str(value).isdigit() else str(value)
             u,v,key=map(node,parts); graph=state["graph"]
             attrs=graph.get_edge_data(u,v,key)
             if not attrs:raise ValueError()
             from .groundtruth import _project
             from shapely.geometry import LineString
-            report=observation_detail(identity)
             if _project(LineString(_edge_coords(graph,u,v,attrs))).distance(_project(Point(report["longitude"],report["latitude"])))>35:raise ValueError()
             if report["category"] in {"curb_ramp_present","missing_tactile_paving"} and payload.routing_effect=="block":raise ValueError()
+            reference=json.dumps([str(u),str(v),str(key)],separators=(",",":"))
         except Exception as exc:raise HTTPException(422,detail="The routing effect must reference an applicable mapped pedestrian edge within 35 metres of this report.") from exc
-    try:return review_observation(identity,status=payload.status.value,reviewer=payload.reviewer,reason=payload.reason,edge_reference=payload.edge_reference,routing_effect=payload.routing_effect,effective_until=expiry.isoformat() if expiry else None,affected_profiles=payload.affected_profiles)
+    try:return review_observation(identity,status=payload.status.value,reviewer=payload.reviewer,reason=payload.reason,edge_reference=reference,routing_effect=payload.routing_effect,effective_until=expiry.isoformat() if expiry else None,affected_profiles=payload.affected_profiles)
     except LookupError as exc:raise HTTPException(404,detail=str(exc)) from exc
+    except Exception as exc:raise HTTPException(503,detail="Community report storage is unavailable.") from exc
 
 
 def calculate_route(graph, origin, destination_node, algorithm, profile, stop, **kwargs):
     """Route to the best recorded arrival point for the stop (entrance or stop)."""
+    if "report_effects" not in kwargs:
+        kwargs["report_effects"] = _routing_effects()
     targets = _arrival_targets(stop, profile)
     if len(targets) == 1 and targets[0][2]["type"] == "stop":
         targets = [(destination_node, targets[0][1], targets[0][2])]
@@ -608,11 +736,19 @@ def calculate_route(graph, origin, destination_node, algorithm, profile, stop, *
     return result
 
 
-def _calculate_single(*args,**kwargs):
+def _routing_effects():
     effects={}
-    if state.get("observations_ready") and database_durability() in {"filesystem-persistent","postgresql"}:
-        try:effects=active_routing_effects()
+    durability=database_durability()
+    if durability == "postgresql" or (state.get("observations_ready") and durability == "filesystem-persistent"):
+        try:
+            effects=active_routing_effects()
+            state["observations_ready"]=True
         except Exception as exc:raise HTTPException(503,detail="Reviewed report information is unavailable. Please retry before routing.") from exc
+    return effects
+
+
+def _calculate_single(*args,report_effects=None,**kwargs):
+    effects = _routing_effects() if report_effects is None else report_effects
     result=base_calculate_route(*args,**kwargs,report_effects=effects)
     result["reviewed_report_effects"]=list(effects.values())
     result["profile_assumptions"]=configuration().get(result["profile"],{})

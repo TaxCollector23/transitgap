@@ -7,6 +7,7 @@ from pathlib import Path
 root = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(root))
 os.environ["TRANSITGAP_DATA_DIR"] = str(root / "backend" / "data")
+os.environ["TRANSITGAP_PREPARING_DATA"] = "1"
 os.environ.setdefault("TRANSITGAP_REGION", "santa_clara_county")
 os.environ.setdefault("TRANSITGAP_OVERPASS_URL", "https://overpass.private.coffee/api")
 import osmnx as ox
@@ -32,12 +33,18 @@ from backend.app.transit_agencies import AGENCIES, load_agency_stops
 rail_stops, transit_sources = load_agency_stops(graph, root / "backend" / "data", os.environ["TRANSITGAP_REGION"], COUNTY_RADIUS_M if os.environ["TRANSITGAP_REGION"] == COUNTY_REGION else DEFAULT_RADIUS_M)
 for agency_id, source in transit_sources.items():
     print(f"Prepared {source['name']} scheduled platforms connected to the graph: {source['stop_count']}")
-if os.environ["TRANSITGAP_REGION"] == COUNTY_REGION and county_graph.exists():
+import gzip, json
+compact_path = county_graph.with_suffix(".jsonl.gz")
+legacy_snapshot = False
+if compact_path.exists():
+    with gzip.open(compact_path, "rt") as snapshot:
+        legacy_snapshot = json.loads(next(snapshot)).get("format") != "transitgap-graph/2"
+if os.environ["TRANSITGAP_REGION"] == COUNTY_REGION and (county_graph.exists() or legacy_snapshot):
     compact = county_graph.with_suffix(".jsonl.gz")
     print("Packing a streaming JSON walking graph for deployment…", flush=True)
     write_compact_graph(graph, compact)
     _write_metadata(compact, COUNTY_RADIUS_M, graph, COUNTY_REGION)
-    county_graph.unlink()
+    county_graph.unlink(missing_ok=True)
     print(f"Packed county graph: {compact.stat().st_size / 1_000_000:.1f} MB", flush=True)
 sidewalks = load_sidewalks(radius_m=DEFAULT_RADIUS_M, directory=root / "backend" / "data")
 print(f"Prepared City of San Jose sidewalk comparison snapshot: {len(sidewalks.get('features', []))} features ({sidewalks.get('metadata', {}).get('availability', 'unavailable')}); other county municipalities are not covered by this source")

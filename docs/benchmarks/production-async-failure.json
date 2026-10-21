@@ -1,0 +1,1056 @@
+{
+  "url": "https://transitgap.vercel.app",
+  "status": "incomplete",
+  "definition": "Observed newly deployed worker; serverless instance placement and OS caches are not controlled",
+  "polls": [
+    {
+      "elapsed_seconds": 0.341,
+      "request_seconds": 0.307,
+      "status": 200,
+      "body": {
+        "alive": true,
+        "ready": false,
+        "reports_ready": false,
+        "error": null,
+        "phase": "walking_network"
+      }
+    },
+    {
+      "elapsed_seconds": 1.688,
+      "request_seconds": 0.226,
+      "status": 200,
+      "body": {
+        "alive": true,
+        "ready": false,
+        "reports_ready": false,
+        "error": null,
+        "phase": "walking_network"
+      }
+    },
+    {
+      "elapsed_seconds": 2.951,
+      "request_seconds": 0.262,
+      "status": 200,
+      "body": {
+        "alive": true,
+        "ready": false,
+        "reports_ready": false,
+        "error": null,
+        "phase": "walking_network"
+      }
+    },
+    {
+      "elapsed_seconds": 4.101,
+      "request_seconds": 0.148,
+      "status": 200,
+      "body": {
+        "alive": true,
+        "ready": false,
+        "reports_ready": false,
+        "error": null,
+        "phase": "walking_network"
+      }
+    },
+    {
+      "elapsed_seconds": 5.22,
+      "request_seconds": 0.114,
+      "status": 200,
+      "body": {
+        "alive": true,
+        "ready": false,
+        "reports_ready": false,
+        "error": null,
+        "phase": "walking_network"
+      }
+    },
+    {
+      "elapsed_seconds": 6.409,
+      "request_seconds": 0.188,
+      "status": 200,
+      "body": {
+        "alive": true,
+        "ready": false,
+        "reports_ready": false,
+        "error": null,
+        "phase": "walking_network"
+      }
+    },
+    {
+      "elapsed_seconds": 7.569,
+      "request_seconds": 0.158,
+      "status": 200,
+      "body": {
+        "alive": true,
+        "ready": false,
+        "reports_ready": false,
+        "error": null,
+        "phase": "walking_network"
+      }
+    },
+    {
+      "elapsed_seconds": 8.709,
+      "request_seconds": 0.14,
+      "status": 200,
+      "body": {
+        "alive": true,
+        "ready": false,
+        "reports_ready": false,
+        "error": null,
+        "phase": "walking_network"
+      }
+    },
+    {
+      "elapsed_seconds": 9.829,
+      "request_seconds": 0.114,
+      "status": 200,
+      "body": {
+        "alive": true,
+        "ready": false,
+        "reports_ready": false,
+        "error": null,
+        "phase": "walking_network"
+      }
+    },
+    {
+      "elapsed_seconds": 10.96,
+      "request_seconds": 0.126,
+      "status": 200,
+      "body": {
+        "alive": true,
+        "ready": false,
+        "reports_ready": false,
+        "error": null,
+        "phase": "walking_network"
+      }
+    },
+    {
+      "elapsed_seconds": 12.237,
+      "request_seconds": 0.272,
+      "status": 200,
+      "body": {
+        "alive": true,
+        "ready": false,
+        "reports_ready": false,
+        "error": null,
+        "phase": "walking_network"
+      }
+    },
+    {
+      "elapsed_seconds": 13.363,
+      "request_seconds": 0.12,
+      "status": 200,
+      "body": {
+        "alive": true,
+        "ready": false,
+        "reports_ready": false,
+        "error": null,
+        "phase": "walking_network"
+      }
+    },
+    {
+      "elapsed_seconds": 14.489,
+      "request_seconds": 0.125,
+      "status": 200,
+      "body": {
+        "alive": true,
+        "ready": false,
+        "reports_ready": false,
+        "error": null,
+        "phase": "walking_network"
+      }
+    },
+    {
+      "elapsed_seconds": 15.696,
+      "request_seconds": 0.205,
+      "status": 200,
+      "body": {
+        "alive": true,
+        "ready": false,
+        "reports_ready": false,
+        "error": null,
+        "phase": "walking_network"
+      }
+    },
+    {
+      "elapsed_seconds": 16.892,
+      "request_seconds": 0.192,
+      "status": 200,
+      "body": {
+        "alive": true,
+        "ready": false,
+        "reports_ready": false,
+        "error": null,
+        "phase": "walking_network"
+      }
+    },
+    {
+      "elapsed_seconds": 18.044,
+      "request_seconds": 0.147,
+      "status": 200,
+      "body": {
+        "alive": true,
+        "ready": false,
+        "reports_ready": false,
+        "error": null,
+        "phase": "walking_network"
+      }
+    },
+    {
+      "elapsed_seconds": 19.187,
+      "request_seconds": 0.138,
+      "status": 200,
+      "body": {
+        "alive": true,
+        "ready": false,
+        "reports_ready": false,
+        "error": null,
+        "phase": "walking_network"
+      }
+    },
+    {
+      "elapsed_seconds": 20.398,
+      "request_seconds": 0.206,
+      "status": 200,
+      "body": {
+        "alive": true,
+        "ready": false,
+        "reports_ready": false,
+        "error": null,
+        "phase": "walking_network"
+      }
+    },
+    {
+      "elapsed_seconds": 21.51,
+      "request_seconds": 0.112,
+      "status": 200,
+      "body": {
+        "alive": true,
+        "ready": false,
+        "reports_ready": false,
+        "error": null,
+        "phase": "walking_network"
+      }
+    },
+    {
+      "elapsed_seconds": 22.659,
+      "request_seconds": 0.144,
+      "status": 200,
+      "body": {
+        "alive": true,
+        "ready": false,
+        "reports_ready": false,
+        "error": null,
+        "phase": "walking_network"
+      }
+    },
+    {
+      "elapsed_seconds": 23.822,
+      "request_seconds": 0.158,
+      "status": 200,
+      "body": {
+        "alive": true,
+        "ready": false,
+        "reports_ready": false,
+        "error": null,
+        "phase": "walking_network"
+      }
+    },
+    {
+      "elapsed_seconds": 24.95,
+      "request_seconds": 0.123,
+      "status": 200,
+      "body": {
+        "alive": true,
+        "ready": false,
+        "reports_ready": false,
+        "error": null,
+        "phase": "walking_network"
+      }
+    },
+    {
+      "elapsed_seconds": 26.111,
+      "request_seconds": 0.159,
+      "status": 200,
+      "body": {
+        "alive": true,
+        "ready": false,
+        "reports_ready": false,
+        "error": null,
+        "phase": "walking_network"
+      }
+    },
+    {
+      "elapsed_seconds": 27.233,
+      "request_seconds": 0.116,
+      "status": 200,
+      "body": {
+        "alive": true,
+        "ready": false,
+        "reports_ready": false,
+        "error": null,
+        "phase": "walking_network"
+      }
+    },
+    {
+      "elapsed_seconds": 28.431,
+      "request_seconds": 0.196,
+      "status": 200,
+      "body": {
+        "alive": true,
+        "ready": false,
+        "reports_ready": false,
+        "error": null,
+        "phase": "walking_network"
+      }
+    },
+    {
+      "elapsed_seconds": 29.59,
+      "request_seconds": 0.154,
+      "status": 200,
+      "body": {
+        "alive": true,
+        "ready": false,
+        "reports_ready": false,
+        "error": null,
+        "phase": "walking_network"
+      }
+    },
+    {
+      "elapsed_seconds": 30.712,
+      "request_seconds": 0.117,
+      "status": 200,
+      "body": {
+        "alive": true,
+        "ready": false,
+        "reports_ready": false,
+        "error": null,
+        "phase": "walking_network"
+      }
+    },
+    {
+      "elapsed_seconds": 31.827,
+      "request_seconds": 0.11,
+      "status": 200,
+      "body": {
+        "alive": true,
+        "ready": false,
+        "reports_ready": false,
+        "error": null,
+        "phase": "walking_network"
+      }
+    },
+    {
+      "elapsed_seconds": 32.956,
+      "request_seconds": 0.126,
+      "status": 200,
+      "body": {
+        "alive": true,
+        "ready": false,
+        "reports_ready": false,
+        "error": null,
+        "phase": "walking_network"
+      }
+    },
+    {
+      "elapsed_seconds": 34.084,
+      "request_seconds": 0.124,
+      "status": 200,
+      "body": {
+        "alive": true,
+        "ready": false,
+        "reports_ready": false,
+        "error": null,
+        "phase": "walking_network"
+      }
+    },
+    {
+      "elapsed_seconds": 35.244,
+      "request_seconds": 0.156,
+      "status": 200,
+      "body": {
+        "alive": true,
+        "ready": false,
+        "reports_ready": false,
+        "error": null,
+        "phase": "walking_network"
+      }
+    },
+    {
+      "elapsed_seconds": 36.399,
+      "request_seconds": 0.15,
+      "status": 200,
+      "body": {
+        "alive": true,
+        "ready": false,
+        "reports_ready": false,
+        "error": null,
+        "phase": "walking_network"
+      }
+    },
+    {
+      "elapsed_seconds": 37.521,
+      "request_seconds": 0.116,
+      "status": 200,
+      "body": {
+        "alive": true,
+        "ready": false,
+        "reports_ready": false,
+        "error": null,
+        "phase": "walking_network"
+      }
+    },
+    {
+      "elapsed_seconds": 38.638,
+      "request_seconds": 0.113,
+      "status": 200,
+      "body": {
+        "alive": true,
+        "ready": false,
+        "reports_ready": false,
+        "error": null,
+        "phase": "walking_network"
+      }
+    },
+    {
+      "elapsed_seconds": 39.766,
+      "request_seconds": 0.123,
+      "status": 200,
+      "body": {
+        "alive": true,
+        "ready": false,
+        "reports_ready": false,
+        "error": null,
+        "phase": "walking_network"
+      }
+    },
+    {
+      "elapsed_seconds": 40.893,
+      "request_seconds": 0.125,
+      "status": 200,
+      "body": {
+        "alive": true,
+        "ready": false,
+        "reports_ready": false,
+        "error": null,
+        "phase": "walking_network"
+      }
+    },
+    {
+      "elapsed_seconds": 42.112,
+      "request_seconds": 0.217,
+      "status": 200,
+      "body": {
+        "alive": true,
+        "ready": false,
+        "reports_ready": false,
+        "error": null,
+        "phase": "walking_network"
+      }
+    },
+    {
+      "elapsed_seconds": 43.242,
+      "request_seconds": 0.125,
+      "status": 200,
+      "body": {
+        "alive": true,
+        "ready": false,
+        "reports_ready": false,
+        "error": null,
+        "phase": "walking_network"
+      }
+    },
+    {
+      "elapsed_seconds": 44.412,
+      "request_seconds": 0.165,
+      "status": 200,
+      "body": {
+        "alive": true,
+        "ready": false,
+        "reports_ready": false,
+        "error": null,
+        "phase": "walking_network"
+      }
+    },
+    {
+      "elapsed_seconds": 45.552,
+      "request_seconds": 0.137,
+      "status": 200,
+      "body": {
+        "alive": true,
+        "ready": false,
+        "reports_ready": false,
+        "error": null,
+        "phase": "walking_network"
+      }
+    },
+    {
+      "elapsed_seconds": 46.674,
+      "request_seconds": 0.117,
+      "status": 200,
+      "body": {
+        "alive": true,
+        "ready": false,
+        "reports_ready": false,
+        "error": null,
+        "phase": "walking_network"
+      }
+    },
+    {
+      "elapsed_seconds": 47.828,
+      "request_seconds": 0.149,
+      "status": 200,
+      "body": {
+        "alive": true,
+        "ready": false,
+        "reports_ready": false,
+        "error": null,
+        "phase": "walking_network"
+      }
+    },
+    {
+      "elapsed_seconds": 48.987,
+      "request_seconds": 0.158,
+      "status": 200,
+      "body": {
+        "alive": true,
+        "ready": false,
+        "reports_ready": false,
+        "error": null,
+        "phase": "walking_network"
+      }
+    },
+    {
+      "elapsed_seconds": 50.11,
+      "request_seconds": 0.119,
+      "status": 200,
+      "body": {
+        "alive": true,
+        "ready": false,
+        "reports_ready": false,
+        "error": null,
+        "phase": "walking_network"
+      }
+    },
+    {
+      "elapsed_seconds": 51.234,
+      "request_seconds": 0.121,
+      "status": 200,
+      "body": {
+        "alive": true,
+        "ready": false,
+        "reports_ready": false,
+        "error": null,
+        "phase": "walking_network"
+      }
+    },
+    {
+      "elapsed_seconds": 52.361,
+      "request_seconds": 0.122,
+      "status": 200,
+      "body": {
+        "alive": true,
+        "ready": false,
+        "reports_ready": false,
+        "error": null,
+        "phase": "walking_network"
+      }
+    },
+    {
+      "elapsed_seconds": 53.481,
+      "request_seconds": 0.114,
+      "status": 200,
+      "body": {
+        "alive": true,
+        "ready": false,
+        "reports_ready": false,
+        "error": null,
+        "phase": "walking_network"
+      }
+    },
+    {
+      "elapsed_seconds": 54.701,
+      "request_seconds": 0.217,
+      "status": 200,
+      "body": {
+        "alive": true,
+        "ready": false,
+        "reports_ready": false,
+        "error": null,
+        "phase": "walking_network"
+      }
+    },
+    {
+      "elapsed_seconds": 55.848,
+      "request_seconds": 0.143,
+      "status": 200,
+      "body": {
+        "alive": true,
+        "ready": false,
+        "reports_ready": false,
+        "error": null,
+        "phase": "walking_network"
+      }
+    },
+    {
+      "elapsed_seconds": 56.97,
+      "request_seconds": 0.116,
+      "status": 200,
+      "body": {
+        "alive": true,
+        "ready": false,
+        "reports_ready": false,
+        "error": null,
+        "phase": "walking_network"
+      }
+    },
+    {
+      "elapsed_seconds": 58.083,
+      "request_seconds": 0.108,
+      "status": 200,
+      "body": {
+        "alive": true,
+        "ready": false,
+        "reports_ready": false,
+        "error": null,
+        "phase": "walking_network"
+      }
+    },
+    {
+      "elapsed_seconds": 59.212,
+      "request_seconds": 0.127,
+      "status": 200,
+      "body": {
+        "alive": true,
+        "ready": false,
+        "reports_ready": false,
+        "error": null,
+        "phase": "walking_network"
+      }
+    },
+    {
+      "elapsed_seconds": 60.413,
+      "request_seconds": 0.196,
+      "status": 200,
+      "body": {
+        "alive": true,
+        "ready": false,
+        "reports_ready": false,
+        "error": null,
+        "phase": "walking_network"
+      }
+    },
+    {
+      "elapsed_seconds": 61.573,
+      "request_seconds": 0.159,
+      "status": 200,
+      "body": {
+        "alive": true,
+        "ready": false,
+        "reports_ready": false,
+        "error": null,
+        "phase": "walking_network"
+      }
+    },
+    {
+      "elapsed_seconds": 62.701,
+      "request_seconds": 0.123,
+      "status": 200,
+      "body": {
+        "alive": true,
+        "ready": false,
+        "reports_ready": false,
+        "error": null,
+        "phase": "walking_network"
+      }
+    },
+    {
+      "elapsed_seconds": 63.817,
+      "request_seconds": 0.113,
+      "status": 200,
+      "body": {
+        "alive": true,
+        "ready": false,
+        "reports_ready": false,
+        "error": null,
+        "phase": "walking_network"
+      }
+    },
+    {
+      "elapsed_seconds": 64.937,
+      "request_seconds": 0.115,
+      "status": 200,
+      "body": {
+        "alive": true,
+        "ready": false,
+        "reports_ready": false,
+        "error": null,
+        "phase": "walking_network"
+      }
+    },
+    {
+      "elapsed_seconds": 66.173,
+      "request_seconds": 0.231,
+      "status": 200,
+      "body": {
+        "alive": true,
+        "ready": false,
+        "reports_ready": false,
+        "error": null,
+        "phase": "walking_network"
+      }
+    },
+    {
+      "elapsed_seconds": 67.333,
+      "request_seconds": 0.157,
+      "status": 200,
+      "body": {
+        "alive": true,
+        "ready": false,
+        "reports_ready": false,
+        "error": null,
+        "phase": "walking_network"
+      }
+    },
+    {
+      "elapsed_seconds": 68.46,
+      "request_seconds": 0.122,
+      "status": 200,
+      "body": {
+        "alive": true,
+        "ready": false,
+        "reports_ready": false,
+        "error": null,
+        "phase": "walking_network"
+      }
+    },
+    {
+      "elapsed_seconds": 69.576,
+      "request_seconds": 0.111,
+      "status": 200,
+      "body": {
+        "alive": true,
+        "ready": false,
+        "reports_ready": false,
+        "error": null,
+        "phase": "walking_network"
+      }
+    },
+    {
+      "elapsed_seconds": 70.691,
+      "request_seconds": 0.11,
+      "status": 200,
+      "body": {
+        "alive": true,
+        "ready": false,
+        "reports_ready": false,
+        "error": null,
+        "phase": "walking_network"
+      }
+    },
+    {
+      "elapsed_seconds": 71.945,
+      "request_seconds": 0.252,
+      "status": 200,
+      "body": {
+        "alive": true,
+        "ready": false,
+        "reports_ready": false,
+        "error": null,
+        "phase": "walking_network"
+      }
+    },
+    {
+      "elapsed_seconds": 73.106,
+      "request_seconds": 0.157,
+      "status": 200,
+      "body": {
+        "alive": true,
+        "ready": false,
+        "reports_ready": false,
+        "error": null,
+        "phase": "walking_network"
+      }
+    },
+    {
+      "elapsed_seconds": 74.244,
+      "request_seconds": 0.136,
+      "status": 200,
+      "body": {
+        "alive": true,
+        "ready": false,
+        "reports_ready": false,
+        "error": null,
+        "phase": "walking_network"
+      }
+    },
+    {
+      "elapsed_seconds": 75.369,
+      "request_seconds": 0.121,
+      "status": 200,
+      "body": {
+        "alive": true,
+        "ready": false,
+        "reports_ready": false,
+        "error": null,
+        "phase": "walking_network"
+      }
+    },
+    {
+      "elapsed_seconds": 76.476,
+      "request_seconds": 0.102,
+      "status": 200,
+      "body": {
+        "alive": true,
+        "ready": false,
+        "reports_ready": false,
+        "error": null,
+        "phase": "walking_network"
+      }
+    },
+    {
+      "elapsed_seconds": 77.582,
+      "request_seconds": 0.104,
+      "status": 200,
+      "body": {
+        "alive": true,
+        "ready": false,
+        "reports_ready": false,
+        "error": null,
+        "phase": "walking_network"
+      }
+    },
+    {
+      "elapsed_seconds": 78.76,
+      "request_seconds": 0.173,
+      "status": 200,
+      "body": {
+        "alive": true,
+        "ready": false,
+        "reports_ready": false,
+        "error": null,
+        "phase": "walking_network"
+      }
+    },
+    {
+      "elapsed_seconds": 79.987,
+      "request_seconds": 0.222,
+      "status": 200,
+      "body": {
+        "alive": true,
+        "ready": false,
+        "reports_ready": false,
+        "error": null,
+        "phase": "walking_network"
+      }
+    },
+    {
+      "elapsed_seconds": 81.101,
+      "request_seconds": 0.112,
+      "status": 200,
+      "body": {
+        "alive": true,
+        "ready": false,
+        "reports_ready": false,
+        "error": null,
+        "phase": "walking_network"
+      }
+    },
+    {
+      "elapsed_seconds": 82.236,
+      "request_seconds": 0.134,
+      "status": 200,
+      "body": {
+        "alive": true,
+        "ready": false,
+        "reports_ready": false,
+        "error": null,
+        "phase": "walking_network"
+      }
+    },
+    {
+      "elapsed_seconds": 83.481,
+      "request_seconds": 0.24,
+      "status": 200,
+      "body": {
+        "alive": true,
+        "ready": false,
+        "reports_ready": false,
+        "error": null,
+        "phase": "walking_network"
+      }
+    },
+    {
+      "elapsed_seconds": 84.631,
+      "request_seconds": 0.145,
+      "status": 200,
+      "body": {
+        "alive": true,
+        "ready": false,
+        "reports_ready": false,
+        "error": null,
+        "phase": "walking_network"
+      }
+    },
+    {
+      "elapsed_seconds": 85.738,
+      "request_seconds": 0.104,
+      "status": 200,
+      "body": {
+        "alive": true,
+        "ready": false,
+        "reports_ready": false,
+        "error": null,
+        "phase": "walking_network"
+      }
+    },
+    {
+      "elapsed_seconds": 86.996,
+      "request_seconds": 0.254,
+      "status": 200,
+      "body": {
+        "alive": true,
+        "ready": false,
+        "reports_ready": false,
+        "error": null,
+        "phase": "walking_network"
+      }
+    },
+    {
+      "elapsed_seconds": 88.195,
+      "request_seconds": 0.194,
+      "status": 200,
+      "body": {
+        "alive": true,
+        "ready": false,
+        "reports_ready": false,
+        "error": null,
+        "phase": "walking_network"
+      }
+    },
+    {
+      "elapsed_seconds": 89.376,
+      "request_seconds": 0.176,
+      "status": 200,
+      "body": {
+        "alive": true,
+        "ready": false,
+        "reports_ready": false,
+        "error": null,
+        "phase": "walking_network"
+      }
+    },
+    {
+      "elapsed_seconds": 90.49,
+      "request_seconds": 0.109,
+      "status": 200,
+      "body": {
+        "alive": true,
+        "ready": false,
+        "reports_ready": false,
+        "error": null,
+        "phase": "walking_network"
+      }
+    },
+    {
+      "elapsed_seconds": 91.637,
+      "request_seconds": 0.145,
+      "status": 200,
+      "body": {
+        "alive": true,
+        "ready": false,
+        "reports_ready": false,
+        "error": null,
+        "phase": "walking_network"
+      }
+    },
+    {
+      "elapsed_seconds": 92.751,
+      "request_seconds": 0.113,
+      "status": 200,
+      "body": {
+        "alive": true,
+        "ready": false,
+        "reports_ready": false,
+        "error": null,
+        "phase": "walking_network"
+      }
+    },
+    {
+      "elapsed_seconds": 93.87,
+      "request_seconds": 0.116,
+      "status": 200,
+      "body": {
+        "alive": true,
+        "ready": false,
+        "reports_ready": false,
+        "error": null,
+        "phase": "walking_network"
+      }
+    },
+    {
+      "elapsed_seconds": 95.017,
+      "request_seconds": 0.144,
+      "status": 200,
+      "body": {
+        "alive": true,
+        "ready": false,
+        "reports_ready": false,
+        "error": null,
+        "phase": "walking_network"
+      }
+    },
+    {
+      "elapsed_seconds": 96.21,
+      "request_seconds": 0.192,
+      "status": 200,
+      "body": {
+        "alive": true,
+        "ready": false,
+        "reports_ready": false,
+        "error": null,
+        "phase": "walking_network"
+      }
+    },
+    {
+      "elapsed_seconds": 97.324,
+      "request_seconds": 0.109,
+      "status": 200,
+      "body": {
+        "alive": true,
+        "ready": false,
+        "reports_ready": false,
+        "error": null,
+        "phase": "walking_network"
+      }
+    },
+    {
+      "elapsed_seconds": 98.488,
+      "request_seconds": 0.162,
+      "status": 200,
+      "body": {
+        "alive": true,
+        "ready": false,
+        "reports_ready": false,
+        "error": null,
+        "phase": "walking_network"
+      }
+    },
+    {
+      "elapsed_seconds": 99.604,
+      "request_seconds": 0.111,
+      "status": 200,
+      "body": {
+        "alive": true,
+        "ready": false,
+        "reports_ready": false,
+        "error": null,
+        "phase": "walking_network"
+      }
+    }
+  ],
+  "first_route_request": {
+    "seconds": 0.119,
+    "status": 503,
+    "readiness_at_probe": false
+  }
+}

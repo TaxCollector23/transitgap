@@ -2,6 +2,7 @@ from __future__ import annotations
 import csv, gzip, io, json, logging, os, zipfile
 import sys
 import math
+import hashlib
 from datetime import datetime, timezone
 from functools import lru_cache
 from pathlib import Path
@@ -30,6 +31,25 @@ GRAPH_SCHEMA_VERSION = 3
 STOP_SCHEMA_VERSION = 2
 logger = logging.getLogger(__name__)
 _GRAPH_CACHE: dict[str, tuple[int, int, nx.MultiDiGraph]] = {}
+
+
+@lru_cache(maxsize=16)
+def _content_digest(path: str, size: int, modified_ns: int) -> str:
+    digest=hashlib.sha256()
+    with open(path,'rb') as source:
+        for block in iter(lambda:source.read(1024*1024),b''):
+            digest.update(block)
+    return digest.hexdigest()
+
+
+def file_signature(path: Path) -> list:
+    """Portable cache identity; deployment extraction may change timestamps.
+
+    Stat fields invalidate the in-process digest cache, but only content/size are
+    serialized into prepared artifacts. Files are controlled build inputs.
+    """
+    stat=path.stat()
+    return [stat.st_size,_content_digest(str(path.resolve()),stat.st_size,stat.st_mtime_ns)]
 
 
 @lru_cache(maxsize=1)
@@ -150,6 +170,12 @@ def graph_cache_path(directory: Path, radius_m: int, region: str) -> Path:
 
 def write_compact_graph(graph: nx.MultiDiGraph, path: Path) -> None:
     """Serialize plain JSON records; no pickle or executable cache content."""
+    from .graph_snapshot import write_blocks
+    return write_blocks(graph, path)
+
+
+def _write_legacy_graph(graph: nx.MultiDiGraph, path: Path) -> None:
+    """Legacy writer retained for migration/regression benchmarks only."""
     def encode(value):
         if hasattr(value, "wkt"):
             return value.wkt
@@ -175,8 +201,11 @@ def read_compact_graph(path: Path) -> nx.MultiDiGraph:
     def share_strings(record):
         return {sys.intern(key): sys.intern(value) if isinstance(value, str) and len(value) <= 128 else value
                 for key, value in record.items()}
-    with gzip.open(path, "rt", encoding="utf-8") as source:
+    with gzip.open(path, "rb") as source:
         header = json.loads(next(source))
+        if header.get("format") == "transitgap-graph/2":
+            from .graph_snapshot import read_blocks
+            return read_blocks(source, header)
         if header.get("format") != "transitgap-graph/1":
             raise DatasetError("Unsupported compact walking graph format")
         graph.graph.update(header["attributes"])
@@ -221,6 +250,11 @@ def load_graph(radius_m: int = DEFAULT_RADIUS_M, directory: Path | None = None,
         try:
             graph = read_compact_graph(path) if path.name.endswith(".jsonl.gz") else ox.load_graphml(path)
             _GRAPH_CACHE[str(path.resolve())] = (stat.st_size, stat.st_mtime_ns, graph)
+            if os.getenv("VERCEL") and os.getenv("TRANSITGAP_PREPARING_DATA") != "1":
+                # Manifest generation scans all tags and imports build-only
+                # OSMnx dependencies. Packaged manifests are immutable build
+                # artifacts; extraction timestamps are not source freshness.
+                return graph
             metadata_path = path.with_suffix(".metadata.json")
             rewrite_metadata = True
             if metadata_path.exists():
@@ -299,12 +333,10 @@ def load_stops(graph: nx.MultiDiGraph, radius_m: int = DEFAULT_RADIUS_M,
     cache_path = directory / (f"stops-v{GRAPH_SCHEMA_VERSION}.{STOP_SCHEMA_VERSION}-santa-clara-county.json" if region == COUNTY_REGION
                               else f"stops-v{GRAPH_SCHEMA_VERSION}.{STOP_SCHEMA_VERSION}-{radius_m}m.json")
     try:
-        feed_stat = path.stat()
         graph_path = graph_cache_path(directory, radius_m, region)
         graph_stat = graph_path.stat() if graph_path.exists() else None
-        cache_meta = {"feed_size": feed_stat.st_size, "feed_mtime_ns": feed_stat.st_mtime_ns,
-                      "graph_size": graph_stat.st_size if graph_stat else None,
-                      "graph_mtime_ns": graph_stat.st_mtime_ns if graph_stat else None,
+        cache_meta = {"feed_content": file_signature(path),
+                      "graph_content": file_signature(graph_path) if graph_stat else None,
                       "radius_m": radius_m, "region": region}
         if not _refresh_requested() and cache_path.exists():
             cached = json.loads(cache_path.read_text(encoding="utf-8"))

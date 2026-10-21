@@ -34,7 +34,7 @@ def _connect(path=None):
     if postgres:
         import psycopg
         from psycopg.rows import dict_row
-        connection = psycopg.connect(os.environ["DATABASE_URL"], row_factory=dict_row, connect_timeout=8)
+        connection = psycopg.connect(os.environ["DATABASE_URL"], row_factory=dict_row, connect_timeout=8, prepare_threshold=None)
     else:
         target=path or database_path()
         target.parent.mkdir(parents=True, exist_ok=True)
@@ -54,6 +54,11 @@ def _connect(path=None):
 
 def initialize_observations(path=None):
     with _connect(path) as connection:
+        if connection.postgres and os.getenv("TRANSITGAP_REPORTS_MIGRATED") == "1":
+            version = connection.execute("SELECT version FROM observation_schema_migrations WHERE version='002'").fetchone()
+            if version is None:
+                raise RuntimeError("Report storage migration 002 must be applied by the database owner")
+            return
         if connection.postgres:
             connection.execute("SELECT pg_advisory_xact_lock(85439121)")
         sql=(Path(__file__).parent/"migrations/001_observations.sql").read_text()
@@ -63,7 +68,7 @@ def initialize_observations(path=None):
             columns={r["column_name"] for r in connection.execute("SELECT column_name FROM information_schema.columns WHERE table_name='observations' AND table_schema=current_schema()").fetchall()}
         else:
             columns={r["name"] for r in connection.execute("PRAGMA table_info(observations)").fetchall()}
-        for name, declaration in {"source":"TEXT NOT NULL DEFAULT 'community'", "edge_reference":"TEXT", "routing_effect":"TEXT NOT NULL DEFAULT 'none'", "effective_until":"TEXT", "affected_profiles":"TEXT NOT NULL DEFAULT '[]'"}.items():
+        for name, declaration in {"submission_key":"TEXT", "source":"TEXT NOT NULL DEFAULT 'community'", "edge_reference":"TEXT", "routing_effect":"TEXT NOT NULL DEFAULT 'none'", "effective_until":"TEXT", "affected_profiles":"TEXT NOT NULL DEFAULT '[]'"}.items():
             if name not in columns:connection.execute(f"ALTER TABLE observations ADD COLUMN {name} {declaration}")
         if connection.postgres:
             review_columns={r["column_name"] for r in connection.execute("SELECT column_name FROM information_schema.columns WHERE table_name='observation_reviews' AND table_schema=current_schema()").fetchall()}
@@ -72,15 +77,39 @@ def initialize_observations(path=None):
         if "affected_profiles" not in review_columns:connection.execute("ALTER TABLE observation_reviews ADD COLUMN affected_profiles TEXT NOT NULL DEFAULT '[]'")
         connection.execute("UPDATE observations SET review_status='UNVERIFIED' WHERE review_status='UNREVIEWED'")
         connection.execute("INSERT INTO observation_schema_migrations(version,applied_at) VALUES (?,?) ON CONFLICT(version) DO NOTHING",("001",datetime.now(timezone.utc).isoformat()))
+        for statement in (Path(__file__).parent/"migrations/002_submission_safety.sql").read_text().split(";"):
+            if statement.strip():
+                connection.execute(statement)
+        connection.execute("INSERT INTO observation_schema_migrations(version,applied_at) VALUES (?,?) ON CONFLICT(version) DO NOTHING",("002",datetime.now(timezone.utc).isoformat()))
 
 
-def create_observation(*,latitude,longitude,category,description,related_feature_id=None,path=None,now=None):
+def _public_report(row):
+    result=dict(row)
+    result.pop("submission_key",None)
+    return result
+
+
+def consume_report_quota(client_hash, *, now=None, path=None):
+    """Atomic across instances. Only keyed hashes survive, for at most 2 minutes."""
+    window=int((now or datetime.now(timezone.utc)).timestamp())//60
+    with _connect(path) as c:
+        c.execute("DELETE FROM observation_rate_limits WHERE window_start<?",(window-1,))
+        row=c.execute("""INSERT INTO observation_rate_limits(client_hash,window_start,attempts) VALUES (?,?,1)
+         ON CONFLICT(client_hash,window_start) DO UPDATE SET attempts=observation_rate_limits.attempts+1
+         WHERE observation_rate_limits.attempts<5 RETURNING attempts""",(client_hash,window)).fetchone()
+        return row is not None
+
+
+def create_observation(*,latitude,longitude,category,description,related_feature_id=None,path=None,now=None,submission_key=None):
     timestamp=(now or datetime.now(timezone.utc)).astimezone(timezone.utc).isoformat()
     identity=str(uuid.uuid4())
     with _connect(path) as c:
-        c.execute("""INSERT INTO observations(id,latitude,longitude,category,description,created_at,updated_at,evidence_status,review_status,related_feature_id,source)
-         VALUES (?,?,?,?,?,?,?,'COMMUNITY_REPORTED','UNVERIFIED',?,'community')""",(identity,latitude,longitude,category,description,timestamp,timestamp,related_feature_id))
-        return dict(c.execute("SELECT * FROM observations WHERE id=?",(identity,)).fetchone())
+        c.execute("""INSERT INTO observations(id,latitude,longitude,category,description,created_at,updated_at,evidence_status,review_status,related_feature_id,source,submission_key)
+         VALUES (?,?,?,?,?,?,?,'COMMUNITY_REPORTED','UNVERIFIED',?,'community',?) ON CONFLICT(submission_key) DO NOTHING""",(identity,latitude,longitude,category,description,timestamp,timestamp,related_feature_id,submission_key))
+        row=c.execute("SELECT * FROM observations WHERE "+("submission_key=?" if submission_key else "id=?"),(submission_key or identity,)).fetchone()
+        if (row['latitude'],row['longitude'],row['category'],row['description']) != (latitude,longitude,category,description):
+            raise ValueError("This submission key was already used for a different report")
+        return _public_report(row)
 
 
 def list_observations(*,west=None,south=None,east=None,north=None,limit=100,offset=0,path=None,include_inactive=False):
@@ -92,7 +121,7 @@ def list_observations(*,west=None,south=None,east=None,north=None,limit=100,offs
     with _connect(path) as c:
         total=c.execute("SELECT COUNT(*) AS total FROM observations"+where,params).fetchone()["total"]
         rows=c.execute("SELECT * FROM observations"+where+" ORDER BY created_at DESC,id ASC LIMIT ? OFFSET ?",(*params,limit,offset)).fetchall()
-    return {"count":total,"limit":limit,"offset":offset,"observations":[dict(r) for r in rows],"evidence_status_note":"Community observations are claims. Unverified observations do not change routes; only explicitly reviewed, edge-linked, unexpired effects can influence routing."}
+    return {"count":total,"limit":limit,"offset":offset,"observations":[_public_report(r) for r in rows],"evidence_status_note":"Community observations are claims. Unverified observations do not change routes; only explicitly reviewed, edge-linked, unexpired effects can influence routing."}
 
 
 def observation_detail(identity,path=None):
@@ -100,7 +129,7 @@ def observation_detail(identity,path=None):
         row=c.execute("SELECT * FROM observations WHERE id=?",(identity,)).fetchone()
         if row is None:raise LookupError("Report not found")
         history=c.execute("SELECT * FROM observation_reviews WHERE observation_id=? ORDER BY created_at,id",(identity,)).fetchall()
-    return {**dict(row),"review_history":[dict(r) for r in history]}
+    return {**_public_report(row),"review_history":[dict(r) for r in history]}
 
 
 def review_observation(identity,*,status,reviewer,reason,edge_reference=None,routing_effect="none",effective_until=None,affected_profiles=None,path=None):
@@ -120,6 +149,10 @@ def active_routing_effects(path=None):
     effects={}
     for row in rows:
         item=dict(row); item["affected_profiles"]=json.loads(item["affected_profiles"])
+        parts=json.loads(item["edge_reference"])
+        if not isinstance(parts,list) or len(parts)!=3 or any(isinstance(value,(list,dict)) or value is None for value in parts):
+            raise ValueError("Reviewed report contains an invalid mapped edge association")
+        item["edge_reference"]=json.dumps([str(value) for value in parts],separators=(",",":"))
         previous=effects.get(item["edge_reference"])
         effects[item["edge_reference"]] = {"reports":previous.get("reports",[previous])+[item]} if previous else item
     return effects

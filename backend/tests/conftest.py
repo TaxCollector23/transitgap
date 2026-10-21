@@ -5,6 +5,16 @@ from fastapi.testclient import TestClient
 from backend.app import main
 
 
+@pytest.fixture(scope='session',autouse=True)
+def isolate_inherited_report_storage(tmp_path_factory):
+    """Never inherit a production URL into any test or session startup."""
+    with pytest.MonkeyPatch.context() as patch:
+        patch.delenv('DATABASE_URL',raising=False)
+        patch.delenv('TRANSITGAP_REPORTS_MIGRATED',raising=False)
+        patch.setenv('TRANSITGAP_OBSERVATIONS_DB',str(tmp_path_factory.mktemp('session-reports')/'reports.sqlite3'))
+        yield
+
+
 @pytest.fixture(scope='session')
 def client(request, tmp_path_factory):
     # The MCP SDK session manager has one lifecycle per ASGI application.

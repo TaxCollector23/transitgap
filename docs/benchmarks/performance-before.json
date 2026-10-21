@@ -1,0 +1,151 @@
+{
+  "python": "3.12.3",
+  "platform": "macOS-26.6.2-arm64-arm-64bit",
+  "definition": "fresh interpreter, OS filesystem caches not flushed; warm repeats initialization in process",
+  "import_seconds": 1.256,
+  "cold_initialization_seconds": 12.186,
+  "warm_initialization_seconds": 1.628,
+  "cold_stages_seconds": {
+    "load_graph": 10.455,
+    "load_stops": 0.017,
+    "load_agency_stops": 0.198,
+    "TransitSchedule": 0.16,
+    "nearest_graph_node": 0.0,
+    "GapIndex": 0.572,
+    "load_sidewalks": 0.03,
+    "load_groundtruth": 0.582,
+    "initialize_observations": 0.009
+  },
+  "steady_rss_mib": 1325.3,
+  "peak_rss_mib": 1546.23,
+  "nodes": 291569,
+  "directed_edges": 811314,
+  "agency_counts": {
+    "VTA": 3234,
+    "Caltrain": 34,
+    "BART": 4
+  },
+  "reachability_index_seconds": 0.208,
+  "routes": {
+    "VTA/standard": {
+      "stop_id": "5374",
+      "milliseconds": [
+        2.689,
+        1.59,
+        1.532
+      ],
+      "distance_m": 125.0,
+      "output_sha256": "58a5bff4d4283d68fe1397a63814714a16d1b5eaee0f0dcd1e116b3a0c72fa1d"
+    },
+    "VTA/wheelchair": {
+      "stop_id": "5374",
+      "milliseconds": [
+        3.701,
+        3.578,
+        3.564
+      ],
+      "distance_m": 145.0,
+      "output_sha256": "99c947de279ca73b634b170cc9e31ddf92690d6a0464d78027e6f572c5ddb4b0"
+    },
+    "VTA/stroller": {
+      "stop_id": "5374",
+      "milliseconds": [
+        3.417,
+        3.385,
+        3.404
+      ],
+      "distance_m": 145.0,
+      "output_sha256": "889f54662dea75ba010369ace09e33524b83db06c0ab6255c9cb4f98680bd444"
+    },
+    "VTA/low_vision": {
+      "stop_id": "5374",
+      "milliseconds": [
+        3.381,
+        3.346,
+        3.35
+      ],
+      "distance_m": 125.0,
+      "output_sha256": "ddbc45effc7e9d287bd246f4b20a0fa317249dcff0af853c3f5d83a57b988d90"
+    },
+    "Caltrain/standard": {
+      "stop_id": "caltrain:70232",
+      "milliseconds": [
+        153.871,
+        153.912,
+        153.147
+      ],
+      "distance_m": 4394.6,
+      "output_sha256": "fd67780bef76e9f10edb847794e162dbcf8f22422bc5d6d19bf085480cf5658f"
+    },
+    "Caltrain/wheelchair": {
+      "stop_id": "caltrain:70232",
+      "milliseconds": [
+        423.385,
+        442.944,
+        434.727
+      ],
+      "distance_m": 4449.9,
+      "output_sha256": "81acce66e1da52370924cba15575008409a4811e1bcaa9b32721d94be7656515"
+    },
+    "Caltrain/stroller": {
+      "stop_id": "caltrain:70232",
+      "milliseconds": [
+        368.466,
+        369.056,
+        371.616
+      ],
+      "distance_m": 4436.4,
+      "output_sha256": "77255f2c6149d45ad9f95cab3f0937b1bc8e3c7d7e37ed6f52ed6bd2945919e7"
+    },
+    "Caltrain/low_vision": {
+      "stop_id": "caltrain:70232",
+      "milliseconds": [
+        465.47,
+        495.005,
+        468.248
+      ],
+      "distance_m": 4489.4,
+      "output_sha256": "de963b7673db83dcb39bc87f3c0adf39ae03399738e44e8d76d6b6a9966158ad"
+    },
+    "BART/standard": {
+      "stop_id": "bart:S50-1",
+      "milliseconds": [
+        27.696,
+        30.024,
+        30.198
+      ],
+      "distance_m": 1585.7,
+      "output_sha256": "6f44b8651ba60575f180da83eddbd6c1135f5720624eff6638358260180feed2"
+    },
+    "BART/wheelchair": {
+      "stop_id": "bart:S50-1",
+      "milliseconds": [
+        94.611,
+        96.815,
+        99.872
+      ],
+      "distance_m": 1616.5,
+      "output_sha256": "af7bada7172c6c5d2efe64ab8875f2e16d20f3af942c8ceaddd7e4c560df4883"
+    },
+    "BART/stroller": {
+      "stop_id": "bart:S50-1",
+      "milliseconds": [
+        86.76,
+        84.961,
+        78.913
+      ],
+      "distance_m": 1616.5,
+      "output_sha256": "0bd4d6674c9689ab6d27531a2ecd8b27e4168d63d75a351546d7d0a46475869a"
+    },
+    "BART/low_vision": {
+      "stop_id": "bart:S50-1",
+      "milliseconds": [
+        126.635,
+        125.264,
+        126.103
+      ],
+      "distance_m": 1934.3,
+      "output_sha256": "ba88de6e5b082070977a89524877b71bc01212725786c9f4782ef67b7f317232"
+    }
+  }
+}

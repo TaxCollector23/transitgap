@@ -35,6 +35,7 @@ export default function OriginSearch({
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ query }),
+              signal: AbortSignal.timeout(15000),
             });
             const data = await r.json();
             if (!r.ok) throw Error(typeof data.detail === "string" ? data.detail : "Address search is unavailable right now.");
@@ -43,7 +44,9 @@ export default function OriginSearch({
               setMessage("No address found inside the supported area. Try a nearby street or landmark.");
           } catch (error) {
             setMessage(
-              error instanceof TypeError
+              error instanceof DOMException && error.name === "TimeoutError"
+                ? "Address search took too long. Try again or choose on the map."
+                : error instanceof TypeError
                 ? "Address search can't connect right now. You can use your location or choose on the map."
                 : error instanceof Error ? error.message : "Address search is unavailable right now.",
             );

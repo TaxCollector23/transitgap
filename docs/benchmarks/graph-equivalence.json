@@ -1,0 +1,17 @@
+{
+  "equal": true,
+  "snapshots": [
+    {
+      "file": "transitgap-legacy.jsonl.gz",
+      "nodes": 291569,
+      "directed_edges": 811314,
+      "all_attributes_sha256": "ebb750f323c6921155593e18d2897b18ca363876cb767beb91db814c3496d646"
+    },
+    {
+      "file": "walk-network-santa-clara-county.jsonl.gz",
+      "nodes": 291569,
+      "directed_edges": 811314,
+      "all_attributes_sha256": "ebb750f323c6921155593e18d2897b18ca363876cb767beb91db814c3496d646"
+    }
+  ]
+}

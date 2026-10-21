@@ -48,3 +48,15 @@ def test_cache_and_time_validation(tmp_path):
     assert seconds("25:10:00") == 90600
     assert seconds("10:90:00") is None
     assert seconds("") is None
+
+
+def test_prepared_schedule_survives_packaging_timestamp_changes(tmp_path,monkeypatch):
+    import os
+    from backend.app import transit
+    first=schedule(tmp_path)
+    path=tmp_path/'gtfs.zip'
+    stamp=path.stat().st_mtime+100
+    os.utime(path,(stamp,stamp))
+    monkeypatch.setattr(transit,'rows',lambda *_:(_ for _ in ()).throw(AssertionError('GTFS reparsed after timestamp-only change')))
+    second=TransitSchedule(path,['s'])
+    assert second.cache_hit and second.events==first.events

@@ -1,6 +1,7 @@
 import zipfile
 
 import networkx as nx
+import pytest
 from shapely.geometry import box
 
 from backend.app import main
@@ -121,6 +122,19 @@ def test_step_free_profiles_only_route_to_recorded_accessible_entrances():
     assert main._arrival_targets({**stop, "entrances": []}, Profile.wheelchair)[0][2]["type"] == "stop"
 
 
+def test_inaccessible_station_entrances_do_not_fall_back_to_platform():
+    from backend.app.models import Profile
+
+    stop = {"stop_id": "platform", "stop_name": "Station", "graph_node": 10,
+            "latitude": 1, "longitude": 1, "entrances": [
+                {"entrance_id": "stairs", "name": "Stairs", "graph_node": 0,
+                 "latitude": 1, "longitude": 1, "wheelchair_boarding": 2}]}
+    for profile in (Profile.wheelchair, Profile.stroller):
+        with pytest.raises(LookupError, match="every recorded station entrance"):
+            main._arrival_targets(stop, profile)
+    assert main._arrival_targets(stop, Profile.standard)[0][0] == 0
+
+
 def test_station_entrance_selection_preserves_the_requested_algorithm(monkeypatch):
     from backend.app.models import Algorithm, Profile
 
@@ -135,7 +149,7 @@ def test_station_entrance_selection_preserves_the_requested_algorithm(monkeypatc
         ],
     }
 
-    def fake_route(_graph, _origin, node, algorithm, _profile, _target):
+    def fake_route(_graph, _origin, node, algorithm, _profile, _target, *, report_effects):
         if algorithm == Algorithm.breadth_first:
             return {
                 "distance_m": 90 if node == "near" else 120,

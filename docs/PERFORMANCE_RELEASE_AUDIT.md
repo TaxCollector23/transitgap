@@ -274,3 +274,59 @@ consistently seamless first production route is not established. An always-runni
 county worker needs sufficient measured RAM and hosting that guarantees uptime;
 no paid resource was provisioned. CAC submission is still incomplete for the
 human tasks above.
+
+## Cold-start availability follow-up, October 21
+
+The two independently deployed pre-fix candidates and one fresh public worker
+reproduced the cold behavior: a direct first `/route` request returned 503 while
+`walking_network` was loading. A separate `/routing/initialize` request did
+complete on that same instance, after 27.1–27.9 s in the two protected candidates
+and 19.8 s on the public worker. The public route matrix passed 24/24 requests
+(VTA, Caltrain and BART, each with standard, wheelchair, stroller and low-vision
+profiles, twice). Protected candidates passed 12/12 each. This established that
+the map/backend data were sound after warmup, while first-route availability
+still had a gap.
+
+The first-route handler now awaits the same shared, shielded initialization task
+for at most 45 seconds. It does not create another loader, drop graph data or
+weaken route costs. A fresh Vercel production candidate then returned a real
+VTA route from its very first request: HTTP 200 in 28.9 s including CLI/network
+overhead, with 19.92 s initialization (19.78 s process CPU). The same worker
+then passed the full 12/12 agency/profile matrix. A new public alias run is
+required after the final deployment below; the candidate alone is not treated
+as proof of the public release.
+
+| Fresh worker | First route | Init wall / CPU | DB connect + schema wall | Peak RSS | Later route matrix |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Protected candidate A, before route wait | 503 / 1.54 s | 27.92 / 18.16 s | 0.87 s | 1249.03 MiB | 12/12 |
+| Protected candidate B, before route wait | 503 / 1.51 s | 27.13 / 18.49 s | 0.22 s | 1249.08 MiB | 12/12 |
+| Public worker, before route wait | 503 / 8.55 s | 19.90 / 19.56 s | 0.18 s | 1249.28 MiB | 24/24 |
+| Protected route-wait candidate | 200 / 28.90 s | 19.92 / 19.78 s | 0.19 s | 1249.68 MiB | 12/12 |
+
+The first-route wall time includes Vercel dependency setup and CLI/network time;
+it is not backend CPU time. The detailed per-stage wall/CPU timers and worker
+request numbers are in the JSON benchmark artifacts beside this report. The
+largest measured stage remained the directed county walking graph (about 15–21
+s wall, 13.8–14.9 s CPU across these workers). Prepared evidence, gaps and transit
+schedule stages contributed the remaining initialization cost. Database schema
+setup was under 0.05 s; database connection was 0.18–0.82 s, so the database did
+not explain the earlier 25 s HTTP timeouts. Worker peak RSS stayed around 1.25
+GiB for the intact 291,569-node / 811,314-edge directed multigraph. No always-on
+service or paid resource was created.
+
+After the pre-fix public worker was warm, the actual public browser flow passed
+at 390x844, 768x1024, 1440x900 and 1920x1080. Each route completed in four
+pointer actions; planner readiness was 0.73–1.58 s and map readiness 1.03–1.62 s
+in this warmed-browser sample. The 24 public route checks took 0.146–1.817 s.
+Screenshots are in the local ignored `frontend/test-artifacts/performance/` tree;
+the machine-readable measurements are committed alongside this report.
+
+The PR #14 backend suite passed 171 tests, skipped 3 integration tests that
+require external data, and emitted 122 existing warnings. Both GitHub `checks`
+and `fixture-browser` jobs passed; its manually controlled `real-data` job was
+skipped. The browser measurements are automated and do not substitute for
+human usability or assistive-technology sessions.
+
+At this point, two independent pre-fix instances reproduced the 503, one fresh
+candidate proved the first-route wait, and the final public deployment must
+still repeat that first-route check before reliability is considered established.

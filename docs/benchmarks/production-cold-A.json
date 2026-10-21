@@ -1,0 +1,336 @@
+{
+  "url": "https://transitgap-grwrkdcul-rangan-alt.vercel.app",
+  "status": "passed",
+  "warmup": [
+    {
+      "status": 200,
+      "body": {
+        "alive": true,
+        "ready": true,
+        "reports_ready": true,
+        "error": null,
+        "phase": "ready",
+        "instance_id": "4840e95351d5"
+      },
+      "worker": {
+        "x-transitgap-init-phase": "ready",
+        "x-transitgap-instance": "4840e95351d5",
+        "x-transitgap-request-id": "sfo1::gzccd-1792598791248-9d91f2da3a3a",
+        "x-transitgap-request-number": "2"
+      },
+      "cli_request_seconds": 27.844
+    }
+  ],
+  "first_route_before_warmup": {
+    "status": 503,
+    "cli_request_seconds": 1.544,
+    "profile": null,
+    "distance_m": null,
+    "headers": {
+      "x-transitgap-init-phase": "walking_network",
+      "x-transitgap-instance": "4840e95351d5",
+      "x-transitgap-request-id": "sfo1::w5qln-1792598789513-3ad25380ea52",
+      "x-transitgap-request-number": "1"
+    }
+  },
+  "health_attempts": [
+    {
+      "status": 200,
+      "ready": true,
+      "request_seconds": 2.206,
+      "worker": {
+        "x-transitgap-init-phase": "ready",
+        "x-transitgap-instance": "4840e95351d5",
+        "x-transitgap-request-id": "sfo1::669jp-1792598818779-cbd4147b747b",
+        "x-transitgap-request-number": "3"
+      }
+    }
+  ],
+  "health": {
+    "runtime": {
+      "instance_id": "4840e95351d5",
+      "process_started_at": "2026-10-21T16:06:26.788283+00:00",
+      "uptime_seconds": 32.158
+    },
+    "ready": true,
+    "build_sha": "93b62735e4350ba933bdac14fa19deb1c6e72f50",
+    "datasets": {
+      "osm_walk_graph": "ready",
+      "vta_gtfs_stops": "ready",
+      "caltrain_gtfs_stops": "ready",
+      "bart_gtfs_stops": "ready"
+    },
+    "graph": {
+      "type": "directed_multigraph",
+      "nodes": 291569,
+      "directed_edges": 811314
+    },
+    "vta_stop_count": 3234,
+    "transit_stop_counts": {
+      "VTA": 3234,
+      "Caltrain": 34,
+      "BART": 4
+    },
+    "community_report_storage": "postgresql",
+    "reports_enabled": true,
+    "gap_stops_evaluated": 32,
+    "schedule_ready": true,
+    "data_freshness": [
+      {
+        "feed_publisher_name": "Santa Clara Valley Transportation Authority",
+        "feed_publisher_url": "https://www.vta.org",
+        "feed_lang": "EN",
+        "feed_start_date": "20261026",
+        "feed_end_date": "20270110",
+        "feed_version": "2026-10-09_14:57",
+        "feed_contact_email": "customer.service@vta.org",
+        "feed_contact_url": "https://www.vta.org/about/contact"
+      }
+    ],
+    "groundtruth_ready": true,
+    "groundtruth_error": null,
+    "error": null,
+    "initialization_seconds": 27.92,
+    "initialization_cpu_seconds": 18.161,
+    "initialization_timings": {
+      "walking_network": {
+        "wall_seconds": 21.015,
+        "cpu_seconds": 13.759
+      },
+      "rail_stops_and_schedules": {
+        "wall_seconds": 0.623,
+        "cpu_seconds": 0.436
+      },
+      "spatial_index": {
+        "wall_seconds": 0.0,
+        "cpu_seconds": 0.0
+      },
+      "prepared_gap_cache": {
+        "wall_seconds": 2.036,
+        "cpu_seconds": 1.443
+      },
+      "vta_schedule": {
+        "wall_seconds": 1.057,
+        "cpu_seconds": 0.743
+      },
+      "municipal_snapshot": {
+        "wall_seconds": 0.356,
+        "cpu_seconds": 0.252
+      },
+      "evidence_index": {
+        "wall_seconds": 1.959,
+        "cpu_seconds": 1.39
+      },
+      "report_storage": {
+        "wall_seconds": 0.872,
+        "cpu_seconds": 0.138
+      }
+    },
+    "database_initialization_timings": {
+      "connect_wall_seconds": 0.8223,
+      "connect_cpu_seconds": 0.1368,
+      "schema_wall_seconds": 0.0468,
+      "schema_cpu_seconds": 0.0007
+    },
+    "schedule_cache_hits": {
+      "VTA": true,
+      "caltrain": true,
+      "bart": true
+    },
+    "process_memory": {
+      "rss_mib": 1242.16,
+      "peak_rss_mib": 1249.03
+    }
+  },
+  "health_worker": {
+    "x-transitgap-init-phase": "ready",
+    "x-transitgap-instance": "4840e95351d5",
+    "x-transitgap-request-id": "sfo1::669jp-1792598818779-cbd4147b747b",
+    "x-transitgap-request-number": "3"
+  },
+  "real_route": {
+    "status": 200,
+    "distance_m": 390.1,
+    "profile": "wheelchair",
+    "worker": {
+      "x-transitgap-init-phase": "ready",
+      "x-transitgap-instance": "4840e95351d5",
+      "x-transitgap-request-id": "sfo1::89drw-1792598820823-7f3736debe18",
+      "x-transitgap-request-number": "4"
+    },
+    "cli_request_seconds": 1.039
+  },
+  "bootstrap_worker": {},
+  "routes": [
+    {
+      "agency": "VTA",
+      "profile": "standard",
+      "status": 200,
+      "ok": true,
+      "seconds": 1.035,
+      "worker": {
+        "x-transitgap-init-phase": "ready",
+        "x-transitgap-instance": "4840e95351d5",
+        "x-transitgap-request-id": "sfo1::5pvfd-1792598823143-aab77eaf985d",
+        "x-transitgap-request-number": "5"
+      },
+      "distance_m": 370.1
+    },
+    {
+      "agency": "VTA",
+      "profile": "wheelchair",
+      "status": 200,
+      "ok": true,
+      "seconds": 0.9,
+      "worker": {
+        "x-transitgap-init-phase": "ready",
+        "x-transitgap-instance": "4840e95351d5",
+        "x-transitgap-request-id": "sfo1::82477-1792598824133-ef94aa00b7ef",
+        "x-transitgap-request-number": "6"
+      },
+      "distance_m": 390.1
+    },
+    {
+      "agency": "VTA",
+      "profile": "stroller",
+      "status": 200,
+      "ok": true,
+      "seconds": 1.102,
+      "worker": {
+        "x-transitgap-init-phase": "ready",
+        "x-transitgap-instance": "4840e95351d5",
+        "x-transitgap-request-id": "sfo1::8tcds-1792598825119-a393b6ae4c67",
+        "x-transitgap-request-number": "7"
+      },
+      "distance_m": 390.1
+    },
+    {
+      "agency": "VTA",
+      "profile": "low_vision",
+      "status": 200,
+      "ok": true,
+      "seconds": 0.978,
+      "worker": {
+        "x-transitgap-init-phase": "ready",
+        "x-transitgap-instance": "4840e95351d5",
+        "x-transitgap-request-id": "sfo1::x6np5-1792598826188-d4157fb3b643",
+        "x-transitgap-request-number": "8"
+      },
+      "distance_m": 370.1
+    },
+    {
+      "agency": "Caltrain",
+      "profile": "standard",
+      "status": 200,
+      "ok": true,
+      "seconds": 1.263,
+      "worker": {
+        "x-transitgap-init-phase": "ready",
+        "x-transitgap-instance": "4840e95351d5",
+        "x-transitgap-request-id": "sfo1::8tcds-1792598827154-6f889285c78b",
+        "x-transitgap-request-number": "9"
+      },
+      "distance_m": 4626.0
+    },
+    {
+      "agency": "Caltrain",
+      "profile": "wheelchair",
+      "status": 200,
+      "ok": true,
+      "seconds": 2.461,
+      "worker": {
+        "x-transitgap-init-phase": "ready",
+        "x-transitgap-instance": "4840e95351d5",
+        "x-transitgap-request-id": "sfo1::wfb9l-1792598828458-852fc3721a85",
+        "x-transitgap-request-number": "10"
+      },
+      "distance_m": 4659.9
+    },
+    {
+      "agency": "Caltrain",
+      "profile": "stroller",
+      "status": 200,
+      "ok": true,
+      "seconds": 2.072,
+      "worker": {
+        "x-transitgap-init-phase": "ready",
+        "x-transitgap-instance": "4840e95351d5",
+        "x-transitgap-request-id": "sfo1::8nzqv-1792598830886-7cae6db4e04f",
+        "x-transitgap-request-number": "11"
+      },
+      "distance_m": 4707.6
+    },
+    {
+      "agency": "Caltrain",
+      "profile": "low_vision",
+      "status": 200,
+      "ok": true,
+      "seconds": 3.067,
+      "worker": {
+        "x-transitgap-init-phase": "ready",
+        "x-transitgap-instance": "4840e95351d5",
+        "x-transitgap-request-id": "sfo1::2wvh7-1792598832991-f33087697a2b",
+        "x-transitgap-request-number": "12"
+      },
+      "distance_m": 5798.4
+    },
+    {
+      "agency": "BART",
+      "profile": "standard",
+      "status": 200,
+      "ok": true,
+      "seconds": 1.205,
+      "worker": {
+        "x-transitgap-init-phase": "ready",
+        "x-transitgap-instance": "4840e95351d5",
+        "x-transitgap-request-id": "sfo1::2rl96-1792598836024-91620509921d",
+        "x-transitgap-request-number": "13"
+      },
+      "distance_m": 1585.7
+    },
+    {
+      "agency": "BART",
+      "profile": "wheelchair",
+      "status": 200,
+      "ok": true,
+      "seconds": 1.231,
+      "worker": {
+        "x-transitgap-init-phase": "ready",
+        "x-transitgap-instance": "4840e95351d5",
+        "x-transitgap-request-id": "sfo1::l862s-1792598837210-094cf943bcfb",
+        "x-transitgap-request-number": "14"
+      },
+      "distance_m": 1616.5
+    },
+    {
+      "agency": "BART",
+      "profile": "stroller",
+      "status": 200,
+      "ok": true,
+      "seconds": 1.256,
+      "worker": {
+        "x-transitgap-init-phase": "ready",
+        "x-transitgap-instance": "4840e95351d5",
+        "x-transitgap-request-id": "sfo1::nznm2-1792598838504-2d3422c56dae",
+        "x-transitgap-request-number": "15"
+      },
+      "distance_m": 1616.5
+    },
+    {
+      "agency": "BART",
+      "profile": "low_vision",
+      "status": 200,
+      "ok": true,
+      "seconds": 1.408,
+      "worker": {
+        "x-transitgap-init-phase": "ready",
+        "x-transitgap-instance": "4840e95351d5",
+        "x-transitgap-request-id": "sfo1::zgxrz-1792598839690-8ce76fa18bf2",
+        "x-transitgap-request-number": "16"
+      },
+      "distance_m": 1934.3
+    }
+  ],
+  "route_success_count": 12,
+  "route_count": 12
+}

@@ -1,0 +1,190 @@
+{
+  "base": "https://transitgap.vercel.app",
+  "label": "production-final-live",
+  "reports": [
+    {
+      "width": 390,
+      "height": 844,
+      "planner_ready_ms": 1131,
+      "map_canvas_ms": 1405,
+      "map_ready_ms": 1917,
+      "resources": [
+        {
+          "name": "index-z8BdG11k.js",
+          "duration_ms": 195,
+          "transfer_bytes": 77722,
+          "decoded_bytes": 240773
+        },
+        {
+          "name": "bootstrap.json",
+          "duration_ms": 95,
+          "transfer_bytes": 166618,
+          "decoded_bytes": 1130783
+        },
+        {
+          "name": "MapView-CaE3Ueh4.js",
+          "duration_ms": 357,
+          "transfer_bytes": 305714,
+          "decoded_bytes": 1087568
+        },
+        {
+          "name": "App-ee6a0Cbw.js",
+          "duration_ms": 110,
+          "transfer_bytes": 16366,
+          "decoded_bytes": 47663
+        },
+        {
+          "name": "maplibre-gl-worker-DJoMIXcx.js",
+          "duration_ms": -45,
+          "transfer_bytes": 300,
+          "decoded_bytes": 519571
+        },
+        {
+          "name": "maplibre-gl-worker-DJoMIXcx.js",
+          "duration_ms": -66,
+          "transfer_bytes": 153480,
+          "decoded_bytes": 519571
+        }
+      ],
+      "walking_pointer_actions": 4
+    },
+    {
+      "width": 768,
+      "height": 1024,
+      "planner_ready_ms": 1454,
+      "map_canvas_ms": 1726,
+      "map_ready_ms": 1728,
+      "resources": [
+        {
+          "name": "index-z8BdG11k.js",
+          "duration_ms": 51,
+          "transfer_bytes": 77722,
+          "decoded_bytes": 240773
+        },
+        {
+          "name": "bootstrap.json",
+          "duration_ms": 64,
+          "transfer_bytes": 166618,
+          "decoded_bytes": 1130783
+        },
+        {
+          "name": "MapView-CaE3Ueh4.js",
+          "duration_ms": 69,
+          "transfer_bytes": 305714,
+          "decoded_bytes": 1087568
+        },
+        {
+          "name": "App-ee6a0Cbw.js",
+          "duration_ms": 65,
+          "transfer_bytes": 16366,
+          "decoded_bytes": 47663
+        },
+        {
+          "name": "maplibre-gl-worker-DJoMIXcx.js",
+          "duration_ms": -101,
+          "transfer_bytes": 153480,
+          "decoded_bytes": 519571
+        },
+        {
+          "name": "maplibre-gl-worker-DJoMIXcx.js",
+          "duration_ms": -80,
+          "transfer_bytes": 300,
+          "decoded_bytes": 519571
+        }
+      ],
+      "walking_pointer_actions": 4
+    },
+    {
+      "width": 1440,
+      "height": 900,
+      "planner_ready_ms": 1786,
+      "map_canvas_ms": 1818,
+      "map_ready_ms": 1820,
+      "resources": [
+        {
+          "name": "index-z8BdG11k.js",
+          "duration_ms": 132,
+          "transfer_bytes": 77722,
+          "decoded_bytes": 240773
+        },
+        {
+          "name": "bootstrap.json",
+          "duration_ms": 95,
+          "transfer_bytes": 166618,
+          "decoded_bytes": 1130783
+        },
+        {
+          "name": "MapView-CaE3Ueh4.js",
+          "duration_ms": 92,
+          "transfer_bytes": 305714,
+          "decoded_bytes": 1087568
+        },
+        {
+          "name": "App-ee6a0Cbw.js",
+          "duration_ms": 22,
+          "transfer_bytes": 16366,
+          "decoded_bytes": 47663
+        },
+        {
+          "name": "maplibre-gl-worker-DJoMIXcx.js",
+          "duration_ms": -83,
+          "transfer_bytes": 153480,
+          "decoded_bytes": 519571
+        },
+        {
+          "name": "maplibre-gl-worker-DJoMIXcx.js",
+          "duration_ms": -66,
+          "transfer_bytes": 300,
+          "decoded_bytes": 519571
+        }
+      ],
+      "walking_pointer_actions": 4
+    },
+    {
+      "width": 1920,
+      "height": 1080,
+      "planner_ready_ms": 1264,
+      "map_canvas_ms": 1329,
+      "map_ready_ms": 1771,
+      "resources": [
+        {
+          "name": "index-z8BdG11k.js",
+          "duration_ms": 45,
+          "transfer_bytes": 77722,
+          "decoded_bytes": 240773
+        },
+        {
+          "name": "bootstrap.json",
+          "duration_ms": 54,
+          "transfer_bytes": 166618,
+          "decoded_bytes": 1130783
+        },
+        {
+          "name": "MapView-CaE3Ueh4.js",
+          "duration_ms": 67,
+          "transfer_bytes": 305714,
+          "decoded_bytes": 1087568
+        },
+        {
+          "name": "App-ee6a0Cbw.js",
+          "duration_ms": 47,
+          "transfer_bytes": 16366,
+          "decoded_bytes": 47663
+        },
+        {
+          "name": "maplibre-gl-worker-DJoMIXcx.js",
+          "duration_ms": -95,
+          "transfer_bytes": 153480,
+          "decoded_bytes": 519571
+        },
+        {
+          "name": "maplibre-gl-worker-DJoMIXcx.js",
+          "duration_ms": -81,
+          "transfer_bytes": 300,
+          "decoded_bytes": 519571
+        }
+      ],
+      "walking_pointer_actions": 4
+    }
+  ]
+}

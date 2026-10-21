@@ -1,0 +1,2646 @@
+{
+  "url": "https://transitgap.vercel.app",
+  "status": "passed",
+  "definition": "Observed newly deployed worker; serverless instance placement and OS caches are not controlled",
+  "polls": [
+    {
+      "elapsed_seconds": 27.111,
+      "request_seconds": 0.206,
+      "status": 200,
+      "worker": {
+        "instance_id": "703d2e43c1f3",
+        "request_id": "sfo1::c8tmk-1792599721618-504e5e5e07a0",
+        "request_number": "2",
+        "initialization_phase": "ready"
+      },
+      "body": {
+        "alive": true,
+        "ready": true,
+        "reports_ready": true,
+        "error": null,
+        "phase": "ready",
+        "instance_id": "703d2e43c1f3"
+      }
+    }
+  ],
+  "cold_first_route_request": {
+    "seconds": 26.869,
+    "status": 200,
+    "worker": {
+      "instance_id": "703d2e43c1f3",
+      "request_id": "sfo1::xf8gs-1792599694922-7e49439efa72",
+      "request_number": "1",
+      "initialization_phase": "ready"
+    },
+    "body": {
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -121.90442,
+            37.32875
+          ],
+          [
+            -121.9043476,
+            37.3289669
+          ],
+          [
+            -121.9040658,
+            37.3289817
+          ],
+          [
+            -121.9038531,
+            37.3289875
+          ],
+          [
+            -121.9038507,
+            37.3289536
+          ],
+          [
+            -121.9038224,
+            37.3289528
+          ],
+          [
+            -121.9038161,
+            37.3289531
+          ],
+          [
+            -121.9037694,
+            37.3289549
+          ],
+          [
+            -121.9037195,
+            37.3289546
+          ],
+          [
+            -121.9037131,
+            37.3289547
+          ],
+          [
+            -121.9037068,
+            37.3289532
+          ],
+          [
+            -121.9037109,
+            37.3290027
+          ],
+          [
+            -121.903725,
+            37.3290375
+          ],
+          [
+            -121.903666,
+            37.3290455
+          ],
+          [
+            -121.9036494,
+            37.3290455
+          ],
+          [
+            -121.9036188,
+            37.3290461
+          ],
+          [
+            -121.90357,
+            37.3290479
+          ],
+          [
+            -121.9035434,
+            37.3290495
+          ],
+          [
+            -121.9035182,
+            37.3290508
+          ],
+          [
+            -121.9035642,
+            37.329684
+          ],
+          [
+            -121.9035533,
+            37.3296956
+          ],
+          [
+            -121.9026867,
+            37.3297308
+          ],
+          [
+            -121.9026234,
+            37.3297364
+          ],
+          [
+            -121.9026107,
+            37.3297371
+          ],
+          [
+            -121.9025712,
+            37.3297391
+          ],
+          [
+            -121.9025819,
+            37.3299111
+          ],
+          [
+            -121.9024249,
+            37.329922
+          ],
+          [
+            -121.9024078,
+            37.329917
+          ],
+          [
+            -121.902402,
+            37.3300008
+          ],
+          [
+            -121.9023467,
+            37.3300865
+          ],
+          [
+            -121.9023376,
+            37.3300973
+          ],
+          [
+            -121.9023118,
+            37.3301211
+          ],
+          [
+            -121.9023152,
+            37.3301668
+          ],
+          [
+            -121.9023188,
+            37.3302277
+          ],
+          [
+            -121.9023225,
+            37.3302894
+          ],
+          [
+            -121.9023253,
+            37.3303355
+          ],
+          [
+            -121.902328,
+            37.3303787
+          ],
+          [
+            -121.902321,
+            37.330463
+          ]
+        ]
+      },
+      "distance_m": 370.1,
+      "duration_seconds": 308,
+      "walking_speed_mps_assumed": 1.2,
+      "selected_edges": [
+        {
+          "from": "5265148966",
+          "to": "5265148952",
+          "key": "0",
+          "reference": "[\"5265148966\",\"5265148952\",\"0\"]"
+        },
+        {
+          "from": "5265148952",
+          "to": "7795037131",
+          "key": "0",
+          "reference": "[\"5265148952\",\"7795037131\",\"0\"]"
+        },
+        {
+          "from": "7795037131",
+          "to": "7795037129",
+          "key": "0",
+          "reference": "[\"7795037131\",\"7795037129\",\"0\"]"
+        },
+        {
+          "from": "7795037129",
+          "to": "3646452817",
+          "key": "0",
+          "reference": "[\"7795037129\",\"3646452817\",\"0\"]"
+        },
+        {
+          "from": "3646452817",
+          "to": "3646452801",
+          "key": "0",
+          "reference": "[\"3646452817\",\"3646452801\",\"0\"]"
+        },
+        {
+          "from": "3646452801",
+          "to": "339428395",
+          "key": "0",
+          "reference": "[\"3646452801\",\"339428395\",\"0\"]"
+        },
+        {
+          "from": "339428395",
+          "to": "530429796",
+          "key": "0",
+          "reference": "[\"339428395\",\"530429796\",\"0\"]"
+        },
+        {
+          "from": "530429796",
+          "to": "10840556756",
+          "key": "0",
+          "reference": "[\"530429796\",\"10840556756\",\"0\"]"
+        },
+        {
+          "from": "10840556756",
+          "to": "3532004898",
+          "key": "0",
+          "reference": "[\"10840556756\",\"3532004898\",\"0\"]"
+        },
+        {
+          "from": "3532004898",
+          "to": "530429824",
+          "key": "0",
+          "reference": "[\"3532004898\",\"530429824\",\"0\"]"
+        },
+        {
+          "from": "530429824",
+          "to": "534478176",
+          "key": "0",
+          "reference": "[\"530429824\",\"534478176\",\"0\"]"
+        },
+        {
+          "from": "534478176",
+          "to": "12992898177",
+          "key": "0",
+          "reference": "[\"534478176\",\"12992898177\",\"0\"]"
+        }
+      ],
+      "segments": [
+        {
+          "geometry": {
+            "type": "LineString",
+            "coordinates": [
+              [
+                -121.90442,
+                37.32875
+              ],
+              [
+                -121.9043476,
+                37.3289669
+              ]
+            ]
+          },
+          "length_m": 24.95,
+          "status": "unknown",
+          "reasons": [
+            "Off-network connector; path not assessed"
+          ],
+          "name": null,
+          "source": "Straight-line connector, not a mapped sidewalk",
+          "kind": "connector"
+        },
+        {
+          "geometry": {
+            "type": "LineString",
+            "coordinates": [
+              [
+                -121.9043476,
+                37.3289669
+              ],
+              [
+                -121.9040658,
+                37.3289817
+              ]
+            ]
+          },
+          "length_m": 24.97,
+          "status": "unknown",
+          "reasons": [
+            "Missing smoothness",
+            "Missing incline",
+            "Missing width"
+          ],
+          "name": null,
+          "costs": {
+            "physical_distance_m": 24.970664976030537,
+            "difficulty_cost_m": 0.0,
+            "uncertainty_cost_m": 0.0,
+            "optimization_cost_m": 24.970664976030537
+          },
+          "documented_attributes": [
+            "surface"
+          ],
+          "missing_attributes": [
+            "smoothness",
+            "incline",
+            "width"
+          ],
+          "source": "OpenStreetMap; mapped, not field checked",
+          "osm_id": 1166302119,
+          "kind": "sidewalk",
+          "highway": "footway",
+          "crossing": null,
+          "end_node_crossing": null,
+          "end_junction_degree": 4
+        },
+        {
+          "geometry": {
+            "type": "LineString",
+            "coordinates": [
+              [
+                -121.9040658,
+                37.3289817
+              ],
+              [
+                -121.9038531,
+                37.3289875
+              ],
+              [
+                -121.9038507,
+                37.3289536
+              ]
+            ]
+          },
+          "length_m": 22.59,
+          "status": "unknown",
+          "reasons": [
+            "Missing smoothness",
+            "Missing incline",
+            "Missing width"
+          ],
+          "name": null,
+          "costs": {
+            "physical_distance_m": 22.59318168663679,
+            "difficulty_cost_m": 0.0,
+            "uncertainty_cost_m": 0.0,
+            "optimization_cost_m": 22.59318168663679
+          },
+          "documented_attributes": [
+            "surface"
+          ],
+          "missing_attributes": [
+            "smoothness",
+            "incline",
+            "width"
+          ],
+          "source": "OpenStreetMap; mapped, not field checked",
+          "osm_id": 1166302119,
+          "kind": "sidewalk",
+          "highway": "footway",
+          "crossing": null,
+          "end_node_crossing": null,
+          "end_junction_degree": 3
+        },
+        {
+          "geometry": {
+            "type": "LineString",
+            "coordinates": [
+              [
+                -121.9038507,
+                37.3289536
+              ],
+              [
+                -121.9038224,
+                37.3289528
+              ],
+              [
+                -121.9038161,
+                37.3289531
+              ],
+              [
+                -121.9037694,
+                37.3289549
+              ],
+              [
+                -121.9037195,
+                37.3289546
+              ],
+              [
+                -121.9037131,
+                37.3289547
+              ],
+              [
+                -121.9037068,
+                37.3289532
+              ]
+            ]
+          },
+          "length_m": 12.76,
+          "status": "concern",
+          "reasons": [
+            "Mapped unmarked crossing",
+            "Missing smoothness",
+            "Missing incline",
+            "Missing width",
+            "Missing kerb",
+            "Missing tactile paving"
+          ],
+          "name": null,
+          "costs": {
+            "physical_distance_m": 12.755545024717934,
+            "difficulty_cost_m": 0.0,
+            "uncertainty_cost_m": 0.0,
+            "optimization_cost_m": 12.755545024717934
+          },
+          "documented_attributes": [
+            "surface",
+            "crossing"
+          ],
+          "missing_attributes": [
+            "smoothness",
+            "incline",
+            "width",
+            "kerb",
+            "tactile_paving"
+          ],
+          "source": "OpenStreetMap; mapped, not field checked",
+          "osm_id": [
+            835085621,
+            835085622,
+            835085623
+          ],
+          "kind": "crossing",
+          "highway": "footway",
+          "crossing": "unmarked",
+          "end_node_crossing": null,
+          "end_junction_degree": 3
+        },
+        {
+          "geometry": {
+            "type": "LineString",
+            "coordinates": [
+              [
+                -121.9037068,
+                37.3289532
+              ],
+              [
+                -121.9037109,
+                37.3290027
+              ],
+              [
+                -121.903725,
+                37.3290375
+              ]
+            ]
+          },
+          "length_m": 9.58,
+          "status": "unknown",
+          "reasons": [
+            "Missing smoothness",
+            "Missing incline",
+            "Missing width"
+          ],
+          "name": null,
+          "costs": {
+            "physical_distance_m": 9.581544254061379,
+            "difficulty_cost_m": 0.0,
+            "uncertainty_cost_m": 0.0,
+            "optimization_cost_m": 9.581544254061379
+          },
+          "documented_attributes": [
+            "surface"
+          ],
+          "missing_attributes": [
+            "smoothness",
+            "incline",
+            "width"
+          ],
+          "source": "OpenStreetMap; mapped, not field checked",
+          "osm_id": 42743935,
+          "kind": "sidewalk",
+          "highway": "footway",
+          "crossing": null,
+          "end_node_crossing": null,
+          "end_junction_degree": 4
+        },
+        {
+          "geometry": {
+            "type": "LineString",
+            "coordinates": [
+              [
+                -121.903725,
+                37.3290375
+              ],
+              [
+                -121.903666,
+                37.3290455
+              ]
+            ]
+          },
+          "length_m": 5.29,
+          "status": "concern",
+          "reasons": [
+            "Mapped stairs",
+            "Slope direction recorded; steepness unknown",
+            "Missing smoothness",
+            "Missing incline",
+            "Missing width"
+          ],
+          "name": null,
+          "costs": {
+            "physical_distance_m": 5.291997193760644,
+            "difficulty_cost_m": 0.0,
+            "uncertainty_cost_m": 0.0,
+            "optimization_cost_m": 5.291997193760644
+          },
+          "documented_attributes": [
+            "surface"
+          ],
+          "missing_attributes": [
+            "smoothness",
+            "incline",
+            "width"
+          ],
+          "source": "OpenStreetMap; mapped, not field checked",
+          "osm_id": 42743936,
+          "kind": "steps",
+          "highway": "steps",
+          "crossing": null,
+          "end_node_crossing": null,
+          "end_junction_degree": 4
+        },
+        {
+          "geometry": {
+            "type": "LineString",
+            "coordinates": [
+              [
+                -121.903666,
+                37.3290455
+              ],
+              [
+                -121.9036494,
+                37.3290455
+              ],
+              [
+                -121.9036188,
+                37.3290461
+              ],
+              [
+                -121.90357,
+                37.3290479
+              ],
+              [
+                -121.9035434,
+                37.3290495
+              ],
+              [
+                -121.9035182,
+                37.3290508
+              ]
+            ]
+          },
+          "length_m": 13.09,
+          "status": "unknown",
+          "reasons": [
+            "Missing smoothness",
+            "Missing incline",
+            "Missing width",
+            "Missing kerb",
+            "Missing tactile paving"
+          ],
+          "name": null,
+          "costs": {
+            "physical_distance_m": 13.085130044936971,
+            "difficulty_cost_m": 0.0,
+            "uncertainty_cost_m": 0.0,
+            "optimization_cost_m": 13.085130044936971
+          },
+          "documented_attributes": [
+            "surface",
+            "crossing"
+          ],
+          "missing_attributes": [
+            "smoothness",
+            "incline",
+            "width",
+            "kerb",
+            "tactile_paving"
+          ],
+          "source": "OpenStreetMap; mapped, not field checked",
+          "osm_id": [
+            1028208992,
+            30694773,
+            1028208991
+          ],
+          "kind": "crossing",
+          "highway": "footway",
+          "crossing": "marked",
+          "end_node_crossing": null,
+          "end_junction_degree": 3
+        },
+        {
+          "geometry": {
+            "type": "LineString",
+            "coordinates": [
+              [
+                -121.9035182,
+                37.3290508
+              ],
+              [
+                -121.9035642,
+                37.329684
+              ],
+              [
+                -121.9035533,
+                37.3296956
+              ],
+              [
+                -121.9026867,
+                37.3297308
+              ],
+              [
+                -121.9026234,
+                37.3297364
+              ]
+            ]
+          },
+          "length_m": 154.49,
+          "status": "concern",
+          "reasons": [
+            "Slope direction recorded; steepness unknown",
+            "Missing smoothness",
+            "Missing incline",
+            "Missing width"
+          ],
+          "name": null,
+          "costs": {
+            "physical_distance_m": 154.49038243982747,
+            "difficulty_cost_m": 0.0,
+            "uncertainty_cost_m": 0.0,
+            "optimization_cost_m": 154.49038243982747
+          },
+          "documented_attributes": [
+            "surface"
+          ],
+          "missing_attributes": [
+            "smoothness",
+            "incline",
+            "width"
+          ],
+          "source": "OpenStreetMap; mapped, not field checked",
+          "osm_id": [
+            347810195,
+            497965318,
+            42478847
+          ],
+          "kind": "indoor",
+          "highway": "corridor / footway",
+          "crossing": null,
+          "end_node_crossing": null,
+          "end_junction_degree": 3
+        },
+        {
+          "geometry": {
+            "type": "LineString",
+            "coordinates": [
+              [
+                -121.9026234,
+                37.3297364
+              ],
+              [
+                -121.9026107,
+                37.3297371
+              ],
+              [
+                -121.9025712,
+                37.3297391
+              ]
+            ]
+          },
+          "length_m": 4.63,
+          "status": "unknown",
+          "reasons": [
+            "Missing surface",
+            "Missing smoothness",
+            "Missing incline",
+            "Missing width"
+          ],
+          "name": null,
+          "costs": {
+            "physical_distance_m": 4.6251746371165785,
+            "difficulty_cost_m": 0.0,
+            "uncertainty_cost_m": 0.0,
+            "optimization_cost_m": 4.6251746371165785
+          },
+          "documented_attributes": [],
+          "missing_attributes": [
+            "surface",
+            "smoothness",
+            "incline",
+            "width"
+          ],
+          "source": "OpenStreetMap; mapped, not field checked",
+          "osm_id": [
+            1165499628,
+            1165499629
+          ],
+          "kind": "indoor",
+          "highway": "corridor",
+          "crossing": null,
+          "end_node_crossing": null,
+          "end_junction_degree": 3
+        },
+        {
+          "geometry": {
+            "type": "LineString",
+            "coordinates": [
+              [
+                -121.9025712,
+                37.3297391
+              ],
+              [
+                -121.9025819,
+                37.3299111
+              ]
+            ]
+          },
+          "length_m": 19.15,
+          "status": "unknown",
+          "reasons": [
+            "Missing surface",
+            "Missing smoothness",
+            "Missing incline",
+            "Missing width"
+          ],
+          "name": null,
+          "costs": {
+            "physical_distance_m": 19.148939329716736,
+            "difficulty_cost_m": 0.0,
+            "uncertainty_cost_m": 0.0,
+            "optimization_cost_m": 19.148939329716736
+          },
+          "documented_attributes": [],
+          "missing_attributes": [
+            "surface",
+            "smoothness",
+            "incline",
+            "width"
+          ],
+          "source": "OpenStreetMap; mapped, not field checked",
+          "osm_id": 346680639,
+          "kind": "indoor",
+          "highway": "corridor",
+          "crossing": null,
+          "end_node_crossing": null,
+          "end_junction_degree": 3
+        },
+        {
+          "geometry": {
+            "type": "LineString",
+            "coordinates": [
+              [
+                -121.9025819,
+                37.3299111
+              ],
+              [
+                -121.9024249,
+                37.329922
+              ],
+              [
+                -121.9024078,
+                37.329917
+              ]
+            ]
+          },
+          "length_m": 15.55,
+          "status": "unknown",
+          "reasons": [
+            "Missing smoothness",
+            "Missing incline",
+            "Missing width"
+          ],
+          "name": null,
+          "costs": {
+            "physical_distance_m": 15.545288736070226,
+            "difficulty_cost_m": 0.0,
+            "uncertainty_cost_m": 0.0,
+            "optimization_cost_m": 15.545288736070226
+          },
+          "documented_attributes": [
+            "surface"
+          ],
+          "missing_attributes": [
+            "smoothness",
+            "incline",
+            "width"
+          ],
+          "source": "OpenStreetMap; mapped, not field checked",
+          "osm_id": [
+            42478827,
+            497965317
+          ],
+          "kind": "indoor",
+          "highway": "corridor / footway",
+          "crossing": null,
+          "end_node_crossing": null,
+          "end_junction_degree": 3
+        },
+        {
+          "geometry": {
+            "type": "LineString",
+            "coordinates": [
+              [
+                -121.9024078,
+                37.329917
+              ],
+              [
+                -121.902402,
+                37.3300008
+              ],
+              [
+                -121.9023467,
+                37.3300865
+              ],
+              [
+                -121.9023376,
+                37.3300973
+              ],
+              [
+                -121.9023118,
+                37.3301211
+              ],
+              [
+                -121.9023152,
+                37.3301668
+              ]
+            ]
+          },
+          "length_m": 30.07,
+          "status": "unknown",
+          "reasons": [
+            "Missing smoothness",
+            "Missing incline",
+            "Missing width"
+          ],
+          "name": null,
+          "costs": {
+            "physical_distance_m": 30.07277961355223,
+            "difficulty_cost_m": 0.0,
+            "uncertainty_cost_m": 0.0,
+            "optimization_cost_m": 30.07277961355223
+          },
+          "documented_attributes": [
+            "surface"
+          ],
+          "missing_attributes": [
+            "smoothness",
+            "incline",
+            "width"
+          ],
+          "source": "OpenStreetMap; mapped, not field checked",
+          "osm_id": 42478849,
+          "kind": "sidewalk",
+          "highway": "footway",
+          "crossing": null,
+          "end_node_crossing": null,
+          "end_junction_degree": 4
+        },
+        {
+          "geometry": {
+            "type": "LineString",
+            "coordinates": [
+              [
+                -121.9023152,
+                37.3301668
+              ],
+              [
+                -121.9023188,
+                37.3302277
+              ],
+              [
+                -121.9023225,
+                37.3302894
+              ],
+              [
+                -121.9023253,
+                37.3303355
+              ],
+              [
+                -121.902328,
+                37.3303787
+              ]
+            ]
+          },
+          "length_m": 23.59,
+          "status": "unknown",
+          "reasons": [
+            "Missing smoothness",
+            "Missing incline",
+            "Missing width",
+            "Missing kerb",
+            "Missing tactile paving"
+          ],
+          "name": null,
+          "costs": {
+            "physical_distance_m": 23.5894131694145,
+            "difficulty_cost_m": 0.0,
+            "uncertainty_cost_m": 0.0,
+            "optimization_cost_m": 23.5894131694145
+          },
+          "documented_attributes": [
+            "surface",
+            "crossing"
+          ],
+          "missing_attributes": [
+            "smoothness",
+            "incline",
+            "width",
+            "kerb",
+            "tactile_paving"
+          ],
+          "source": "OpenStreetMap; mapped, not field checked",
+          "osm_id": [
+            1413913024,
+            360044547,
+            1413913023
+          ],
+          "kind": "crossing",
+          "highway": "footway",
+          "crossing": "marked",
+          "end_node_crossing": null,
+          "end_junction_degree": 3
+        },
+        {
+          "geometry": {
+            "type": "LineString",
+            "coordinates": [
+              [
+                -121.902328,
+                37.3303787
+              ],
+              [
+                -121.902321,
+                37.330463
+              ]
+            ]
+          },
+          "length_m": 9.39,
+          "status": "unknown",
+          "reasons": [
+            "Off-network connector; path not assessed"
+          ],
+          "name": null,
+          "source": "Straight-line connector, not a mapped sidewalk",
+          "kind": "connector"
+        }
+      ],
+      "data_confidence": 0.2155,
+      "data_confidence_definition": "Length-weighted share of applicable attributes documented in OSM; not verified accessibility",
+      "directions": [
+        {
+          "instruction": "Go from your starting point to the nearest mapped path",
+          "distance_m": 24.95,
+          "status": "unknown",
+          "warnings": [
+            "This connection isn't on the map, so we can't confirm a usable path."
+          ],
+          "notes": [
+            "This connection isn't on the map, so we can't confirm a usable path."
+          ],
+          "maneuver": "connector",
+          "kind": "connector",
+          "name": null,
+          "documented_concerns": [],
+          "missing_information": [],
+          "crossings": {
+            "total": 0,
+            "unmarked": 0,
+            "signals": 0,
+            "marked": 0,
+            "unrecorded": 0
+          },
+          "segment_range": [
+            0,
+            0
+          ],
+          "segment_count": 1,
+          "location": [
+            -121.90442,
+            37.32875
+          ]
+        },
+        {
+          "instruction": "Head east along the sidewalk",
+          "distance_m": 47.56,
+          "status": "unknown",
+          "warnings": [],
+          "notes": [],
+          "maneuver": "depart",
+          "kind": "sidewalk",
+          "name": null,
+          "documented_concerns": [],
+          "missing_information": [
+            "incline",
+            "smoothness",
+            "width"
+          ],
+          "crossings": {
+            "total": 0,
+            "unmarked": 0,
+            "signals": 0,
+            "marked": 0,
+            "unrecorded": 0
+          },
+          "segment_range": [
+            1,
+            2
+          ],
+          "segment_count": 2,
+          "location": [
+            -121.9043476,
+            37.3289669
+          ]
+        },
+        {
+          "instruction": "Bear left and cross the street, then continue along the sidewalk",
+          "distance_m": 22.34,
+          "status": "concern",
+          "warnings": [],
+          "notes": [
+            "This crossing is mapped as unmarked."
+          ],
+          "maneuver": "cross",
+          "kind": "crossing",
+          "name": null,
+          "documented_concerns": [],
+          "missing_information": [
+            "incline",
+            "kerb",
+            "smoothness",
+            "tactile paving",
+            "width"
+          ],
+          "crossings": {
+            "total": 1,
+            "unmarked": 1,
+            "signals": 0,
+            "marked": 0,
+            "unrecorded": 0
+          },
+          "segment_range": [
+            3,
+            4
+          ],
+          "segment_count": 2,
+          "location": [
+            -121.9038507,
+            37.3289536
+          ]
+        },
+        {
+          "instruction": "Take the stairs",
+          "distance_m": 5.29,
+          "status": "concern",
+          "warnings": [
+            "Stairs are mapped here.",
+            "A slope is mapped here; its steepness isn't recorded."
+          ],
+          "notes": [],
+          "maneuver": "steps",
+          "kind": "steps",
+          "name": null,
+          "documented_concerns": [
+            "Mapped stairs",
+            "Slope direction recorded; steepness unknown"
+          ],
+          "missing_information": [
+            "incline",
+            "smoothness",
+            "width"
+          ],
+          "crossings": {
+            "total": 0,
+            "unmarked": 0,
+            "signals": 0,
+            "marked": 0,
+            "unrecorded": 0
+          },
+          "segment_range": [
+            5,
+            5
+          ],
+          "segment_count": 1,
+          "location": [
+            -121.903725,
+            37.3290375
+          ]
+        },
+        {
+          "instruction": "Cross the street",
+          "distance_m": 13.09,
+          "status": "unknown",
+          "warnings": [],
+          "notes": [
+            "This crossing is mapped as marked."
+          ],
+          "maneuver": "cross",
+          "kind": "crossing",
+          "name": null,
+          "documented_concerns": [],
+          "missing_information": [
+            "incline",
+            "kerb",
+            "smoothness",
+            "tactile paving",
+            "width"
+          ],
+          "crossings": {
+            "total": 1,
+            "unmarked": 0,
+            "signals": 0,
+            "marked": 1,
+            "unrecorded": 0
+          },
+          "segment_range": [
+            6,
+            6
+          ],
+          "segment_count": 1,
+          "location": [
+            -121.903666,
+            37.3290455
+          ]
+        },
+        {
+          "instruction": "Turn left onto the indoor walkway heading north, then follow it as it curves east",
+          "distance_m": 159.12,
+          "status": "concern",
+          "warnings": [
+            "A slope is mapped here; its steepness isn't recorded."
+          ],
+          "notes": [],
+          "maneuver": "turn-left",
+          "kind": "indoor",
+          "name": null,
+          "documented_concerns": [
+            "Slope direction recorded; steepness unknown"
+          ],
+          "missing_information": [
+            "incline",
+            "smoothness",
+            "surface",
+            "width"
+          ],
+          "crossings": {
+            "total": 0,
+            "unmarked": 0,
+            "signals": 0,
+            "marked": 0,
+            "unrecorded": 0
+          },
+          "segment_range": [
+            7,
+            8
+          ],
+          "segment_count": 2,
+          "location": [
+            -121.9035182,
+            37.3290508
+          ]
+        },
+        {
+          "instruction": "Turn left onto the indoor walkway heading north",
+          "distance_m": 19.15,
+          "status": "unknown",
+          "warnings": [],
+          "notes": [],
+          "maneuver": "turn-left",
+          "kind": "indoor",
+          "name": null,
+          "documented_concerns": [],
+          "missing_information": [
+            "incline",
+            "smoothness",
+            "surface",
+            "width"
+          ],
+          "crossings": {
+            "total": 0,
+            "unmarked": 0,
+            "signals": 0,
+            "marked": 0,
+            "unrecorded": 0
+          },
+          "segment_range": [
+            9,
+            9
+          ],
+          "segment_count": 1,
+          "location": [
+            -121.9025712,
+            37.3297391
+          ]
+        },
+        {
+          "instruction": "Turn right onto the indoor walkway heading east",
+          "distance_m": 15.55,
+          "status": "unknown",
+          "warnings": [],
+          "notes": [],
+          "maneuver": "turn-right",
+          "kind": "indoor",
+          "name": null,
+          "documented_concerns": [],
+          "missing_information": [
+            "incline",
+            "smoothness",
+            "width"
+          ],
+          "crossings": {
+            "total": 0,
+            "unmarked": 0,
+            "signals": 0,
+            "marked": 0,
+            "unrecorded": 0
+          },
+          "segment_range": [
+            10,
+            10
+          ],
+          "segment_count": 1,
+          "location": [
+            -121.9025819,
+            37.3299111
+          ]
+        },
+        {
+          "instruction": "Bear left onto the sidewalk heading north",
+          "distance_m": 53.66,
+          "status": "unknown",
+          "warnings": [],
+          "notes": [
+            "Includes 1 mapped crossing along the way."
+          ],
+          "maneuver": "slight-left",
+          "kind": "sidewalk",
+          "name": null,
+          "documented_concerns": [],
+          "missing_information": [
+            "incline",
+            "kerb",
+            "smoothness",
+            "tactile paving",
+            "width"
+          ],
+          "crossings": {
+            "total": 1,
+            "unmarked": 0,
+            "signals": 0,
+            "marked": 1,
+            "unrecorded": 0
+          },
+          "segment_range": [
+            11,
+            12
+          ],
+          "segment_count": 2,
+          "location": [
+            -121.9024078,
+            37.329917
+          ]
+        },
+        {
+          "instruction": "Go from the end of the mapped path to San Jose Diridon (Bay 11)",
+          "distance_m": 9.39,
+          "status": "unknown",
+          "warnings": [
+            "This connection isn't on the map, so we can't confirm a usable path."
+          ],
+          "notes": [
+            "This connection isn't on the map, so we can't confirm a usable path."
+          ],
+          "maneuver": "connector",
+          "kind": "connector",
+          "name": null,
+          "documented_concerns": [],
+          "missing_information": [],
+          "crossings": {
+            "total": 0,
+            "unmarked": 0,
+            "signals": 0,
+            "marked": 0,
+            "unrecorded": 0
+          },
+          "segment_range": [
+            13,
+            13
+          ],
+          "segment_count": 1,
+          "location": [
+            -121.902328,
+            37.3303787
+          ]
+        },
+        {
+          "instruction": "Arrive at San Jose Diridon (Bay 11)",
+          "distance_m": 0.0,
+          "status": "mapped",
+          "warnings": [],
+          "notes": [],
+          "maneuver": "arrive",
+          "kind": "arrive",
+          "name": null,
+          "documented_concerns": [],
+          "missing_information": [],
+          "crossings": {
+            "total": 0,
+            "unmarked": 0,
+            "signals": 0,
+            "marked": 0,
+            "unrecorded": 0
+          },
+          "segment_range": null,
+          "segment_count": 0,
+          "location": [
+            -121.902321,
+            37.330463
+          ]
+        }
+      ],
+      "accessibility_summary": {
+        "headline": "2 documented concerns on this route. See the marked steps.",
+        "lines": [
+          "2 documented concerns on this route. See the marked steps.",
+          "Some accessibility information is missing along this route.",
+          "This route includes 3 mapped crossings: 1 mapped as unmarked.",
+          "About 110 ft of the route connects to the map without a mapped path."
+        ],
+        "documented_restrictions": [
+          {
+            "code": "Mapped stairs",
+            "text": "Stairs are mapped here.",
+            "steps": [
+              4
+            ]
+          },
+          {
+            "code": "Slope direction recorded; steepness unknown",
+            "text": "A slope is mapped here; its steepness isn't recorded.",
+            "steps": [
+              4,
+              6
+            ]
+          }
+        ],
+        "missing_information": [
+          {
+            "attribute": "smoothness",
+            "label": "surface condition",
+            "distance_m": 335.8,
+            "share": 1.0
+          },
+          {
+            "attribute": "incline",
+            "label": "slope",
+            "distance_m": 335.8,
+            "share": 1.0
+          },
+          {
+            "attribute": "width",
+            "label": "path width",
+            "distance_m": 335.8,
+            "share": 1.0
+          },
+          {
+            "attribute": "kerb",
+            "label": "curb ramps",
+            "distance_m": 49.4,
+            "share": 0.147
+          },
+          {
+            "attribute": "tactile paving",
+            "label": "tactile paving",
+            "distance_m": 49.4,
+            "share": 0.147
+          },
+          {
+            "attribute": "surface",
+            "label": "surface type",
+            "distance_m": 23.8,
+            "share": 0.071
+          }
+        ],
+        "crossings": {
+          "total": 3,
+          "unmarked": 1,
+          "unrecorded_type": 0
+        },
+        "unmapped_connectors": [
+          {
+            "segment": 0,
+            "distance_m": 24.9,
+            "position": "start"
+          },
+          {
+            "segment": 13,
+            "distance_m": 9.4,
+            "position": "end"
+          }
+        ],
+        "walking_distance_m": 370.1,
+        "interpretation": "Missing information is unknown, not proof that a path is usable or unusable."
+      },
+      "geometry_audit": {
+        "continuous": true,
+        "gaps": [],
+        "reversals": [],
+        "unmapped_connector_m": 34.3
+      },
+      "algorithm": "astar",
+      "profile": "standard",
+      "optimization_objective": "Minimize mapped walking distance",
+      "optimization_hops": 12,
+      "algorithm_warning": null,
+      "optimization_cost_m": 370.097,
+      "uncertainty_cost_m": -0.0,
+      "computation_time_ms": 7.96,
+      "graph_nodes_traversed": 13,
+      "mapped_stair_segments": 1,
+      "accessibility": {
+        "source": "OpenStreetMap tags; not independently field verified",
+        "mapped_stair_segments": 1,
+        "known_mapped_barriers": [],
+        "known_mapped_barrier_count": 0,
+        "pedestrian_access_information": {
+          "explicitly_tagged_segments": 7,
+          "segments_without_explicit_access_tags": 5,
+          "segment_denominator": 12,
+          "observed_tags": [
+            "foot=yes"
+          ]
+        },
+        "surface_distance_known_m": 312.0,
+        "surface_distance_missing_m": 23.8,
+        "distance_denominator_m": 335.8,
+        "crossing_observations": {
+          "known_kerb_information": 0,
+          "unknown_kerb_information": 3,
+          "denominator": 3
+        },
+        "documented_attributes": [
+          {
+            "attribute": "crossing",
+            "observations": 3,
+            "distance_m": 49.4,
+            "values": [
+              "marked",
+              "unmarked"
+            ]
+          },
+          {
+            "attribute": "incline",
+            "observations": 2,
+            "distance_m": 159.8,
+            "values": [
+              "down",
+              "up"
+            ]
+          },
+          {
+            "attribute": "surface",
+            "observations": 10,
+            "distance_m": 312.0,
+            "values": [
+              "asphalt",
+              "concrete",
+              "paving_stones"
+            ]
+          }
+        ],
+        "missing_attributes": [
+          {
+            "attribute": "incline",
+            "observations": 10,
+            "distance_m": 176.0,
+            "values": []
+          },
+          {
+            "attribute": "kerb",
+            "observations": 3,
+            "distance_m": 49.4,
+            "values": []
+          },
+          {
+            "attribute": "smoothness",
+            "observations": 12,
+            "distance_m": 335.8,
+            "values": []
+          },
+          {
+            "attribute": "surface",
+            "observations": 2,
+            "distance_m": 23.8,
+            "values": []
+          },
+          {
+            "attribute": "tactile_paving",
+            "observations": 3,
+            "distance_m": 49.4,
+            "values": []
+          },
+          {
+            "attribute": "wheelchair",
+            "observations": 12,
+            "distance_m": 335.8,
+            "values": []
+          },
+          {
+            "attribute": "width",
+            "observations": 12,
+            "distance_m": 335.8,
+            "values": []
+          }
+        ],
+        "segment_observations": [
+          {
+            "segment": 1,
+            "distance_m": 25.0,
+            "crossing_applies": false,
+            "known_attributes": [
+              "surface"
+            ],
+            "missing_attributes": [
+              "smoothness",
+              "incline",
+              "wheelchair",
+              "width"
+            ],
+            "mapped_barriers": [],
+            "documented_values": {
+              "surface": [
+                "concrete"
+              ]
+            },
+            "source": "OpenStreetMap; not independently field verified"
+          },
+          {
+            "segment": 2,
+            "distance_m": 22.6,
+            "crossing_applies": false,
+            "known_attributes": [
+              "surface"
+            ],
+            "missing_attributes": [
+              "smoothness",
+              "incline",
+              "wheelchair",
+              "width"
+            ],
+            "mapped_barriers": [],
+            "documented_values": {
+              "surface": [
+                "concrete"
+              ]
+            },
+            "source": "OpenStreetMap; not independently field verified"
+          },
+          {
+            "segment": 3,
+            "distance_m": 12.8,
+            "crossing_applies": true,
+            "known_attributes": [
+              "surface",
+              "crossing"
+            ],
+            "missing_attributes": [
+              "smoothness",
+              "incline",
+              "wheelchair",
+              "width",
+              "kerb",
+              "tactile_paving"
+            ],
+            "mapped_barriers": [],
+            "documented_values": {
+              "surface": [
+                "asphalt"
+              ],
+              "crossing": [
+                "unmarked"
+              ]
+            },
+            "source": "OpenStreetMap; not independently field verified"
+          },
+          {
+            "segment": 4,
+            "distance_m": 9.6,
+            "crossing_applies": false,
+            "known_attributes": [
+              "surface"
+            ],
+            "missing_attributes": [
+              "smoothness",
+              "incline",
+              "wheelchair",
+              "width"
+            ],
+            "mapped_barriers": [],
+            "documented_values": {
+              "surface": [
+                "concrete"
+              ]
+            },
+            "source": "OpenStreetMap; not independently field verified"
+          },
+          {
+            "segment": 5,
+            "distance_m": 5.3,
+            "crossing_applies": false,
+            "known_attributes": [
+              "surface",
+              "incline"
+            ],
+            "missing_attributes": [
+              "smoothness",
+              "wheelchair",
+              "width"
+            ],
+            "mapped_barriers": [],
+            "documented_values": {
+              "surface": [
+                "concrete"
+              ],
+              "incline": [
+                "down"
+              ]
+            },
+            "source": "OpenStreetMap; not independently field verified"
+          },
+          {
+            "segment": 6,
+            "distance_m": 13.1,
+            "crossing_applies": true,
+            "known_attributes": [
+              "surface",
+              "crossing"
+            ],
+            "missing_attributes": [
+              "smoothness",
+              "incline",
+              "wheelchair",
+              "width",
+              "kerb",
+              "tactile_paving"
+            ],
+            "mapped_barriers": [],
+            "documented_values": {
+              "surface": [
+                "concrete"
+              ],
+              "crossing": [
+                "marked"
+              ]
+            },
+            "source": "OpenStreetMap; not independently field verified"
+          },
+          {
+            "segment": 7,
+            "distance_m": 154.5,
+            "crossing_applies": false,
+            "known_attributes": [
+              "surface",
+              "incline"
+            ],
+            "missing_attributes": [
+              "smoothness",
+              "wheelchair",
+              "width"
+            ],
+            "mapped_barriers": [],
+            "documented_values": {
+              "surface": [
+                "concrete"
+              ],
+              "incline": [
+                "up"
+              ]
+            },
+            "source": "OpenStreetMap; not independently field verified"
+          },
+          {
+            "segment": 8,
+            "distance_m": 4.6,
+            "crossing_applies": false,
+            "known_attributes": [],
+            "missing_attributes": [
+              "surface",
+              "smoothness",
+              "incline",
+              "wheelchair",
+              "width"
+            ],
+            "mapped_barriers": [],
+            "documented_values": {},
+            "source": "OpenStreetMap; not independently field verified"
+          },
+          {
+            "segment": 9,
+            "distance_m": 19.1,
+            "crossing_applies": false,
+            "known_attributes": [],
+            "missing_attributes": [
+              "surface",
+              "smoothness",
+              "incline",
+              "wheelchair",
+              "width"
+            ],
+            "mapped_barriers": [],
+            "documented_values": {},
+            "source": "OpenStreetMap; not independently field verified"
+          },
+          {
+            "segment": 10,
+            "distance_m": 15.5,
+            "crossing_applies": false,
+            "known_attributes": [
+              "surface"
+            ],
+            "missing_attributes": [
+              "smoothness",
+              "incline",
+              "wheelchair",
+              "width"
+            ],
+            "mapped_barriers": [],
+            "documented_values": {
+              "surface": [
+                "paving_stones"
+              ]
+            },
+            "source": "OpenStreetMap; not independently field verified"
+          },
+          {
+            "segment": 11,
+            "distance_m": 30.1,
+            "crossing_applies": false,
+            "known_attributes": [
+              "surface"
+            ],
+            "missing_attributes": [
+              "smoothness",
+              "incline",
+              "wheelchair",
+              "width"
+            ],
+            "mapped_barriers": [],
+            "documented_values": {
+              "surface": [
+                "paving_stones"
+              ]
+            },
+            "source": "OpenStreetMap; not independently field verified"
+          },
+          {
+            "segment": 12,
+            "distance_m": 23.6,
+            "crossing_applies": true,
+            "known_attributes": [
+              "surface",
+              "crossing"
+            ],
+            "missing_attributes": [
+              "smoothness",
+              "incline",
+              "wheelchair",
+              "width",
+              "kerb",
+              "tactile_paving"
+            ],
+            "mapped_barriers": [],
+            "documented_values": {
+              "surface": [
+                "concrete"
+              ],
+              "crossing": [
+                "marked"
+              ]
+            },
+            "source": "OpenStreetMap; not independently field verified"
+          }
+        ],
+        "connector_distance_m": 34.3,
+        "interpretation": "More documented information does not guarantee greater accessibility. Missing information is unknown, not a barrier or proof of access.",
+        "selected_edge_keys": [
+          {
+            "from": "5265148966",
+            "to": "5265148952",
+            "key": "0",
+            "reference": "[\"5265148966\",\"5265148952\",\"0\"]"
+          },
+          {
+            "from": "5265148952",
+            "to": "7795037131",
+            "key": "0",
+            "reference": "[\"5265148952\",\"7795037131\",\"0\"]"
+          },
+          {
+            "from": "7795037131",
+            "to": "7795037129",
+            "key": "0",
+            "reference": "[\"7795037131\",\"7795037129\",\"0\"]"
+          },
+          {
+            "from": "7795037129",
+            "to": "3646452817",
+            "key": "0",
+            "reference": "[\"7795037129\",\"3646452817\",\"0\"]"
+          },
+          {
+            "from": "3646452817",
+            "to": "3646452801",
+            "key": "0",
+            "reference": "[\"3646452817\",\"3646452801\",\"0\"]"
+          },
+          {
+            "from": "3646452801",
+            "to": "339428395",
+            "key": "0",
+            "reference": "[\"3646452801\",\"339428395\",\"0\"]"
+          },
+          {
+            "from": "339428395",
+            "to": "530429796",
+            "key": "0",
+            "reference": "[\"339428395\",\"530429796\",\"0\"]"
+          },
+          {
+            "from": "530429796",
+            "to": "10840556756",
+            "key": "0",
+            "reference": "[\"530429796\",\"10840556756\",\"0\"]"
+          },
+          {
+            "from": "10840556756",
+            "to": "3532004898",
+            "key": "0",
+            "reference": "[\"10840556756\",\"3532004898\",\"0\"]"
+          },
+          {
+            "from": "3532004898",
+            "to": "530429824",
+            "key": "0",
+            "reference": "[\"3532004898\",\"530429824\",\"0\"]"
+          },
+          {
+            "from": "530429824",
+            "to": "534478176",
+            "key": "0",
+            "reference": "[\"530429824\",\"534478176\",\"0\"]"
+          },
+          {
+            "from": "534478176",
+            "to": "12992898177",
+            "key": "0",
+            "reference": "[\"534478176\",\"12992898177\",\"0\"]"
+          }
+        ],
+        "uncertainty_penalty_weights": null
+      },
+      "accessibility_warning": "This route is not verified accessible. OpenStreetMap accessibility tags may be missing or out of date; unknown data does not mean accessible.",
+      "destination": {
+        "stop_id": "4514",
+        "stop_name": "San Jose Diridon (Bay 11)",
+        "latitude": 37.330463,
+        "longitude": -121.902321,
+        "agency": "vta",
+        "agency_name": "VTA",
+        "station_name": "San Jose Diridon Station",
+        "platform_name": null
+      },
+      "reviewed_report_effects": [],
+      "profile_assumptions": {},
+      "arrival": {
+        "type": "stop",
+        "note": null
+      },
+      "arrival_options_considered": 1,
+      "groundtruth_evidence": {
+        "status": "ready",
+        "nearby_feature_count": 8,
+        "features": [
+          {
+            "source_feature_id": "6040",
+            "distance_to_route_m": 0.0,
+            "ada_compliance_record": "No",
+            "width_record": null,
+            "last_update": 1284036209000,
+            "status": "SOURCE_DOCUMENTED",
+            "source_name": "City of San Jose Sidewalks",
+            "source_url": "https://geo.sanjoseca.gov/server/rest/services/OPN/OPN_OpenDataService/MapServer/185",
+            "relationship": "Polygon is spatially near the route; it is not confirmed to be the traveled path or accessible."
+          },
+          {
+            "source_feature_id": "6896",
+            "distance_to_route_m": 0.0,
+            "ada_compliance_record": "No",
+            "width_record": null,
+            "last_update": 1284036207000,
+            "status": "SOURCE_DOCUMENTED",
+            "source_name": "City of San Jose Sidewalks",
+            "source_url": "https://geo.sanjoseca.gov/server/rest/services/OPN/OPN_OpenDataService/MapServer/185",
+            "relationship": "Polygon is spatially near the route; it is not confirmed to be the traveled path or accessible."
+          },
+          {
+            "source_feature_id": "7867",
+            "distance_to_route_m": 0.0,
+            "ada_compliance_record": "No",
+            "width_record": null,
+            "last_update": 1284036207000,
+            "status": "SOURCE_DOCUMENTED",
+            "source_name": "City of San Jose Sidewalks",
+            "source_url": "https://geo.sanjoseca.gov/server/rest/services/OPN/OPN_OpenDataService/MapServer/185",
+            "relationship": "Polygon is spatially near the route; it is not confirmed to be the traveled path or accessible."
+          },
+          {
+            "source_feature_id": "9040",
+            "distance_to_route_m": 0.0,
+            "ada_compliance_record": "No",
+            "width_record": null,
+            "last_update": 1284036213000,
+            "status": "SOURCE_DOCUMENTED",
+            "source_name": "City of San Jose Sidewalks",
+            "source_url": "https://geo.sanjoseca.gov/server/rest/services/OPN/OPN_OpenDataService/MapServer/185",
+            "relationship": "Polygon is spatially near the route; it is not confirmed to be the traveled path or accessible."
+          },
+          {
+            "source_feature_id": "9723",
+            "distance_to_route_m": 0.9,
+            "ada_compliance_record": "Yes",
+            "width_record": null,
+            "last_update": 1284036213000,
+            "status": "SOURCE_DOCUMENTED",
+            "source_name": "City of San Jose Sidewalks",
+            "source_url": "https://geo.sanjoseca.gov/server/rest/services/OPN/OPN_OpenDataService/MapServer/185",
+            "relationship": "Polygon is spatially near the route; it is not confirmed to be the traveled path or accessible."
+          },
+          {
+            "source_feature_id": "4886",
+            "distance_to_route_m": 2.8,
+            "ada_compliance_record": "No",
+            "width_record": null,
+            "last_update": 1284036206000,
+            "status": "SOURCE_DOCUMENTED",
+            "source_name": "City of San Jose Sidewalks",
+            "source_url": "https://geo.sanjoseca.gov/server/rest/services/OPN/OPN_OpenDataService/MapServer/185",
+            "relationship": "Polygon is spatially near the route; it is not confirmed to be the traveled path or accessible."
+          },
+          {
+            "source_feature_id": "7806",
+            "distance_to_route_m": 11.1,
+            "ada_compliance_record": "No",
+            "width_record": null,
+            "last_update": 1284036206000,
+            "status": "SOURCE_DOCUMENTED",
+            "source_name": "City of San Jose Sidewalks",
+            "source_url": "https://geo.sanjoseca.gov/server/rest/services/OPN/OPN_OpenDataService/MapServer/185",
+            "relationship": "Polygon is spatially near the route; it is not confirmed to be the traveled path or accessible."
+          },
+          {
+            "source_feature_id": "9785",
+            "distance_to_route_m": 18.8,
+            "ada_compliance_record": "Yes",
+            "width_record": null,
+            "last_update": 1284036213000,
+            "status": "SOURCE_DOCUMENTED",
+            "source_name": "City of San Jose Sidewalks",
+            "source_url": "https://geo.sanjoseca.gov/server/rest/services/OPN/OPN_OpenDataService/MapServer/185",
+            "relationship": "Polygon is spatially near the route; it is not confirmed to be the traveled path or accessible."
+          }
+        ],
+        "distance_threshold_m": 15,
+        "message": "City sidewalk polygons near this route are spatial context, not evidence that the route uses those sidewalks."
+      }
+    },
+    "ready_before_request": true
+  },
+  "first_route_request": {
+    "seconds": 0.262,
+    "status": 200,
+    "readiness_at_probe": true,
+    "worker": {
+      "instance_id": "703d2e43c1f3",
+      "request_id": "sfo1::l862s-1792599721816-58c6e0d64be1",
+      "request_number": "3",
+      "initialization_phase": "ready"
+    }
+  },
+  "observed_ready_seconds": 27.373,
+  "health": {
+    "runtime": {
+      "instance_id": "703d2e43c1f3",
+      "process_started_at": "2026-10-21T16:21:25.542752+00:00",
+      "uptime_seconds": 36.594
+    },
+    "ready": true,
+    "build_sha": "6f72a5b5dd44dd765a8ab64235a1633328fecdff",
+    "datasets": {
+      "osm_walk_graph": "ready",
+      "vta_gtfs_stops": "ready",
+      "caltrain_gtfs_stops": "ready",
+      "bart_gtfs_stops": "ready"
+    },
+    "graph": {
+      "type": "directed_multigraph",
+      "nodes": 291569,
+      "directed_edges": 811314
+    },
+    "vta_stop_count": 3234,
+    "transit_stop_counts": {
+      "VTA": 3234,
+      "Caltrain": 34,
+      "BART": 4
+    },
+    "community_report_storage": "postgresql",
+    "reports_enabled": true,
+    "gap_stops_evaluated": 32,
+    "schedule_ready": true,
+    "data_freshness": [
+      {
+        "feed_publisher_name": "Santa Clara Valley Transportation Authority",
+        "feed_publisher_url": "https://www.vta.org",
+        "feed_lang": "EN",
+        "feed_start_date": "20261026",
+        "feed_end_date": "20270110",
+        "feed_version": "2026-10-09_14:57",
+        "feed_contact_email": "customer.service@vta.org",
+        "feed_contact_url": "https://www.vta.org/about/contact"
+      }
+    ],
+    "groundtruth_ready": true,
+    "groundtruth_error": null,
+    "error": null,
+    "initialization_seconds": 26.367,
+    "initialization_cpu_seconds": 18.383,
+    "initialization_timings": {
+      "walking_network": {
+        "wall_seconds": 20.02,
+        "cpu_seconds": 13.963
+      },
+      "rail_stops_and_schedules": {
+        "wall_seconds": 0.602,
+        "cpu_seconds": 0.421
+      },
+      "spatial_index": {
+        "wall_seconds": 0.0,
+        "cpu_seconds": 0.0
+      },
+      "prepared_gap_cache": {
+        "wall_seconds": 2.1,
+        "cpu_seconds": 1.464
+      },
+      "vta_schedule": {
+        "wall_seconds": 1.002,
+        "cpu_seconds": 0.701
+      },
+      "municipal_snapshot": {
+        "wall_seconds": 0.118,
+        "cpu_seconds": 0.082
+      },
+      "evidence_index": {
+        "wall_seconds": 2.305,
+        "cpu_seconds": 1.61
+      },
+      "report_storage": {
+        "wall_seconds": 0.219,
+        "cpu_seconds": 0.14
+      }
+    },
+    "database_initialization_timings": {
+      "connect_wall_seconds": 0.2142,
+      "connect_cpu_seconds": 0.1391,
+      "schema_wall_seconds": 0.0031,
+      "schema_cpu_seconds": 0.0004
+    },
+    "schedule_cache_hits": {
+      "VTA": true,
+      "caltrain": true,
+      "bart": true
+    },
+    "process_memory": {
+      "rss_mib": 1244.45,
+      "peak_rss_mib": 1249.35
+    }
+  },
+  "health_worker": {
+    "instance_id": "703d2e43c1f3",
+    "request_id": "sfo1::l862s-1792599722079-dc5c5519832a",
+    "request_number": "4",
+    "initialization_phase": "ready"
+  },
+  "routes": [
+    {
+      "agency": "VTA",
+      "profile": "standard",
+      "repeat": 0,
+      "status": 200,
+      "seconds": 0.158,
+      "worker": {
+        "instance_id": "703d2e43c1f3",
+        "request_id": "sfo1::l94dk-1792599723761-083cd03c9a45",
+        "request_number": "5",
+        "initialization_phase": "ready"
+      },
+      "distance_m": 370.1,
+      "directions": 11,
+      "arrival": {
+        "type": "stop",
+        "note": null
+      },
+      "geometry_sha256": "d2640002d59b60694a81efd2948ca712062a25e0a97eac9bf94c0434b8462109"
+    },
+    {
+      "agency": "VTA",
+      "profile": "standard",
+      "repeat": 1,
+      "status": 200,
+      "seconds": 0.142,
+      "worker": {
+        "instance_id": "703d2e43c1f3",
+        "request_id": "sfo1::q4zr8-1792599723918-05289165dda8",
+        "request_number": "6",
+        "initialization_phase": "ready"
+      },
+      "distance_m": 370.1,
+      "directions": 11,
+      "arrival": {
+        "type": "stop",
+        "note": null
+      },
+      "geometry_sha256": "d2640002d59b60694a81efd2948ca712062a25e0a97eac9bf94c0434b8462109"
+    },
+    {
+      "agency": "VTA",
+      "profile": "wheelchair",
+      "repeat": 0,
+      "status": 200,
+      "seconds": 0.156,
+      "worker": {
+        "instance_id": "703d2e43c1f3",
+        "request_id": "sfo1::q4zr8-1792599724061-f945bd5f55c3",
+        "request_number": "7",
+        "initialization_phase": "ready"
+      },
+      "distance_m": 390.1,
+      "directions": 11,
+      "arrival": {
+        "type": "stop",
+        "note": null
+      },
+      "geometry_sha256": "22aa545fbf87c872572bd71f59e536d0ac10f96e604c6a112327994825cdb871"
+    },
+    {
+      "agency": "VTA",
+      "profile": "wheelchair",
+      "repeat": 1,
+      "status": 200,
+      "seconds": 0.173,
+      "worker": {
+        "instance_id": "703d2e43c1f3",
+        "request_id": "sfo1::n568v-1792599724214-771cc743e7af",
+        "request_number": "8",
+        "initialization_phase": "ready"
+      },
+      "distance_m": 390.1,
+      "directions": 11,
+      "arrival": {
+        "type": "stop",
+        "note": null
+      },
+      "geometry_sha256": "22aa545fbf87c872572bd71f59e536d0ac10f96e604c6a112327994825cdb871"
+    },
+    {
+      "agency": "VTA",
+      "profile": "stroller",
+      "repeat": 0,
+      "status": 200,
+      "seconds": 0.151,
+      "worker": {
+        "instance_id": "703d2e43c1f3",
+        "request_id": "sfo1::dhtt8-1792599724392-66e10634732c",
+        "request_number": "9",
+        "initialization_phase": "ready"
+      },
+      "distance_m": 390.1,
+      "directions": 11,
+      "arrival": {
+        "type": "stop",
+        "note": null
+      },
+      "geometry_sha256": "22aa545fbf87c872572bd71f59e536d0ac10f96e604c6a112327994825cdb871"
+    },
+    {
+      "agency": "VTA",
+      "profile": "stroller",
+      "repeat": 1,
+      "status": 200,
+      "seconds": 0.173,
+      "worker": {
+        "instance_id": "703d2e43c1f3",
+        "request_id": "sfo1::zgxrz-1792599724541-6637b11ed46d",
+        "request_number": "10",
+        "initialization_phase": "ready"
+      },
+      "distance_m": 390.1,
+      "directions": 11,
+      "arrival": {
+        "type": "stop",
+        "note": null
+      },
+      "geometry_sha256": "22aa545fbf87c872572bd71f59e536d0ac10f96e604c6a112327994825cdb871"
+    },
+    {
+      "agency": "VTA",
+      "profile": "low_vision",
+      "repeat": 0,
+      "status": 200,
+      "seconds": 0.141,
+      "worker": {
+        "instance_id": "703d2e43c1f3",
+        "request_id": "sfo1::dhtt8-1792599724712-1498befe0db1",
+        "request_number": "11",
+        "initialization_phase": "ready"
+      },
+      "distance_m": 370.1,
+      "directions": 11,
+      "arrival": {
+        "type": "stop",
+        "note": null
+      },
+      "geometry_sha256": "d2640002d59b60694a81efd2948ca712062a25e0a97eac9bf94c0434b8462109"
+    },
+    {
+      "agency": "VTA",
+      "profile": "low_vision",
+      "repeat": 1,
+      "status": 200,
+      "seconds": 0.147,
+      "worker": {
+        "instance_id": "703d2e43c1f3",
+        "request_id": "sfo1::8tcds-1792599724857-cd882800c292",
+        "request_number": "12",
+        "initialization_phase": "ready"
+      },
+      "distance_m": 370.1,
+      "directions": 11,
+      "arrival": {
+        "type": "stop",
+        "note": null
+      },
+      "geometry_sha256": "d2640002d59b60694a81efd2948ca712062a25e0a97eac9bf94c0434b8462109"
+    },
+    {
+      "agency": "Caltrain",
+      "profile": "standard",
+      "repeat": 0,
+      "status": 200,
+      "seconds": 0.46,
+      "worker": {
+        "instance_id": "703d2e43c1f3",
+        "request_id": "sfo1::8jqg9-1792599725002-edd3064af1d8",
+        "request_number": "13",
+        "initialization_phase": "ready"
+      },
+      "distance_m": 4626.0,
+      "directions": 19,
+      "arrival": {
+        "type": "stop",
+        "note": null
+      },
+      "geometry_sha256": "2954abeb2d008279d0706fad4766d9b1ac58ca0a68d40bb52a1568e60fb01344"
+    },
+    {
+      "agency": "Caltrain",
+      "profile": "standard",
+      "repeat": 1,
+      "status": 200,
+      "seconds": 0.455,
+      "worker": {
+        "instance_id": "703d2e43c1f3",
+        "request_id": "sfo1::8jqg9-1792599725460-1b4963f29f31",
+        "request_number": "14",
+        "initialization_phase": "ready"
+      },
+      "distance_m": 4626.0,
+      "directions": 19,
+      "arrival": {
+        "type": "stop",
+        "note": null
+      },
+      "geometry_sha256": "2954abeb2d008279d0706fad4766d9b1ac58ca0a68d40bb52a1568e60fb01344"
+    },
+    {
+      "agency": "Caltrain",
+      "profile": "wheelchair",
+      "repeat": 0,
+      "status": 200,
+      "seconds": 1.409,
+      "worker": {
+        "instance_id": "703d2e43c1f3",
+        "request_id": "sfo1::zr2sn-1792599725919-a030dd501d25",
+        "request_number": "15",
+        "initialization_phase": "ready"
+      },
+      "distance_m": 4659.9,
+      "directions": 19,
+      "arrival": {
+        "type": "stop",
+        "note": null
+      },
+      "geometry_sha256": "40909bba543e523b2a3df3d124a4b464a4ca4cf5705f87a0b02e52c464c3d6f9"
+    },
+    {
+      "agency": "Caltrain",
+      "profile": "wheelchair",
+      "repeat": 1,
+      "status": 200,
+      "seconds": 1.391,
+      "worker": {
+        "instance_id": "703d2e43c1f3",
+        "request_id": "sfo1::zr2sn-1792599727335-8c173a5cf1e7",
+        "request_number": "16",
+        "initialization_phase": "ready"
+      },
+      "distance_m": 4659.9,
+      "directions": 19,
+      "arrival": {
+        "type": "stop",
+        "note": null
+      },
+      "geometry_sha256": "40909bba543e523b2a3df3d124a4b464a4ca4cf5705f87a0b02e52c464c3d6f9"
+    },
+    {
+      "agency": "Caltrain",
+      "profile": "stroller",
+      "repeat": 0,
+      "status": 200,
+      "seconds": 1.22,
+      "worker": {
+        "instance_id": "703d2e43c1f3",
+        "request_id": "sfo1::zgns5-1792599728716-fd92bda78e06",
+        "request_number": "17",
+        "initialization_phase": "ready"
+      },
+      "distance_m": 4707.6,
+      "directions": 23,
+      "arrival": {
+        "type": "stop",
+        "note": null
+      },
+      "geometry_sha256": "861fa1e9a264d20fa2f5f4a598f64576279b41a89feb33500493c0f4f321e851"
+    },
+    {
+      "agency": "Caltrain",
+      "profile": "stroller",
+      "repeat": 1,
+      "status": 200,
+      "seconds": 1.155,
+      "worker": {
+        "instance_id": "703d2e43c1f3",
+        "request_id": "sfo1::xpn5t-1792599729936-548bbbd34394",
+        "request_number": "18",
+        "initialization_phase": "ready"
+      },
+      "distance_m": 4707.6,
+      "directions": 23,
+      "arrival": {
+        "type": "stop",
+        "note": null
+      },
+      "geometry_sha256": "861fa1e9a264d20fa2f5f4a598f64576279b41a89feb33500493c0f4f321e851"
+    },
+    {
+      "agency": "Caltrain",
+      "profile": "low_vision",
+      "repeat": 0,
+      "status": 200,
+      "seconds": 2.003,
+      "worker": {
+        "instance_id": "703d2e43c1f3",
+        "request_id": "sfo1::q4zr8-1792599731094-de0d29f8bcc6",
+        "request_number": "19",
+        "initialization_phase": "ready"
+      },
+      "distance_m": 5798.4,
+      "directions": 36,
+      "arrival": {
+        "type": "stop",
+        "note": null
+      },
+      "geometry_sha256": "c08a60e387870a5278c4d8586d6cfe59abc5026197fe289dc7d531cb9c0236cf"
+    },
+    {
+      "agency": "Caltrain",
+      "profile": "low_vision",
+      "repeat": 1,
+      "status": 200,
+      "seconds": 2.14,
+      "worker": {
+        "instance_id": "703d2e43c1f3",
+        "request_id": "sfo1::k7nx8-1792599733098-119717623594",
+        "request_number": "20",
+        "initialization_phase": "ready"
+      },
+      "distance_m": 5798.4,
+      "directions": 36,
+      "arrival": {
+        "type": "stop",
+        "note": null
+      },
+      "geometry_sha256": "c08a60e387870a5278c4d8586d6cfe59abc5026197fe289dc7d531cb9c0236cf"
+    },
+    {
+      "agency": "BART",
+      "profile": "standard",
+      "repeat": 0,
+      "status": 200,
+      "seconds": 0.254,
+      "worker": {
+        "instance_id": "703d2e43c1f3",
+        "request_id": "sfo1::8hbtj-1792599735237-8242464ba78f",
+        "request_number": "21",
+        "initialization_phase": "ready"
+      },
+      "distance_m": 1585.7,
+      "directions": 9,
+      "arrival": {
+        "type": "entrance",
+        "entrance_id": "bart:BERY_3",
+        "name": "South Entrance / Exit",
+        "latitude": 37.3682021,
+        "longitude": -121.8745566,
+        "wheelchair_boarding": 0,
+        "note": "Route ends at an entrance recorded in the agency's GTFS feed. The path inside the station to the platform is not part of this route."
+      },
+      "geometry_sha256": "c25dce47853fecd0ba7bbd1807c08d3349e93a207612dfd4c5461178b6a6d79a"
+    },
+    {
+      "agency": "BART",
+      "profile": "standard",
+      "repeat": 1,
+      "status": 200,
+      "seconds": 0.22,
+      "worker": {
+        "instance_id": "703d2e43c1f3",
+        "request_id": "sfo1::p44d2-1792599735496-7e143ae3e8f9",
+        "request_number": "22",
+        "initialization_phase": "ready"
+      },
+      "distance_m": 1585.7,
+      "directions": 9,
+      "arrival": {
+        "type": "entrance",
+        "entrance_id": "bart:BERY_3",
+        "name": "South Entrance / Exit",
+        "latitude": 37.3682021,
+        "longitude": -121.8745566,
+        "wheelchair_boarding": 0,
+        "note": "Route ends at an entrance recorded in the agency's GTFS feed. The path inside the station to the platform is not part of this route."
+      },
+      "geometry_sha256": "c25dce47853fecd0ba7bbd1807c08d3349e93a207612dfd4c5461178b6a6d79a"
+    },
+    {
+      "agency": "BART",
+      "profile": "wheelchair",
+      "repeat": 0,
+      "status": 200,
+      "seconds": 0.599,
+      "worker": {
+        "instance_id": "703d2e43c1f3",
+        "request_id": "sfo1::p44d2-1792599735713-804478f46005",
+        "request_number": "23",
+        "initialization_phase": "ready"
+      },
+      "distance_m": 1616.5,
+      "directions": 11,
+      "arrival": {
+        "type": "entrance",
+        "entrance_id": "bart:BERY_3",
+        "name": "South Entrance / Exit",
+        "latitude": 37.3682021,
+        "longitude": -121.8745566,
+        "wheelchair_boarding": 0,
+        "note": "Route ends at an entrance recorded in the agency's GTFS feed. The path inside the station to the platform is not part of this route."
+      },
+      "geometry_sha256": "6f099cbb2aaa4f29ac6334ef84810f775dde5692e02348d419ab829b638cf735"
+    },
+    {
+      "agency": "BART",
+      "profile": "wheelchair",
+      "repeat": 1,
+      "status": 200,
+      "seconds": 0.443,
+      "worker": {
+        "instance_id": "703d2e43c1f3",
+        "request_id": "sfo1::k7nx8-1792599736316-029cbfd5c87f",
+        "request_number": "24",
+        "initialization_phase": "ready"
+      },
+      "distance_m": 1616.5,
+      "directions": 11,
+      "arrival": {
+        "type": "entrance",
+        "entrance_id": "bart:BERY_3",
+        "name": "South Entrance / Exit",
+        "latitude": 37.3682021,
+        "longitude": -121.8745566,
+        "wheelchair_boarding": 0,
+        "note": "Route ends at an entrance recorded in the agency's GTFS feed. The path inside the station to the platform is not part of this route."
+      },
+      "geometry_sha256": "6f099cbb2aaa4f29ac6334ef84810f775dde5692e02348d419ab829b638cf735"
+    },
+    {
+      "agency": "BART",
+      "profile": "stroller",
+      "repeat": 0,
+      "status": 200,
+      "seconds": 0.398,
+      "worker": {
+        "instance_id": "703d2e43c1f3",
+        "request_id": "sfo1::k7nx8-1792599736755-6e734c6e4f76",
+        "request_number": "25",
+        "initialization_phase": "ready"
+      },
+      "distance_m": 1616.5,
+      "directions": 11,
+      "arrival": {
+        "type": "entrance",
+        "entrance_id": "bart:BERY_3",
+        "name": "South Entrance / Exit",
+        "latitude": 37.3682021,
+        "longitude": -121.8745566,
+        "wheelchair_boarding": 0,
+        "note": "Route ends at an entrance recorded in the agency's GTFS feed. The path inside the station to the platform is not part of this route."
+      },
+      "geometry_sha256": "6f099cbb2aaa4f29ac6334ef84810f775dde5692e02348d419ab829b638cf735"
+    },
+    {
+      "agency": "BART",
+      "profile": "stroller",
+      "repeat": 1,
+      "status": 200,
+      "seconds": 0.401,
+      "worker": {
+        "instance_id": "703d2e43c1f3",
+        "request_id": "sfo1::lfvt4-1792599737156-7fdfa2bbd3e5",
+        "request_number": "26",
+        "initialization_phase": "ready"
+      },
+      "distance_m": 1616.5,
+      "directions": 11,
+      "arrival": {
+        "type": "entrance",
+        "entrance_id": "bart:BERY_3",
+        "name": "South Entrance / Exit",
+        "latitude": 37.3682021,
+        "longitude": -121.8745566,
+        "wheelchair_boarding": 0,
+        "note": "Route ends at an entrance recorded in the agency's GTFS feed. The path inside the station to the platform is not part of this route."
+      },
+      "geometry_sha256": "6f099cbb2aaa4f29ac6334ef84810f775dde5692e02348d419ab829b638cf735"
+    },
+    {
+      "agency": "BART",
+      "profile": "low_vision",
+      "repeat": 0,
+      "status": 200,
+      "seconds": 0.544,
+      "worker": {
+        "instance_id": "703d2e43c1f3",
+        "request_id": "sfo1::j7hm8-1792599737557-8c24a6bb26c8",
+        "request_number": "27",
+        "initialization_phase": "ready"
+      },
+      "distance_m": 1934.3,
+      "directions": 20,
+      "arrival": {
+        "type": "entrance",
+        "entrance_id": "bart:BERY_3",
+        "name": "South Entrance / Exit",
+        "latitude": 37.3682021,
+        "longitude": -121.8745566,
+        "wheelchair_boarding": 0,
+        "note": "Route ends at an entrance recorded in the agency's GTFS feed. The path inside the station to the platform is not part of this route."
+      },
+      "geometry_sha256": "a48bae32fae791e98fdd3ea51b12879caac971af5dd308decfc20f521e1a4f94"
+    },
+    {
+      "agency": "BART",
+      "profile": "low_vision",
+      "repeat": 1,
+      "status": 200,
+      "seconds": 0.773,
+      "worker": {
+        "instance_id": "703d2e43c1f3",
+        "request_id": "sfo1::j7hm8-1792599738102-499a45cde7e1",
+        "request_number": "28",
+        "initialization_phase": "ready"
+      },
+      "distance_m": 1934.3,
+      "directions": 20,
+      "arrival": {
+        "type": "entrance",
+        "entrance_id": "bart:BERY_3",
+        "name": "South Entrance / Exit",
+        "latitude": 37.3682021,
+        "longitude": -121.8745566,
+        "wheelchair_boarding": 0,
+        "note": "Route ends at an entrance recorded in the agency's GTFS feed. The path inside the station to the platform is not part of this route."
+      },
+      "geometry_sha256": "a48bae32fae791e98fdd3ea51b12879caac971af5dd308decfc20f521e1a4f94"
+    }
+  ],
+  "public_admin_status": 403
+}

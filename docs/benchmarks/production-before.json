@@ -1,0 +1,47 @@
+{
+  "url": "https://transitgap.vercel.app/health",
+  "http_status": 200,
+  "request_seconds": 1.332,
+  "definition": "Observed existing production worker; no forced cold restart",
+  "health": {
+    "ready": true,
+    "build_sha": "a4944399ccce00758eb24079244c74fd43d7a3c5",
+    "datasets": {
+      "osm_walk_graph": "ready",
+      "vta_gtfs_stops": "ready",
+      "caltrain_gtfs_stops": "ready",
+      "bart_gtfs_stops": "ready"
+    },
+    "graph": {
+      "type": "directed_multigraph",
+      "nodes": 291569,
+      "directed_edges": 811314
+    },
+    "vta_stop_count": 3234,
+    "transit_stop_counts": {
+      "VTA": 3234,
+      "Caltrain": 34,
+      "BART": 4
+    },
+    "community_report_storage": "instance-local",
+    "reports_enabled": false,
+    "gap_stops_evaluated": 32,
+    "schedule_ready": true,
+    "data_freshness": [
+      {
+        "feed_publisher_name": "Santa Clara Valley Transportation Authority",
+        "feed_publisher_url": "https://www.vta.org",
+        "feed_lang": "EN",
+        "feed_start_date": "20261026",
+        "feed_end_date": "20270110",
+        "feed_version": "2026-10-09_14:57",
+        "feed_contact_email": "customer.service@vta.org",
+        "feed_contact_url": "https://www.vta.org/about/contact"
+      }
+    ],
+    "groundtruth_ready": true,
+    "groundtruth_error": null,
+    "error": null,
+    "initialization_seconds": 46.329
+  }
+}

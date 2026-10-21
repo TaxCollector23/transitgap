@@ -89,3 +89,11 @@ def test_pg_unavailable_store_never_confirms_save(pg,monkeypatch):
     review={'status':'REVIEWED','reviewer':'isolated-test','reason':'Synthetic documented evidence','edge_reference':'["0","1","shortcut"]','routing_effect':'block','effective_until':(datetime.now(timezone.utc)+timedelta(hours=1)).isoformat(),'affected_profiles':['wheelchair']}
     response=pg.post('/accessibility/observations/missing/review',json=review,headers={'Authorization':'Bearer isolated-test-review-secret-00000000'})
     assert response.status_code==503
+    monkeypatch.setitem(main.state,'observations_ready',False)
+    with monkeypatch.context() as patch:
+        patch.setattr(main,'active_routing_effects',lambda:(_ for _ in ()).throw(ConnectionError('synthetic outage')))
+        from fastapi import HTTPException
+        with pytest.raises(HTTPException) as failure:main._routing_effects()
+        assert failure.value.status_code==503
+    assert main._routing_effects()=={}
+    assert main.state['observations_ready']

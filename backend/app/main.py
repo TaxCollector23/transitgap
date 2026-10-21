@@ -1,5 +1,6 @@
 from __future__ import annotations
 import json
+import asyncio
 import hmac
 import hashlib
 import uuid
@@ -215,8 +216,11 @@ def _load() -> None:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    if os.getenv("VERCEL"):
+        os.environ.setdefault("TRANSITGAP_CACHE_ONLY", "1")
     pool = ThreadPoolExecutor(max_workers=1)
     initialization = __import__("asyncio").get_running_loop().run_in_executor(pool, _load)
+    app.state.initialization = initialization
     if os.getenv("TRANSITGAP_ASYNC_STARTUP", "1" if os.getenv("VERCEL") else "0") != "1":
         await initialization
     try:
@@ -579,6 +583,26 @@ def liveness():
     return {"alive":True,"ready":state["graph"] is not None,"reports_ready":state.get("observations_ready",False),"error":state.get("error"),"phase":state.get("initialization_phase","starting")}
 
 
+INITIALIZATION_REQUEST_SECONDS = 18
+
+
+@app.post("/routing/initialize")
+async def initialize_routing():
+    """Keep compute active during a bounded serverless warmup request.
+
+    A thread alone can be suspended after the last response. Awaiting the same
+    future keeps the invocation alive; shielding preserves it across timeouts.
+    Other requests, CDN stop search and the map remain independent.
+    """
+    initialization = getattr(app.state, "initialization", None)
+    if initialization is not None and not initialization.done():
+        try:
+            await asyncio.wait_for(asyncio.shield(initialization), INITIALIZATION_REQUEST_SECONDS)
+        except TimeoutError:
+            pass
+    return liveness()
+
+
 @app.get("/mobility-profiles")
 def mobility_profiles():
     return {"assumptions":configuration(),"note":"Model assumptions, not legal compliance or a safety certification. Missing values remain unknown."}
@@ -671,8 +695,11 @@ def calculate_route(graph, origin, destination_node, algorithm, profile, stop, *
 
 def _routing_effects():
     effects={}
-    if state.get("observations_ready") and database_durability() in {"filesystem-persistent","postgresql"}:
-        try:effects=active_routing_effects()
+    durability=database_durability()
+    if durability == "postgresql" or (state.get("observations_ready") and durability == "filesystem-persistent"):
+        try:
+            effects=active_routing_effects()
+            state["observations_ready"]=True
         except Exception as exc:raise HTTPException(503,detail="Reviewed report information is unavailable. Please retry before routing.") from exc
     return effects
 

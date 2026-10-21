@@ -47,7 +47,7 @@ so a separately timed subsequent index lookup is not its construction cost.
 
 Station entrance attempts now share one current reviewed-effects database read.
 No routing-effect cache can hide a moderation revocation. Stops/studies continue
-to come from prepared CDN data; lightweight liveness polling avoids repeatedly
+to come from prepared CDN data; lightweight bounded warmup avoids repeatedly
 serializing full health/data-source responses during startup.
 
 Network-reachability analyses of three real Diridon stops and two documentation
@@ -81,7 +81,7 @@ activate Find route after readiness retries expired. Find route now accepts a
 valid trip while the engine warms, announces preparation, waits at most 45 seconds
 for readiness, and offers retry without losing the trip. Route requests have a
 25-second timeout; address search and report submission have 15-second timeouts.
-Backend liveness responds during asynchronous initialization. Startup failure
+Backend liveness responds during initialization. A separate POST `/routing/initialize` holds an active invocation for up to 18 seconds, awaiting the shielded loader future so serverless compute can continue after brief liveness responses. Startup failure
 does not hide the map or unified destination search.
 
 The optional agency filter moved behind a disclosure. The search still covers
@@ -98,7 +98,7 @@ unassisted human task success. Automated tests do not establish human usability.
 ## Validation and failures
 
 - Python unit/integration/routing/profile, PostgreSQL and existing inspection
-  contract suite: 159 passed. Three PostgreSQL cases use an isolated test database
+  contract suite: 161 passed. Three PostgreSQL cases use an isolated test database
   and per-test schemas. Routing algorithms and profiles run on independent small
   graphs and real county journeys. Expired/future feeds withhold departure times.
 - Frontend lint, TypeScript and production build: passed. MapLibre still produces
@@ -135,6 +135,21 @@ history is retained. The runtime cannot create schemas or delete review history.
 Only authenticated, supported, edge-linked, unexpired reviews affect routes.
 Unverified potholes do not block paths. See REPORTING_OPERATIONS.md for credentials,
 migrations, privacy, reviewer tools, retention and provider limits.
+
+## Deployment failure caught and corrected
+
+The first new production deployment (`5689153`, dpl_HrKUFqJnMGYvTWCg5FT2CpCyYT1o)
+returned liveness but remained in walking_network after 100 seconds of polling.
+The first route probe returned 503 in 0.119 seconds. The complete failed probe
+is retained in production-async-failure.json. This demonstrated that a background
+thread with short requests was not sufficient on Vercel. The prior working
+release was restored. A bounded, awaited initialization endpoint now keeps the
+invocation active without blocking other asynchronous requests, and preserves
+its future across request timeouts. Two new backend tests cover concurrent
+liveness and non-cancelling timeouts; all five built startup tests pass. Public
+verification of the corrected candidate follows before promotion. PostgreSQL
+effects are also always queried when configured, even if startup marked the store
+unavailable; outages cannot silently discard reviewed barriers.
 
 ## Release status
 

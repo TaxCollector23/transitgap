@@ -125,7 +125,7 @@ export function warmRouting() {
     const deadline = Date.now() + 45000;
     while (Date.now() < deadline) {
       try {
-        const response = await fetch(`${API}/health/live`, {cache:"no-store", signal:AbortSignal.timeout(Math.min(8000,deadline-Date.now()))});
+        const response = await fetch(`${API}/routing/initialize`, {method:"POST",cache:"no-store", signal:AbortSignal.timeout(Math.min(20000,deadline-Date.now()))});
         if (response.ok) {
           const health = await response.json();
           if (health.ready) return true;

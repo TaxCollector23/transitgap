@@ -1,0 +1,167 @@
+{
+  "base": "https://transitgap.vercel.app",
+  "label": "before",
+  "reports": [
+    {
+      "width": 390,
+      "height": 844,
+      "planner_ready_ms": 1760,
+      "map_canvas_ms": 1769,
+      "map_ready_ms": 1771,
+      "resources": [
+        {
+          "name": "index-B9Kto14m.js",
+          "duration_ms": 55,
+          "transfer_bytes": 77790,
+          "decoded_bytes": 240369
+        },
+        {
+          "name": "bootstrap.json",
+          "duration_ms": 46,
+          "transfer_bytes": 166618,
+          "decoded_bytes": 1130783
+        },
+        {
+          "name": "App-BCNmnpq-.js",
+          "duration_ms": 74,
+          "transfer_bytes": 321945,
+          "decoded_bytes": 1134621
+        },
+        {
+          "name": "maplibre-gl-worker-DJoMIXcx.js",
+          "duration_ms": -81,
+          "transfer_bytes": 153480,
+          "decoded_bytes": 519571
+        },
+        {
+          "name": "maplibre-gl-worker-DJoMIXcx.js",
+          "duration_ms": -63,
+          "transfer_bytes": 300,
+          "decoded_bytes": 519571
+        }
+      ]
+    },
+    {
+      "width": 768,
+      "height": 1024,
+      "planner_ready_ms": 1592,
+      "map_canvas_ms": 1611,
+      "map_ready_ms": 1612,
+      "resources": [
+        {
+          "name": "index-B9Kto14m.js",
+          "duration_ms": 247,
+          "transfer_bytes": 77790,
+          "decoded_bytes": 240369
+        },
+        {
+          "name": "bootstrap.json",
+          "duration_ms": 128,
+          "transfer_bytes": 166618,
+          "decoded_bytes": 1130783
+        },
+        {
+          "name": "App-BCNmnpq-.js",
+          "duration_ms": 178,
+          "transfer_bytes": 321945,
+          "decoded_bytes": 1134621
+        },
+        {
+          "name": "maplibre-gl-worker-DJoMIXcx.js",
+          "duration_ms": -42,
+          "transfer_bytes": 300,
+          "decoded_bytes": 519571
+        },
+        {
+          "name": "maplibre-gl-worker-DJoMIXcx.js",
+          "duration_ms": -66,
+          "transfer_bytes": 153480,
+          "decoded_bytes": 519571
+        }
+      ]
+    },
+    {
+      "width": 1440,
+      "height": 900,
+      "planner_ready_ms": 1171,
+      "map_canvas_ms": 1444,
+      "map_ready_ms": 1729,
+      "resources": [
+        {
+          "name": "index-B9Kto14m.js",
+          "duration_ms": 47,
+          "transfer_bytes": 77790,
+          "decoded_bytes": 240369
+        },
+        {
+          "name": "bootstrap.json",
+          "duration_ms": 78,
+          "transfer_bytes": 166618,
+          "decoded_bytes": 1130783
+        },
+        {
+          "name": "App-BCNmnpq-.js",
+          "duration_ms": 73,
+          "transfer_bytes": 321945,
+          "decoded_bytes": 1134621
+        },
+        {
+          "name": "maplibre-gl-worker-DJoMIXcx.js",
+          "duration_ms": -78,
+          "transfer_bytes": 153480,
+          "decoded_bytes": 519571
+        },
+        {
+          "name": "maplibre-gl-worker-DJoMIXcx.js",
+          "duration_ms": -61,
+          "transfer_bytes": 300,
+          "decoded_bytes": 519571
+        }
+      ]
+    },
+    {
+      "width": 1920,
+      "height": 1080,
+      "planner_ready_ms": 1184,
+      "map_canvas_ms": 1189,
+      "map_ready_ms": 2461,
+      "resources": [
+        {
+          "name": "index-B9Kto14m.js",
+          "duration_ms": 43,
+          "transfer_bytes": 77790,
+          "decoded_bytes": 240369
+        },
+        {
+          "name": "bootstrap.json",
+          "duration_ms": 38,
+          "transfer_bytes": 166618,
+          "decoded_bytes": 1130783
+        },
+        {
+          "name": "App-BCNmnpq-.js",
+          "duration_ms": 66,
+          "transfer_bytes": 321945,
+          "decoded_bytes": 1134621
+        },
+        {
+          "name": "maplibre-gl-worker-DJoMIXcx.js",
+          "duration_ms": -90,
+          "transfer_bytes": 153480,
+          "decoded_bytes": 519571
+        },
+        {
+          "name": "maplibre-gl-worker-DJoMIXcx.js",
+          "duration_ms": -71,
+          "transfer_bytes": 300,
+          "decoded_bytes": 519571
+        }
+      ]
+    }
+  ],
+  "prior_live_route_attempt": {
+    "outcome": "failed",
+    "reason": "Find route remained disabled after readiness retries",
+    "button_wait_timeout_ms": 90000
+  }
+}

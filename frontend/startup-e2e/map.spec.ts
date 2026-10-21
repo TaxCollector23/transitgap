@@ -12,7 +12,7 @@ for (const viewport of [{width:1440,height:900},{width:390,height:844},{width:76
       if (request.url().includes(".pbf")) glyphRequests.push(request.url());
     });
     // Hold the cold backend indefinitely. Map readiness must be independent.
-    await page.route("**/health/live", () => { healthRequests++; });
+    await page.route("**/routing/initialize", () => { healthRequests++; });
     await page.route("**/bootstrap.json", async route => {
       bootstrapRequests++;
       await route.fulfill({json:{
@@ -57,7 +57,7 @@ test("cold startup failure keeps a valid trip actionable and retryable", async (
     coverage:{center:{latitude:37.3296,longitude:-121.903},radius_m:1500,region:"Diridon",description:"Synthetic startup fixture"},
     stops:[{stop_id:"fixture",stop_name:"San Jose Diridon (Bay 11)",latitude:37.3296,longitude:-121.903}],
   }}));
-  await page.route("**/health/live", route=>route.fulfill({json:{alive:true,ready,error:ready?null:"synthetic startup failure"}}));
+  await page.route("**/routing/initialize", route=>route.fulfill({json:{alive:true,ready,error:ready?null:"synthetic startup failure"}}));
   await page.route("**/route",route=>{ routes++;return route.fulfill({status:503,json:{detail:"Synthetic route-service outage"}}); });
   await page.goto("/app");
   await expect(page.locator('main[data-data-state="ready"]')).toBeVisible();

@@ -150,6 +150,12 @@ def graph_cache_path(directory: Path, radius_m: int, region: str) -> Path:
 
 def write_compact_graph(graph: nx.MultiDiGraph, path: Path) -> None:
     """Serialize plain JSON records; no pickle or executable cache content."""
+    from .graph_snapshot import write_blocks
+    return write_blocks(graph, path)
+
+
+def _write_legacy_graph(graph: nx.MultiDiGraph, path: Path) -> None:
+    """Legacy writer retained for migration/regression benchmarks only."""
     def encode(value):
         if hasattr(value, "wkt"):
             return value.wkt
@@ -175,8 +181,11 @@ def read_compact_graph(path: Path) -> nx.MultiDiGraph:
     def share_strings(record):
         return {sys.intern(key): sys.intern(value) if isinstance(value, str) and len(value) <= 128 else value
                 for key, value in record.items()}
-    with gzip.open(path, "rt", encoding="utf-8") as source:
+    with gzip.open(path, "rb") as source:
         header = json.loads(next(source))
+        if header.get("format") == "transitgap-graph/2":
+            from .graph_snapshot import read_blocks
+            return read_blocks(source, header)
         if header.get("format") != "transitgap-graph/1":
             raise DatasetError("Unsupported compact walking graph format")
         graph.graph.update(header["attributes"])

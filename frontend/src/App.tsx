@@ -6,7 +6,7 @@ import StopSearch from "./StopSearch";
 import RouteResult, { type Comparison } from "./RouteResult";
 import type { GapDetail } from "./GapPanel";
 const GapPanel = lazy(() => import("./GapPanel"));
-import MapView from "./MapView";
+const MapView = lazy(() => import("./MapView"));
 const GroundTruthPanel = lazy(() => import("./GroundTruthPanel"));
 import type { Coverage, ReachabilityAnalysis, RouteResult as Route, Stop } from "./types";
 import { API, plannerData, PREPARED, warmRouting } from "./data";
@@ -207,7 +207,6 @@ export default function App() {
     : !origin && !place ? "Choose where you're starting and where you're going."
     : !origin ? "Choose where you're starting."
     : !place ? "Choose where you're going."
-    : !routingWarm ? (warmingRouting ? "The route service is starting. This can take a few seconds." : "The route service hasn't connected yet.")
     : "";
   const canRoute = !missingReason && !calculating;
 
@@ -301,6 +300,13 @@ export default function App() {
     setProblem(null);
     setStatus(`Finding a route for ${profileLabel(routeProfile)}…`);
     try {
+      if (!routingWarm) {
+        setStatus("Preparing the walking network. Your trip is queued; you can still change either location.");
+        const ready = await warmRouting();
+        if (controller.signal.aborted) return;
+        if (!ready) throw Object.assign(new Error("The routing service is still starting. Please try again."), { status: 503 });
+        setRoutingWarm(true);
+      }
       let response: Response;
       try {
         response = await fetch(`${API}/route`, {
@@ -313,7 +319,7 @@ export default function App() {
             algorithm,
             profile: routeProfile,
           }),
-          signal: controller.signal,
+          signal: AbortSignal.any([controller.signal, AbortSignal.timeout(25000)]),
         });
       } catch (error) {
         if (controller.signal.aborted) return;
@@ -552,6 +558,7 @@ export default function App() {
         Skip to route planner
       </a>
       <section className="map-shell" aria-label="Map">
+        <Suspense fallback={<div className="map" role="status">Loading the map. The route planner is available.</div>}>
         <MapView
           coverage={coverage}
           stops={stops}
@@ -578,6 +585,7 @@ export default function App() {
           showStops={showStops}
           onViewChange={setMapCenter}
         />
+        </Suspense>
         <div className="map-tools">
           {routeActive && (
             <button type="button" className="map-tool" aria-pressed={showStops} onClick={() => setShowStops((value) => !value)}>
@@ -727,7 +735,7 @@ export default function App() {
                   </div>
                 </fieldset>
                 <button className="button button-primary find-route" type="button" onClick={() => void calculate()} disabled={!canRoute} aria-describedby={missingReason ? "route-missing" : undefined} aria-busy={calculating}>
-                  {calculating ? <><span className="spinner light" aria-hidden="true" /> Finding route…</> : "Find route"}
+                  {calculating ? <><span className="spinner light" aria-hidden="true" /> {routingWarm ? "Finding route…" : "Preparing walking network…"}</> : "Find route"}
                 </button>
                 {missingReason && <p className="field-hint" id="route-missing">{missingReason}</p>}
                 {PREPARED && dataReady && !routingWarm && !warmingRouting && (

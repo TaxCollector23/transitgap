@@ -4,7 +4,7 @@
 
 TransitGap measures the last part of a journey to public transit: how mobility preferences change a route, what accessibility information is missing, and which stops deserve closer examination.
 
-It uses actual OpenStreetMap paths and official VTA GTFS across Santa Clara County. The current graph has 291,569 nodes, 811,314 directed edges and 3,348 connected VTA stops. City sidewalk comparisons remain a Diridon-area pilot. No route is independently certified accessible.
+It uses actual OpenStreetMap paths and official VTA, Caltrain and BART GTFS across Santa Clara County. The prepared graph has 291,569 nodes, 811,314 directed edges, 3,234 connected VTA stops, 34 Caltrain platforms and 4 BART platforms. Rail platforms are grouped into stations in destination search. City sidewalk comparisons remain a Diridon-area pilot. No route is independently certified accessible.
 
 ## What works
 
@@ -99,7 +99,7 @@ Deployment uses Vercel's FastAPI integration. Prepared data is bundled, static f
 
 Mapped tags are not field checks. Unknown conditions are not assumed accessible or inaccessible. Short off-network connectors, simplification and omitted source tags can affect results. Gap scores depend on both mapped conditions and assumed speeds; they are not infrastructure grades or population estimates.
 
-Public report submission is paused on Vercel because `/tmp` storage is instance-local. Local SQLite remains available; a durable production store and review/retraction workflow are unfinished. Unreviewed reports never silently block routes.
+Production community reports use a separate PostgreSQL database, shared submission limits and idempotent saves. Every public report starts unverified. Authenticated reviewers can retain a review history, associate supported mapped edges, set expiring effects and revoke incorrect effects. Unreviewed reports never change routes. Local SQLite remains available for development. See [reporting operations](docs/REPORTING_OPERATIONS.md) and [the performance/release audit](docs/PERFORMANCE_RELEASE_AUDIT.md) for measured results and limitations.
 
 Address text is sent to Nominatim only on explicit search. The proxy uses a bounded ten-minute memory cache and a per-process outbound throttle. Multi-instance scaling needs a shared rate coordinator or a separately hosted provider. Precise journey coordinates are shared only when a user chooses to create a journey URL.
 

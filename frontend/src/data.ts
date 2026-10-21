@@ -121,9 +121,21 @@ let routingWarmup: Promise<boolean> | null = null;
 export function warmRouting() {
   // StrictMode and overlapping callers share one cold-start request.
   if (routingWarmup) return routingWarmup;
-  routingWarmup = serviceJSON(`${API}/health`)
-    .then(data => Boolean(data.ready))
-    .catch(() => false)
+  routingWarmup = (async () => {
+    const deadline = Date.now() + 45000;
+    while (Date.now() < deadline) {
+      try {
+        const response = await fetch(`${API}/health/live`, {cache:"no-store", signal:AbortSignal.timeout(Math.min(8000,deadline-Date.now()))});
+        if (response.ok) {
+          const health = await response.json();
+          if (health.ready) return true;
+          if (health.error) return false;
+        } else if (response.status < 500 && response.status !== 429) return false;
+      } catch { /* A cold instance may not have accepted the first request. */ }
+      if (Date.now() < deadline) await new Promise(resolve => window.setTimeout(resolve, 1000));
+    }
+    return false;
+  })()
     .finally(() => { routingWarmup = null; });
   return routingWarmup;
 }

@@ -5,6 +5,12 @@ import networkx as nx
 os.environ['TRANSITGAP_OBSERVATIONS_DB']=str(Path(tempfile.mkdtemp(prefix='transitgap-ci-'))/'observations.sqlite3')
 os.environ['CORS_ORIGINS']='http://127.0.0.1:5174'
 os.environ['TRANSITGAP_MODERATION_TOKEN']='ci-only-synthetic-review-token-0000000000'
+if test_database := os.getenv('TRANSITGAP_TEST_DATABASE_URL'):
+    from psycopg.conninfo import conninfo_to_dict
+    if not conninfo_to_dict(test_database)['dbname'].endswith('_test'):
+        raise RuntimeError('Fixture server refuses non-test PostgreSQL databases')
+    os.environ['DATABASE_URL']=test_database
+    os.environ['TRANSITGAP_REPORT_RATE_SECRET']='ci-only-synthetic-rate-secret-000000000000'
 from backend.app import main
 
 def fixture():

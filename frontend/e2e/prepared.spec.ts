@@ -5,7 +5,7 @@ test("prepared production views work while the route engine is unavailable", asy
   await page.route("**/*", (route) => {
     const path = new URL(route.request().url()).pathname;
     if (
-      ["/health", "/coverage", "/stops", "/gaps"].includes(path) ||
+      ["/health", "/health/live", "/coverage", "/stops", "/gaps"].includes(path) ||
       path.startsWith("/stops/") ||
       path.startsWith("/letters/")
     )

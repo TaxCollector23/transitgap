@@ -135,7 +135,7 @@ def test_station_entrance_selection_preserves_the_requested_algorithm(monkeypatc
         ],
     }
 
-    def fake_route(_graph, _origin, node, algorithm, _profile, _target):
+    def fake_route(_graph, _origin, node, algorithm, _profile, _target, *, report_effects):
         if algorithm == Algorithm.breadth_first:
             return {
                 "distance_m": 90 if node == "near" else 120,

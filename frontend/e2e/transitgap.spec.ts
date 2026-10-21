@@ -79,6 +79,7 @@ test("2-3. find a stop by name and agency, and set an origin without the map", a
   await box.fill("berryessa");
   await expect(stopOptions(page).filter({ hasText: /BART station/ })).toHaveCount(1);
   await expect(stopOptions(page).filter({ hasText: /VTA bus stop/ }).first()).toBeVisible();
+  await page.getByText("Filter by agency", { exact: true }).click();
   await page.getByRole("radio", { name: "BART" }).check();
   await expect(stopOptions(page)).toHaveCount(1);
   await page.getByRole("radio", { name: "Caltrain" }).check();
@@ -91,8 +92,10 @@ test("2-3. find a stop by name and agency, and set an origin without the map", a
   await expect(stopOptions(page).first()).toBeVisible();
 });
 
+for (const viewport of [{width:390,height:844},{width:768,height:1024},{width:1440,height:900},{width:1920,height:1080}])
 for (const key of ["vta", "caltrain", "bart"] as const) {
-  test(`4-7. ${JOURNEYS[key].name} journey: route, profile change, directions and missing data`, async ({ page }) => {
+  test(`4-7. ${JOURNEYS[key].name} ${viewport.width}px journey: route, profile change, directions and missing data`, async ({ page }) => {
+    await page.setViewportSize(viewport);
     const journey = JOURNEYS[key];
     await open(page);
     await startAt(page, journey.origin);
@@ -103,7 +106,7 @@ for (const key of ["vta", "caltrain", "bart"] as const) {
     expect(walking.directions.length).toBeLessThanOrEqual(20);
     await expect(page.locator(".directions > li")).toHaveCount(walking.directions.length);
     await expect(page.locator(".route-headline")).toContainText("Walking");
-    await page.screenshot({ path: `${shots}/desktop-1440-${key}-walking.png` });
+    await page.screenshot({ path: `${shots}/${viewport.width}-${key}-walking.png` });
 
     // 5. Changing the profile recalculates; the old route is never shown as current.
     const pending = page.waitForResponse((r) => r.url().endsWith("/route") && r.request().method() === "POST", { timeout: 60_000 });
@@ -123,9 +126,15 @@ for (const key of ["vta", "caltrain", "bart"] as const) {
     await expect(page.locator(".route-result")).toContainText(/not recorded for/);
     await page.locator("summary", { hasText: /^About / }).click();
     await expect(page.locator(".stop-service")).toContainText(/boarding/i);
-    await page.screenshot({ path: `${shots}/desktop-1440-${key}-wheelchair-details.png`, fullPage: false });
+    await page.screenshot({ path: `${shots}/${viewport.width}-${key}-wheelchair-details.png`, fullPage: false });
     const axe = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"]).analyze();
     expect(axe.violations.map((v) => v.id)).toEqual([]);
+    for (const label of ["Stroller", "Low vision"]) {
+      const next = page.waitForResponse(r => r.url().endsWith("/route") && r.request().method() === "POST");
+      await page.getByRole("radio", {name:label,exact:true}).check();
+      expect((await next).status()).toBe(200);
+      await expect(page.locator(".route-headline")).toContainText(label);
+    }
   });
 }
 

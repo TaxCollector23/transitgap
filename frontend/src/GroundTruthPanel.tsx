@@ -1,8 +1,8 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import OriginSearch from "./OriginSearch";
 import type { GapFeature, Observation, SourceStatus } from "./types";
 
-import { API, serviceJSON } from "./data";
+import { API, serviceJSON, warmRouting } from "./data";
 const METERS_PER_MILE = 1609.344;
 type Props = {
   onFeatures: (
@@ -23,19 +23,19 @@ const emptyPolygons: GeoJSON.FeatureCollection = {
   features: [],
 };
 const categories = [
-  ["pedestrian_pothole", "Pothole on a pedestrian path"],
-  ["broken_pavement", "Broken pavement"],
+  ["pedestrian_pothole", "Pothole affecting pedestrians"],
+  ["broken_pavement", "Broken sidewalk"],
   ["blocked_curb_ramp", "Blocked curb ramp"],
   ["construction_obstruction", "Construction obstruction"],
   ["missing_tactile_paving", "Missing tactile paving, observed in person"],
   ["curb_ramp_present", "Curb ramp present"],
-  ["curb_ramp_appears_absent", "Curb ramp appears absent"],
+  ["curb_ramp_appears_absent", "Missing curb ramp"],
   ["stairs", "Stairs"],
   ["sidewalk_obstruction", "Sidewalk obstruction"],
-  ["uneven_surface", "Uneven surface"],
+  ["uneven_surface", "Uneven pavement"],
   ["sidewalk_condition_issue", "Sidewalk condition issue"],
-  ["crossing_issue", "Crossing issue"],
-  ["other", "Other"],
+  ["crossing_issue", "Blocked crossing"],
+  ["other", "Other accessibility concern"],
 ];
 
 export default function GroundTruthPanel({
@@ -70,6 +70,7 @@ export default function GroundTruthPanel({
   const [reportAvailabilityError, setReportAvailabilityError] = useState(false);
   const [message, setMessage] = useState("");
   const [saved, setSaved] = useState("");
+  const submission = useRef<{body:string; key:string} | null>(null);
 
   function evidenceData(
     items: GapFeature[],
@@ -121,7 +122,13 @@ export default function GroundTruthPanel({
         setReports(data.observations as Observation[]);
         setReportsState("ready");
       }).catch(() => setReportsState("unavailable")),
-      serviceJSON(`${API}/health`).then(data => setReportsEnabled(data.reports_enabled === true))
+      serviceJSON(`${API}/health`).then(async data => {
+        if (!data.ready && !data.error) {
+          if (!await warmRouting()) throw Error("Service is still starting");
+          data = await serviceJSON(`${API}/health`);
+        }
+        setReportsEnabled(data.reports_enabled === true);
+      })
         .catch(() => { setReportsEnabled(null); setReportAvailabilityError(true); }),
     ]);
   }
@@ -184,25 +191,28 @@ export default function GroundTruthPanel({
     setMessage("");
     setSaved("");
     try {
+      const body = JSON.stringify({latitude:Number(latitude),longitude:Number(longitude),category,description,
+        website:new FormData(event.currentTarget as HTMLFormElement).get("website") || ""});
+      if (submission.current?.body !== body) submission.current = {body,key:crypto.randomUUID()};
       const response = await fetch(`${API}/accessibility/observations`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          latitude: Number(latitude),
-          longitude: Number(longitude),
-          category,
-          description,
-        }),
+        headers: { "Content-Type": "application/json", "Idempotency-Key":submission.current.key },
+        body,
+        signal:AbortSignal.timeout(15000),
       });
       if (!response.ok) {
         const error = await response.json().catch(() => ({}));
         throw new Error(typeof error.detail === "string" ? error.detail : "Report could not be saved. Check the location and try again.");
       }
+      const confirmation = await response.json();
+      if (!confirmation.id || confirmation.review_status !== "UNVERIFIED")
+        throw Error("The service did not confirm your saved report. Please try again.");
       setLatitude("");
       setLongitude("");
       setDescription("");
       onClearReportPoint();
       setSaved("Report saved as unverified community evidence.");
+      submission.current = null;
       void refresh();
     } catch (error) {
       setMessage(
@@ -250,6 +260,7 @@ export default function GroundTruthPanel({
               )}
             </section>
             <form className="report-form" onSubmit={(event) => void submit(event)}>
+              <div hidden aria-hidden="true"><label>Website<input name="website" tabIndex={-1} autoComplete="off" /></label></div>
               <label htmlFor="report-observation"><span className="report-step-title">2. What's the problem?</span></label>
               <select id="report-observation" value={category} onChange={(event) => setCategory(event.target.value)}>
                 {categories.map(([value, label]) => (

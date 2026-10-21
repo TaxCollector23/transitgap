@@ -40,3 +40,8 @@ experimental student code part of live routing.
 
 No independent student implementation, field visit, human usability session or
 submission receipt has been supplied in this sprint.
+
+This task is a genuine opportunity for independent work, not a guarantee of CAC
+eligibility. The official rules require broader substantial student contribution
+and full AI disclosure; see CAC_2026_SUBMISSION.md. Do not recast AI-written
+production code as student-authored after completing this reference.

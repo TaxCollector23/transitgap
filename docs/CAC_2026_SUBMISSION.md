@@ -1,5 +1,14 @@
 # CAC submission and human validation
 
+## Authorship requirement
+
+The [2026 rulebook](https://www.congressionalappchallenge.us/wp-content/uploads/2026/05/2026-CAC-Rules.pdf)
+permits disclosed AI help with parts of a project, while requiring substantial
+student programming and understanding; AI cannot supply all technical work.
+This repository records AI assistance but does not establish the student's actual
+independent work. Completing the bounded reference task alone does not establish
+compliance. Document real contributions and confirm eligibility before submitting.
+
 Official pages checked October 20, 2026 (Pacific). The national registration page
 currently says **October 26, 2026, 9 pm ET (6 pm Pacific)**:
 https://www.congressionalappchallenge.us/students/student-registration/ .

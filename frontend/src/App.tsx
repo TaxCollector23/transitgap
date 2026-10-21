@@ -211,7 +211,7 @@ export default function App() {
     : "";
   const canRoute = !missingReason && !calculating;
   const plannerStep = !origin ? "origin" : !place ? "destination" : "ready";
-  const nextAction = !dataReady ? "Loading stops…" : !origin ? "Choose a starting point" : !place ? "Choose a destination" : "Find route";
+  const nextAction = !dataReady ? loading ? "Loading stops…" : "Retry loading stops" : !origin ? "Choose a starting point" : !place ? "Choose a destination" : "Find route";
   const previousInputs = useRef({ origin, place });
 
   const revealStep = useCallback((id: string) => {
@@ -883,10 +883,11 @@ export default function App() {
           <div className={`planner-action ${canRoute ? "planner-action-ready" : ""}`}>
             <button className="button button-primary find-route" type="button"
               onClick={() => {
-                if (canRoute) void calculate();
+                if (!dataReady) void loadData();
+                else if (canRoute) void calculate();
                 else revealStep(!origin ? "origin-title" : "destination-title");
               }}
-              disabled={!dataReady || calculating} aria-describedby={missingReason ? "route-missing" : undefined} aria-busy={calculating}>
+              disabled={(!dataReady && loading) || calculating} aria-describedby={missingReason ? "route-missing" : undefined} aria-busy={calculating}>
               {calculating ? <><span className="spinner light" aria-hidden="true" /> {routingWarm ? "Finding route…" : "Preparing walking network…"}</> : <>{nextAction}<ArrowRight size={18} aria-hidden="true" /></>}
             </button>
             {missingReason && <span className="sr-only" id="route-missing">{missingReason}</span>}

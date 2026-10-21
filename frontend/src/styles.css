@@ -74,10 +74,16 @@ a:focus-visible {
   background: #e9ebe5;
 }
 .map-shell,
-.map {
+.map-shell > .map {
   position: absolute;
   inset: 0;
   overflow: hidden;
+}
+.map-shell > .map {
+  /* MapLibre's asynchronously loaded .maplibregl-map sets position:relative.
+     Keep the canvas viewport sized regardless of stylesheet arrival order. */
+  width: 100%;
+  height: 100%;
 }
 .map-selecting canvas {
   cursor: crosshair !important;

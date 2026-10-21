@@ -35,7 +35,7 @@ type Props = {
   reportPoint: [number, number] | null;
 };
 
-const center: [number, number] = [-121.903, 37.3296];
+const center: [number, number] = [-121.75, 37.2];
 
 function stopFeatures(
   stops: Stop[],
@@ -152,7 +152,7 @@ export default function MapView({
     const map = new maplibregl.Map({
       container: container.current,
       center,
-      zoom: 14,
+      zoom: 9,
       minZoom: 8,
       maxZoom: 19,
       attributionControl: false,
@@ -160,7 +160,7 @@ export default function MapView({
       fadeDuration: 0,
       style: {
         version: 8,
-        glyphs: "https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf",
+        // Cluster counts use local fonts; no third-party glyph download needed.
         sources: {
           osm: {
             type: "raster",
@@ -277,7 +277,7 @@ export default function MapView({
           filter: ["has", "point_count"],
           layout: {
             "text-field": ["get", "point_count_abbreviated"],
-            "text-font": ["Open Sans Semibold", "Arial Unicode MS Bold"],
+            "text-font": ["Arial Bold"],
             "text-size": 11,
           },
           paint: { "text-color": "#ffffff" },
@@ -414,6 +414,7 @@ export default function MapView({
 
     map.on("load", () => {
       addLayers();
+      if (container.current) container.current.dataset.mapState = "ready";
       onReady();
       map.on("click", (event) => {
         if (handlers.current.selecting) {
@@ -571,7 +572,7 @@ export default function MapView({
             right: 36,
           },
           maxZoom: 11,
-          duration: 350,
+          duration: 0,
         },
       );
     }

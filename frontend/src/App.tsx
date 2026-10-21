@@ -6,7 +6,7 @@ import ReadAloud from "./ReadAloud";
 import StopService from "./StopService";
 import type { GapDetail } from "./GapPanel";
 const GapPanel = lazy(() => import("./GapPanel"));
-const MapView = lazy(() => import("./MapView"));
+import MapView from "./MapView";
 const GroundTruthPanel = lazy(() => import("./GroundTruthPanel"));
 import type { Coverage, ReachabilityAnalysis, RouteResult, Stop } from "./types";
 import { plannerData, PREPARED, warmRouting } from "./data";
@@ -659,32 +659,30 @@ export default function App() {
     <main className={`app-shell ${panelExpanded ? "" : "sheet-is-collapsed"}`}>
       <a href="#origin-title" className="app-skip" onClick={() => { setTab("route"); setPanelExpanded(true); requestAnimationFrame(()=>document.getElementById("origin-title")?.focus()); }}>Skip map to route controls</a>
       <section className="map-shell" aria-label="Map">
-        <Suspense fallback={null}>
-          <MapView
-            coverage={coverage}
-            stops={stops}
-            origin={origin}
-            destination={destination}
-            route={routeFeature}
-            segments={routeSegments}
-            comparison={comparisonGeometry}
-            study={studyGeometry}
-            selecting={selecting}
-            panelExpanded={panelExpanded}
-            onReady={() => setMapReady(true)}
-            onOrigin={handleMapOrigin}
-            onStop={chooseStop}
-            evidence={evidenceFeatures}
-            sidewalks={sidewalkFeatures}
-            focusPoint={studyFocus}
-            onCandidate={(id) => {
-              setSelectedCandidateId(id);
-              setTab("evidence");
-              setPanelExpanded(true);
-            }}
-            reportPoint={reportPoint}
-          />
-        </Suspense>
+        <MapView
+          coverage={coverage}
+          stops={stops}
+          origin={origin}
+          destination={destination}
+          route={routeFeature}
+          segments={routeSegments}
+          comparison={comparisonGeometry}
+          study={studyGeometry}
+          selecting={selecting}
+          panelExpanded={panelExpanded}
+          onReady={() => setMapReady(true)}
+          onOrigin={handleMapOrigin}
+          onStop={chooseStop}
+          evidence={evidenceFeatures}
+          sidewalks={sidewalkFeatures}
+          focusPoint={studyFocus}
+          onCandidate={(id) => {
+            setSelectedCandidateId(id);
+            setTab("evidence");
+            setPanelExpanded(true);
+          }}
+          reportPoint={reportPoint}
+        />
         <details className="map-legend">
           <summary>Map key</summary>
           <span>A · Your start</span>

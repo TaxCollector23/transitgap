@@ -44,18 +44,28 @@ async function prepared(path: string, fallback: string, signal?: AbortSignal) {
   }
   return json(await fetch(`${API}${fallback}`, { signal }));
 }
+let preparedPlanner: Promise<{coverage: Coverage; stops: Stop[]}> | null = null;
+export function preloadPlannerData() {
+  if (!PREPARED) return;
+  // Start the CDN request alongside the map bundle, not after React mounts it.
+  preparedPlanner ??= fetch("/bootstrap.json").then(async response => {
+    if (!response.ok) throw Error("Prepared transit data unavailable.");
+    const data = await response.json();
+    if (!data.coverage || !Array.isArray(data.stops) || !data.stops.length)
+      throw Error("Prepared transit data incomplete.");
+    return data;
+  });
+  // A failed preload must remain retryable, and must not reject unhandled.
+  void preparedPlanner.catch(() => { preparedPlanner = null; });
+}
 export async function plannerData(): Promise<{
   coverage: Coverage;
   stops: Stop[];
 }> {
   if (PREPARED) {
     try {
-      const r = await fetch("/bootstrap.json");
-      if (r.ok) {
-        const data = await r.json();
-        if (data.coverage && Array.isArray(data.stops) && data.stops.length)
-          return data;
-      }
+      preloadPlannerData();
+      return await preparedPlanner!;
     } catch {
       /* Recover through the live API. */
     }

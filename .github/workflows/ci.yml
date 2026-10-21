@@ -51,11 +51,15 @@ jobs:
         working-directory: frontend
       - run: npx playwright test --config playwright.fixture.config.ts
         working-directory: frontend
+      - run: npm run build && npx playwright test --config playwright.startup.config.ts
+        working-directory: frontend
       - uses: actions/upload-artifact@v4
         if: failure()
         with:
           name: fixture-browser-failures
-          path: frontend/test-artifacts/fixture-results/
+          path: |
+            frontend/test-artifacts/fixture-results/
+            frontend/test-artifacts/startup-results/
           retention-days: 7
   real-data:
     if: github.event_name == 'workflow_dispatch' && inputs.real_data

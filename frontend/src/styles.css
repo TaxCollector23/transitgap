@@ -1053,6 +1053,31 @@ a:focus-visible {
   .maplibregl-ctrl-bottom-right { bottom: calc(60dvh + 20px) !important; }
 }
 .planner h2 label { display: inline; font: inherit; margin: 0; }
+.panel-scroll { flex: 1 1 auto; scroll-padding: 80px 0 24px; }
+.planner .step-section { padding-left: 12px; margin-left: -15px; border-left: 3px solid transparent; }
+.planner .step-current { border-left-color: var(--accent); animation: guide-step 700ms ease-out 2; }
+.planner h2 { display: flex; align-items: baseline; gap: 9px; scroll-margin: 80px 0 18px; }
+.step-number { flex: none; min-width: 15px; color: #536158; font-size: 15px; font-weight: 600; }
+.step-current .step-number, .step-complete .step-number { color: #176b5b; }
+.origin-actions .location-action { border-color: #176b5b; color: #105345; background: #eef4ed; }
+.planner-action { flex: none; padding: 14px 22px; border-top: 1px solid var(--line); background: var(--surface); }
+.planner-action .find-route { margin: 0; min-height: 50px; justify-content: space-between; padding: 12px 20px; border-radius: 999px; font-size: 16px; }
+.planner-action-ready .find-route { animation: guide-action 700ms ease-out 2; }
+.sheet-summary { border: 0; padding: 0; background: none; text-align: left; min-height: 44px; }
+#planner-problem { scroll-margin-top: 80px; }
+@keyframes guide-step { 0%, 100% { background-color: transparent; } 40% { background-color: #e9f2e8; } }
+@keyframes guide-action { 0%, 100% { box-shadow: 0 0 0 0 #176b5b00; } 45% { box-shadow: 0 0 0 5px #176b5b24; } }
+@media (max-width: 760px) {
+  .panel { display: flex; }
+  .panel-expanded .panel-scroll, .route-active .panel-expanded .panel-scroll { max-height: none; }
+  .panel-collapsed .planner-action { display: none; }
+  .planner-action { padding: 12px 18px; }
+  .panel-collapsed .sheet-summary { color: #105345; font-weight: 600; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .planner .step-current, .planner-action-ready .find-route { animation: none; }
+  .panel-scroll { scroll-behavior: auto; }
+}
 .profile-options { display: grid; grid-template-columns: 1fr 1fr; }
 .profile-options label { display: block; }
 .profile-options span { display: flex; justify-content: center; width: 100%; }

@@ -1,5 +1,23 @@
 import { test, expect } from "@playwright/test";
 
+test('the visible next action retries unavailable stop data', async ({page}) => {
+  let available = false;
+  await page.route('**/routing/initialize', route => route.fulfill({json:{ready:true}}));
+  await page.route('**/health', route => route.fulfill({json:{ready:false,error:'Synthetic data failure'}}));
+  await page.route('**/bootstrap.json', route => available ? route.fulfill({json:{
+    coverage:{center:{latitude:37.3296,longitude:-121.903},radius_m:1500,region:'Diridon'},
+    stops:[{stop_id:'fixture',stop_name:'Test stop',latitude:37.3296,longitude:-121.903}],
+  }}) : route.abort());
+  await page.goto('/app');
+  await expect(page.locator('main[data-data-state="error"]')).toBeVisible();
+  const retry = page.getByRole('button',{name:'Retry loading stops',exact:true});
+  await expect(retry).toBeEnabled();
+  available = true;
+  await retry.click();
+  await expect(page.locator('main[data-data-state="ready"]')).toBeVisible();
+  await expect(page.getByRole('button',{name:'Choose a starting point',exact:true})).toBeVisible();
+});
+
 for (const viewport of [{width:1440,height:900},{width:390,height:844},{width:768,height:1024},{width:1920,height:1080}]) {
   test(`built map fills ${viewport.width}px viewport while routing is stalled`, async ({ page }) => {
     await page.setViewportSize(viewport);
@@ -44,6 +62,9 @@ for (const viewport of [{width:1440,height:900},{width:390,height:844},{width:76
     await page.getByRole("button",{name:"Choose on map",exact:true}).click();
     await page.locator(".maplibregl-canvas").click({position:{x:viewport.width/2+(viewport.width>760?90:0),y:viewport.height/2}});
     await expect(page.locator(".map-marker-origin")).toBeVisible();
+    await expect(page.locator('#destination-title')).toBeFocused();
+    await expect(page.getByRole('button',{name:'Choose a destination',exact:true})).toBeVisible();
+    await expect(page.locator('.planner[data-next-step="destination"] .step-current')).toContainText('Where are you going?');
     expect(healthRequests).toBeGreaterThan(0);
     expect(bootstrapRequests).toBe(1);
     expect(glyphRequests).toEqual([]);

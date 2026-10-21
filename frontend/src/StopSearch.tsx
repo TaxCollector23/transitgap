@@ -63,8 +63,8 @@ export default function StopSearch({
       .sort(
         (a, b) =>
           Number(b.exact) - Number(a.exact) ||
-          Number(b.prefix) - Number(a.prefix) ||
           Number(b.station) - Number(a.station) ||
+          Number(b.prefix) - Number(a.prefix) ||
           (a.distance ?? 0) - (b.distance ?? 0) ||
           a.place.name.localeCompare(b.place.name),
       )

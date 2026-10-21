@@ -7,6 +7,7 @@ test('station matches are discoverable among many nearby bus stops', async ({pag
   await page.route('**/bootstrap.json', route => route.fulfill({json:{
     coverage:{center:{latitude:37.3296,longitude:-121.903},radius_m:70000,region:'Santa Clara County'},
     stops:[...busStops,
+      {stop_id:'bart-bus',stop_name:'Berryessa BART (Bay 1)',latitude:37.33,longitude:-121.903,agency:'vta',modes:['bus']},
       {stop_id:'exact-bus',stop_name:'Berryessa',latitude:37.34,longitude:-121.9,agency:'vta',modes:['bus']},
       {stop_id:'bart',stop_name:'Berryessa / North San Jose',latitude:37.364,longitude:-121.874,agency:'bart'},
       {stop_id:'rail-fixture',stop_name:'Berryessa Junction',latitude:37.4,longitude:-121.87,agency:'caltrain'},
@@ -19,6 +20,8 @@ test('station matches are discoverable among many nearby bus stops', async ({pag
   await expect(results.nth(0)).toContainText('VTA bus stop'); // Exact names still win.
   await expect(results.nth(1)).toContainText('BART station');
   await expect(results.nth(2)).toContainText('Caltrain station');
+  await search.fill('Berryessa BART');
+  await expect(results.first()).toContainText('BART station'); // Agency terms match the station description too.
   await search.fill('Berryessa & Side 9');
   await expect(results.first()).toContainText('Berryessa & Side 9');
   await search.fill('');

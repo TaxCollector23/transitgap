@@ -240,3 +240,37 @@ Final safety review: pytest and the fixture server now discard inherited product
 A final PostgreSQL regression test reproduced a reviewed-effect mismatch when JSON edge references contained spaces/numeric IDs. The API now stores canonical string triples and effect loading normalizes legacy rows, preserving review history. The full backend suite returned 164 passes after the fix; malformed object references are rejected rather than treated as triples. Final landing lint/type/build and two five-viewport/keyboard landing tests passed after the provenance/readability correction.
 
 The final station-entrance regression brings the complete backend suite to **165 passed, 124 warnings (10.95 s)**, including isolated PostgreSQL and the existing inspection-priority contract. Wheelchair/stroller trips now reject a station whose recorded entrances are all explicitly inaccessible instead of falling back to its platform. Graph node zero remains a valid entrance. This does not certify unrecorded station access.
+
+## Final production follow-up, October 21
+
+PR #11 merged as `5e7640a`; Vercel deployment `dpl_BzBc3a8EWawhaKhJfnUJd12dijaS`
+is Ready and assigned to the public domain. CLI polling timed out, but inspect
+confirmed deployment success. Public health verified that exact build SHA.
+
+The final live checks did **not** pass cleanly. The first attempt needed 55.0 s
+to observe readiness after two 25 s network timeouts; that worker reported
+20.43 s initialization. The first real route succeeded in 0.214 s, followed by
+ten successful matrix requests before another request timed out. At four browser
+sizes the map loaded in 1.5–2.1 s; the first 390 px trip timed out, while the
+other three completed with four clicks. A second run observed readiness after
+36.5 s, then timed out; its browser run timed out waiting for planner data.
+These failures are preserved in `production-final-first-attempt.json`,
+`production-final-second-attempt.json`, `browser-final-first-attempt.json` and
+`browser-final-second-attempt.txt`. The prior 24-route and four-viewport successful
+run remains valid evidence for that earlier run, not a guarantee of current
+reliability. The final MCP check passed all 13 tools and a real wheelchair route.
+
+The scheduled monitor also failed because it checked readiness once without
+holding initialization active. It now POSTs the warmup endpoint with a 90 s
+overall budget, bounded request timeouts, explicit failure handling and four
+unit tests. Its direct production check passed after two probes. The full backend
+suite now has **169 passes, 124 warnings (10.90 s)**. This monitor is a readiness
+check, not a route test or an uptime guarantee.
+
+**Release assessment:** code/fixture CI and local regression gates pass, but
+the production cold-start/reliability acceptance gate remains unmet. The map and
+search can load independently, with bounded retry and actionable failure; a
+consistently seamless first production route is not established. An always-running
+county worker needs sufficient measured RAM and hosting that guarantees uptime;
+no paid resource was provisioned. CAC submission is still incomplete for the
+human tasks above.

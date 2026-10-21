@@ -1,0 +1,260 @@
+{
+  "url": "https://transitgap.vercel.app",
+  "status": "incomplete",
+  "definition": "Observed newly deployed worker; serverless instance placement and OS caches are not controlled",
+  "polls": [
+    {
+      "elapsed_seconds": 25.144,
+      "error": "ReadTimeout"
+    },
+    {
+      "elapsed_seconds": 51.257,
+      "error": "ReadTimeout"
+    },
+    {
+      "elapsed_seconds": 54.807,
+      "request_seconds": 2.541,
+      "status": 200,
+      "body": {
+        "alive": true,
+        "ready": true,
+        "reports_ready": true,
+        "error": null,
+        "phase": "ready"
+      }
+    }
+  ],
+  "first_route_request": {
+    "seconds": 0.214,
+    "status": 200,
+    "readiness_at_probe": true
+  },
+  "observed_ready_seconds": 55.021,
+  "health": {
+    "ready": true,
+    "build_sha": "5e7640a47fadc4fec84365b73279c2d396da27fc",
+    "datasets": {
+      "osm_walk_graph": "ready",
+      "vta_gtfs_stops": "ready",
+      "caltrain_gtfs_stops": "ready",
+      "bart_gtfs_stops": "ready"
+    },
+    "graph": {
+      "type": "directed_multigraph",
+      "nodes": 291569,
+      "directed_edges": 811314
+    },
+    "vta_stop_count": 3234,
+    "transit_stop_counts": {
+      "VTA": 3234,
+      "Caltrain": 34,
+      "BART": 4
+    },
+    "community_report_storage": "postgresql",
+    "reports_enabled": true,
+    "gap_stops_evaluated": 32,
+    "schedule_ready": true,
+    "data_freshness": [
+      {
+        "feed_publisher_name": "Santa Clara Valley Transportation Authority",
+        "feed_publisher_url": "https://www.vta.org",
+        "feed_lang": "EN",
+        "feed_start_date": "20261026",
+        "feed_end_date": "20270110",
+        "feed_version": "2026-10-09_14:57",
+        "feed_contact_email": "customer.service@vta.org",
+        "feed_contact_url": "https://www.vta.org/about/contact"
+      }
+    ],
+    "groundtruth_ready": true,
+    "groundtruth_error": null,
+    "error": null,
+    "initialization_seconds": 20.43,
+    "initialization_cpu_seconds": 19.657,
+    "initialization_timings": {
+      "walking_network": {
+        "wall_seconds": 14.872,
+        "cpu_seconds": 14.734
+      },
+      "rail_stops_and_schedules": {
+        "wall_seconds": 0.509,
+        "cpu_seconds": 0.507
+      },
+      "spatial_index": {
+        "wall_seconds": 0.0,
+        "cpu_seconds": 0.0
+      },
+      "prepared_gap_cache": {
+        "wall_seconds": 1.609,
+        "cpu_seconds": 1.603
+      },
+      "vta_schedule": {
+        "wall_seconds": 0.894,
+        "cpu_seconds": 0.893
+      },
+      "municipal_snapshot": {
+        "wall_seconds": 0.098,
+        "cpu_seconds": 0.097
+      },
+      "evidence_index": {
+        "wall_seconds": 1.689,
+        "cpu_seconds": 1.678
+      },
+      "report_storage": {
+        "wall_seconds": 0.759,
+        "cpu_seconds": 0.146
+      }
+    },
+    "schedule_cache_hits": {
+      "VTA": true,
+      "caltrain": true,
+      "bart": true
+    },
+    "process_memory": {
+      "rss_mib": 1244.5,
+      "peak_rss_mib": 1248.09
+    }
+  },
+  "routes": [
+    {
+      "agency": "VTA",
+      "profile": "standard",
+      "repeat": 0,
+      "status": 200,
+      "seconds": 0.15,
+      "distance_m": 370.1,
+      "directions": 11,
+      "arrival": {
+        "type": "stop",
+        "note": null
+      },
+      "geometry_sha256": "d2640002d59b60694a81efd2948ca712062a25e0a97eac9bf94c0434b8462109"
+    },
+    {
+      "agency": "VTA",
+      "profile": "standard",
+      "repeat": 1,
+      "status": 200,
+      "seconds": 0.157,
+      "distance_m": 370.1,
+      "directions": 11,
+      "arrival": {
+        "type": "stop",
+        "note": null
+      },
+      "geometry_sha256": "d2640002d59b60694a81efd2948ca712062a25e0a97eac9bf94c0434b8462109"
+    },
+    {
+      "agency": "VTA",
+      "profile": "wheelchair",
+      "repeat": 0,
+      "status": 200,
+      "seconds": 0.161,
+      "distance_m": 390.1,
+      "directions": 11,
+      "arrival": {
+        "type": "stop",
+        "note": null
+      },
+      "geometry_sha256": "22aa545fbf87c872572bd71f59e536d0ac10f96e604c6a112327994825cdb871"
+    },
+    {
+      "agency": "VTA",
+      "profile": "wheelchair",
+      "repeat": 1,
+      "status": 200,
+      "seconds": 0.171,
+      "distance_m": 390.1,
+      "directions": 11,
+      "arrival": {
+        "type": "stop",
+        "note": null
+      },
+      "geometry_sha256": "22aa545fbf87c872572bd71f59e536d0ac10f96e604c6a112327994825cdb871"
+    },
+    {
+      "agency": "VTA",
+      "profile": "stroller",
+      "repeat": 0,
+      "status": 200,
+      "seconds": 0.157,
+      "distance_m": 390.1,
+      "directions": 11,
+      "arrival": {
+        "type": "stop",
+        "note": null
+      },
+      "geometry_sha256": "22aa545fbf87c872572bd71f59e536d0ac10f96e604c6a112327994825cdb871"
+    },
+    {
+      "agency": "VTA",
+      "profile": "stroller",
+      "repeat": 1,
+      "status": 200,
+      "seconds": 0.181,
+      "distance_m": 390.1,
+      "directions": 11,
+      "arrival": {
+        "type": "stop",
+        "note": null
+      },
+      "geometry_sha256": "22aa545fbf87c872572bd71f59e536d0ac10f96e604c6a112327994825cdb871"
+    },
+    {
+      "agency": "VTA",
+      "profile": "low_vision",
+      "repeat": 0,
+      "status": 200,
+      "seconds": 0.169,
+      "distance_m": 370.1,
+      "directions": 11,
+      "arrival": {
+        "type": "stop",
+        "note": null
+      },
+      "geometry_sha256": "d2640002d59b60694a81efd2948ca712062a25e0a97eac9bf94c0434b8462109"
+    },
+    {
+      "agency": "VTA",
+      "profile": "low_vision",
+      "repeat": 1,
+      "status": 200,
+      "seconds": 0.164,
+      "distance_m": 370.1,
+      "directions": 11,
+      "arrival": {
+        "type": "stop",
+        "note": null
+      },
+      "geometry_sha256": "d2640002d59b60694a81efd2948ca712062a25e0a97eac9bf94c0434b8462109"
+    },
+    {
+      "agency": "Caltrain",
+      "profile": "standard",
+      "repeat": 0,
+      "status": 200,
+      "seconds": 0.427,
+      "distance_m": 4626.0,
+      "directions": 19,
+      "arrival": {
+        "type": "stop",
+        "note": null
+      },
+      "geometry_sha256": "2954abeb2d008279d0706fad4766d9b1ac58ca0a68d40bb52a1568e60fb01344"
+    },
+    {
+      "agency": "Caltrain",
+      "profile": "standard",
+      "repeat": 1,
+      "status": 200,
+      "seconds": 0.457,
+      "distance_m": 4626.0,
+      "directions": 19,
+      "arrival": {
+        "type": "stop",
+        "note": null
+      },
+      "geometry_sha256": "2954abeb2d008279d0706fad4766d9b1ac58ca0a68d40bb52a1568e60fb01344"
+    }
+  ]
+}

@@ -74,7 +74,8 @@ def test_segments_directions_connectors_and_unknown_confidence():
     assert len(result["segments"]) == 3
     assert result["data_confidence"] == 0
     assert all(s["status"] == "unknown" for s in result["segments"])
-    assert "connection" in result["directions"][0]["instruction"]
+    assert result["directions"][0]["maneuver"] == "connector"
+    assert "isn't on the map" in result["directions"][0]["notes"][0]
     assert "Test Avenue" in result["directions"][1]["instruction"]
     assert result["walking_speed_mps_assumed"] == 0.9
     assert sum(s["length_m"] for s in result["segments"]) == pytest.approx(

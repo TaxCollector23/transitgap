@@ -45,12 +45,18 @@ print(f"Prepared City of San Jose sidewalk comparison snapshot: {len(sidewalks.g
 from backend.app.transit import TransitSchedule
 from backend.app.gaps import GapIndex
 print("Preparing static GTFS schedule joins…", flush=True)
-TransitSchedule(root / "backend" / "data" / "gtfs_vta.zip", [s['stop_id'] for s in stops])
+from backend.app.transit import modes
+vta_schedule = TransitSchedule(root / "backend" / "data" / "gtfs_vta.zip", [s['stop_id'] for s in stops])
+for stop in stops:
+    stop["modes"] = modes(vta_schedule.route_types(stop["stop_id"]))
 for agency_id, config in AGENCIES.items():
     ids = [stop["source_stop_id"] for stop in rail_stops if stop["agency"] == agency_id]
     if ids:
-        TransitSchedule(root / "backend" / "data" / config["file"], ids,
-                        root / "backend" / "data" / f"schedule-{agency_id}-v1.json.gz")
+        agency_schedule = TransitSchedule(root / "backend" / "data" / config["file"], ids,
+                                          root / "backend" / "data" / f"schedule-{agency_id}-v2.json.gz")
+        for stop in rail_stops:
+            if stop["agency"] == agency_id:
+                stop["modes"] = modes(agency_schedule.route_types(stop["source_stop_id"]))
 print("Preparing a spatial sample of 32 ten-minute stop access studies…", flush=True)
 gaps = GapIndex(graph, stops, root / "backend" / "data")
 gaps.prepare(32)

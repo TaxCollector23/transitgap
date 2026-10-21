@@ -32,7 +32,7 @@ for (const viewport of [{width:1440,height:900},{width:390,height:844}]) {
       body:Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aJ1sAAAAASUVORK5CYII=","base64"),
     }));
     await page.goto("/app");
-    await expect(page.locator(".dataset-status.is-ready")).toContainText("2 VTA stops");
+    await expect(page.locator('main[data-data-state="ready"]')).toBeVisible();
     // A visible canvas can still be clipped by a zero-height parent. Check both.
     await expect.poll(async () => page.locator(".map").evaluate(el => ({
       width:Math.round(el.getBoundingClientRect().width),

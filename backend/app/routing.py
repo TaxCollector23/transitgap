@@ -22,6 +22,7 @@ from .accessibility import (
 )
 from .models import Algorithm, Profile
 from .geospatial import distance_m, nearest_graph_node
+from .directions import accessibility_summary, describe_edge, directions as group_directions, geometry_audit
 
 ACCESSIBILITY_WARNING = (
     "This route is not verified accessible. OpenStreetMap accessibility tags may be missing or out of date; "
@@ -461,6 +462,8 @@ def calculate_route(
                 "missing_attributes": list(assess(attrs, graph.nodes[u], graph.nodes[v], profile).missing),
                 "source": "OpenStreetMap; mapped, not field checked",
                 "osm_id": attrs.get("osmid"),
+                **describe_edge(attrs, graph.nodes[u], graph.nodes[v]),
+                "end_junction_degree": _junction_degree(graph, v),
             }
         )
         segments.append(
@@ -516,6 +519,7 @@ def calculate_route(
                 "reasons": ["Off-network connector; path not assessed"],
                 "name": None,
                 "source": "Straight-line connector, not a mapped sidewalk",
+                "kind": "connector",
             }
             public_segments.insert(0, connector) if points[
                 0
@@ -529,6 +533,10 @@ def calculate_route(
     accessibility["uncertainty_penalty_weights"] = (
         penalties if profile == Profile.prefer_documented_paths else None
     )
+    destination_info = {
+        key: stop[key] for key in ("stop_id", "stop_name", "latitude", "longitude", "agency", "agency_name") if key in stop
+    }
+    maneuvers = group_directions(public_segments, destination_info)
     return {
         "geometry": geometry,
         "distance_m": round(physical_distance, 1),
@@ -540,7 +548,9 @@ def calculate_route(
         if physical_distance
         else None,
         "data_confidence_definition": "Length-weighted share of applicable attributes documented in OSM; not verified accessibility",
-        "directions": directions(public_segments),
+        "directions": maneuvers,
+        "accessibility_summary": accessibility_summary(public_segments, maneuvers, physical_distance),
+        "geometry_audit": geometry_audit(public_segments),
         "algorithm": algorithm.value,
         "profile": profile.value,
         "optimization_objective": (
@@ -561,66 +571,15 @@ def calculate_route(
         "mapped_stair_segments": mapped_stair_segments,
         "accessibility": accessibility,
         "accessibility_warning": ACCESSIBILITY_WARNING,
-        "destination": {
-            key: stop[key] for key in ("stop_id", "stop_name", "latitude", "longitude", "agency", "agency_name") if key in stop
-        },
+        "destination": destination_info,
     }
 
 
-def directions(segments):
-    """Maneuvers derived from ordered edge geometry; no invented road names."""
-    from math import atan2, cos, radians, sin, degrees
+def _junction_degree(graph: nx.MultiDiGraph, node: Any) -> int:
+    """Distinct mapped neighbours of a node, ignoring edge direction."""
+    return len((set(graph.successors(node)) | set(graph.predecessors(node))) - {node})
 
-    def bearing(a, b):
-        lat1, lat2, delta = radians(a[1]), radians(b[1]), radians(b[0] - a[0])
-        return (
-            degrees(
-                atan2(
-                    sin(delta) * cos(lat2),
-                    cos(lat1) * sin(lat2) - sin(lat1) * cos(lat2) * cos(delta),
-                )
-            )
-            + 360
-        ) % 360
 
-    result = []
-    previous = None
-    for segment in segments:
-        points = segment["geometry"]["coordinates"]
-        if len(points) < 2:
-            continue
-        heading = bearing(points[0], points[1])
-        delta = (heading - previous + 540) % 360 - 180 if previous is not None else 0
-        turn = (
-            "Head "
-            + [
-                "north",
-                "northeast",
-                "east",
-                "southeast",
-                "south",
-                "southwest",
-                "west",
-                "northwest",
-            ][int((heading + 22.5) / 45) % 8]
-            if previous is None
-            else "Turn right"
-            if delta > 35
-            else "Turn left"
-            if delta < -35
-            else "Continue"
-        )
-        name = segment.get("name") or "unnamed mapped path"
-        if "connector" in segment.get("source", "").lower():
-            name = "unassessed connection to the walking network"
-        reasons = segment.get("reasons", [])
-        result.append(
-            {
-                "instruction": f"{turn} on {name}",
-                "distance_m": segment["length_m"],
-                "status": segment["status"],
-                "warnings": reasons,
-            }
-        )
-        previous = bearing(points[-2], points[-1])
-    return result
+def directions(segments, destination=None):
+    """Grouped rider-facing maneuvers; see directions.py for the rules."""
+    return group_directions(segments, destination)

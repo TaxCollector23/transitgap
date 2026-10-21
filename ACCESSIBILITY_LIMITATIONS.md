@@ -13,3 +13,20 @@ TransitGap plans routes over mapped pedestrian paths and surfaces documented inf
 - No independent field validation was completed for this evaluation.
 
 Treat all route results as planning information. Check current conditions and use personal judgment before traveling.
+
+## How directions describe uncertainty
+
+- Missing OpenStreetMap attributes are summarized once per route ("Some
+  accessibility information is missing along this route") with the share of the
+  route affected per attribute, instead of being repeated on every step. Each
+  segment's missing attributes remain in the response and in "Map segments
+  behind these directions".
+- Documented concerns (stairs, mapped barriers, rough surfaces, steep slopes,
+  raised curbs, no sidewalk) are shown on the step where they occur, labelled
+  "Mapped concern", and marked on the map. They are never hidden to simplify
+  the display.
+- Street crossings are counted within a step, with unmarked and unrecorded
+  crossing types called out.
+- Straight-line connectors between a starting point or stop and the mapped
+  network are shown as "Not mapped" steps and dashed lines. They are never
+  phrased as a walking instruction along a path.

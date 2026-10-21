@@ -38,6 +38,7 @@ def study(tmp_path, monkeypatch):
     for k, v in {
         "graph": graph,
         "stops": stops,
+        "transit_stops": stops,
         "gaps": gaps,
         "schedule": None,
         "region": "diridon",

@@ -33,6 +33,9 @@ type Props = {
   focusPoint: [number, number] | null;
   onCandidate: (candidateId: string) => void;
   reportPoint: [number, number] | null;
+  routeActive: boolean;
+  showStops: boolean;
+  onViewChange?: (center: [number, number]) => void;
 };
 
 const center: [number, number] = [-121.75, 37.2];
@@ -54,6 +57,25 @@ function stopFeatures(
       },
       geometry: { type: "Point", coordinates: [stop.longitude, stop.latitude] },
     })),
+  };
+}
+
+/** Midpoints of segments with documented concerns (not merely missing data). */
+function concernPoints(
+  segments: GeoJSON.FeatureCollection,
+): GeoJSON.FeatureCollection<GeoJSON.Point> {
+  return {
+    type: "FeatureCollection",
+    features: segments.features
+      .filter((feature) => feature.properties?.concern && feature.geometry.type === "LineString")
+      .map((feature) => {
+        const coords = (feature.geometry as GeoJSON.LineString).coordinates;
+        return {
+          type: "Feature" as const,
+          properties: {},
+          geometry: { type: "Point" as const, coordinates: coords[Math.floor(coords.length / 2)] },
+        };
+      }),
   };
 }
 
@@ -120,18 +142,21 @@ export default function MapView({
   focusPoint,
   onCandidate,
   reportPoint,
+  routeActive,
+  showStops,
+  onViewChange,
 }: Props) {
   const container = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<Map | null>(null);
   const originMarker = useRef<Marker | null>(null);
   const destinationMarker = useRef<Marker | null>(null);
   const reportMarker = useRef<Marker | null>(null);
-  const handlers = useRef({ onOrigin, onStop, onCandidate, selecting, stops });
+  const handlers = useRef({ onOrigin, onStop, onCandidate, selecting, stops, onViewChange });
   const latest = useRef({ route, destination, panelExpanded, coverage });
   const evidenceRef = useRef({ evidence, sidewalks });
 
   useEffect(() => {
-    handlers.current = { onOrigin, onStop, onCandidate, selecting, stops };
+    handlers.current = { onOrigin, onStop, onCandidate, selecting, stops, onViewChange };
     latest.current = { route, destination, panelExpanded, coverage };
     evidenceRef.current = { evidence, sidewalks };
   }, [
@@ -140,6 +165,7 @@ export default function MapView({
     onCandidate,
     selecting,
     stops,
+    onViewChange,
     route,
     destination,
     panelExpanded,
@@ -248,8 +274,8 @@ export default function MapView({
             latest.current.destination?.stop_id,
           ),
           cluster: true,
-          clusterRadius: 38,
-          clusterMaxZoom: 15,
+          clusterRadius: 56,
+          clusterMaxZoom: 14,
         });
         map.addLayer({
           id: "stop-clusters",
@@ -257,18 +283,11 @@ export default function MapView({
           source: "vta-stops",
           filter: ["has", "point_count"],
           paint: {
-            "circle-color": "#176b5b",
-            "circle-radius": [
-              "step",
-              ["get", "point_count"],
-              15,
-              8,
-              18,
-              18,
-              21,
-            ],
-            "circle-stroke-color": "#ffffff",
-            "circle-stroke-width": 2,
+            "circle-color": "#fffefa",
+            "circle-opacity": 0.92,
+            "circle-radius": ["step", ["get", "point_count"], 10, 10, 12, 40, 14],
+            "circle-stroke-color": "#176b5b",
+            "circle-stroke-width": 1.5,
           },
         });
         map.addLayer({
@@ -279,9 +298,9 @@ export default function MapView({
           layout: {
             "text-field": ["get", "point_count_abbreviated"],
             "text-font": ["Arial Bold"],
-            "text-size": 11,
+            "text-size": 10,
           },
-          paint: { "text-color": "#ffffff" },
+          paint: { "text-color": "#176b5b" },
         });
         map.addLayer({
           id: "vta-stops",
@@ -290,7 +309,7 @@ export default function MapView({
           filter: ["!", ["has", "point_count"]],
           paint: {
             "circle-color": ["case", ["get", "selected"], "#d58c2e", ["match", ["get", "agency"], "Caltrain", "#81502b", "BART", "#3c536d", "#176b5b"]],
-            "circle-radius": ["case", ["get", "selected"], 9, 6],
+            "circle-radius": ["case", ["get", "selected"], 9, ["match", ["get", "agency"], "VTA", 5, 7]],
             "circle-stroke-color": "#ffffff",
             "circle-stroke-width": ["case", ["get", "selected"], 3, 2],
             "circle-opacity": 0.98,
@@ -306,28 +325,6 @@ export default function MapView({
             geometry: { type: "LineString", coordinates: [] },
           },
         });
-        map.addLayer({
-          id: "route-outline",
-          type: "line",
-          source: "route",
-          paint: {
-            "line-color": "#ffffff",
-            "line-width": 9,
-            "line-opacity": 0.95,
-          },
-          layout: { "line-cap": "round", "line-join": "round" },
-        });
-        map.addLayer({
-          id: "route-line",
-          type: "line",
-          source: "route",
-          paint: {
-            "line-color": "#176b5b",
-            "line-width": 3,
-            "line-opacity": 0.4,
-          },
-          layout: { "line-cap": "round", "line-join": "round" },
-        });
         map.addSource("comparison", {
           type: "geojson",
           data: { type: "FeatureCollection", features: [] },
@@ -337,41 +334,56 @@ export default function MapView({
           type: "line",
           source: "comparison",
           paint: {
-            "line-color": "#566672",
-            "line-width": 9,
-            "line-opacity": 0.55,
+            "line-color": "#6b7780",
+            "line-width": 5,
+            "line-opacity": 0.6,
           },
+          layout: { "line-cap": "round", "line-join": "round" },
         });
+        // One continuous, high-contrast walking line. Data uncertainty is
+        // described in the panel; only unmapped connectors and documented
+        // concerns are drawn separately, so the route stays easy to follow.
         map.addSource("route-segments", {
           type: "geojson",
           data: { type: "FeatureCollection", features: [] },
         });
         map.addLayer({
-          id: "known-segments",
+          id: "route-outline",
           type: "line",
           source: "route-segments",
-          filter: ["!=", ["get", "status"], "unknown"],
-          paint: {
-            "line-color": [
-              "match",
-              ["get", "status"],
-              "concern",
-              "#b45622",
-              "#176b5b",
-            ],
-            "line-width": 5,
-          },
+          filter: ["!=", ["get", "kind"], "connector"],
+          paint: { "line-color": "#ffffff", "line-width": 10 },
           layout: { "line-cap": "round", "line-join": "round" },
         });
         map.addLayer({
-          id: "unknown-segments",
+          id: "route-line",
           type: "line",
           source: "route-segments",
-          filter: ["==", ["get", "status"], "unknown"],
+          filter: ["!=", ["get", "kind"], "connector"],
+          paint: { "line-color": "#0f5c4c", "line-width": 6 },
+          layout: { "line-cap": "round", "line-join": "round" },
+        });
+        map.addLayer({
+          id: "route-connectors",
+          type: "line",
+          source: "route-segments",
+          filter: ["==", ["get", "kind"], "connector"],
+          paint: { "line-color": "#36423b", "line-width": 3, "line-dasharray": [1, 1.5] },
+          layout: { "line-cap": "round" },
+        });
+        map.addSource("route-concerns", {
+          type: "geojson",
+          data: { type: "FeatureCollection", features: [] },
+        });
+        map.addLayer({
+          id: "route-concerns",
+          type: "circle",
+          source: "route-concerns",
           paint: {
-            "line-color": "#526779",
-            "line-width": 5,
-            "line-dasharray": [2, 1.6],
+            "circle-color": "#b45622",
+            "circle-radius": 6,
+            "circle-stroke-color": "#ffffff",
+            "circle-stroke-width": 2,
           },
         });
         map.addSource("study", {
@@ -469,6 +481,10 @@ export default function MapView({
           return;
         }
       });
+      map.on("moveend", () => {
+        const c = map.getCenter();
+        handlers.current.onViewChange?.([c.lat, c.lng]);
+      });
       let lastPointerQuery = 0;
       map.on("mousemove", (event) => {
         if (performance.now() - lastPointerQuery < 60) return;
@@ -535,6 +551,9 @@ export default function MapView({
       (
         map.getSource("route-segments") as maplibregl.GeoJSONSource | undefined
       )?.setData(segments);
+      (
+        map.getSource("route-concerns") as maplibregl.GeoJSONSource | undefined
+      )?.setData(concernPoints(segments));
       (
         map.getSource("comparison") as maplibregl.GeoJSONSource | undefined
       )?.setData(comparison);
@@ -627,7 +646,7 @@ export default function MapView({
       element.textContent = "B";
       element.setAttribute(
         "aria-label",
-        `Selected stop: ${destination.stop_name}`,
+        `${route ? "Route arrival" : "Selected stop"}: ${destination.stop_name}`,
       );
       destinationMarker.current = new maplibregl.Marker({
         element,
@@ -698,16 +717,15 @@ export default function MapView({
       const mobile = window.matchMedia("(max-width: 760px)").matches;
       const panel = document.querySelector(".panel")?.getBoundingClientRect();
       const bottomSheetHeight =
-        mobile && panelExpanded ? panel?.height || 96 : 96;
+        mobile && panelExpanded ? panel?.height || 96 : mobile ? 96 : 40;
       map.fitBounds(bounds, {
         padding: {
-          top: 76,
-          bottom: Math.min(bottomSheetHeight + 20, window.innerHeight - 170),
+          top: mobile ? 64 : 60,
+          bottom: Math.max(40, Math.min(bottomSheetHeight + 24, window.innerHeight - 220)),
           left: mobile
-            ? 24
-            : (document.querySelector(".panel")?.getBoundingClientRect()
-                .right || 408) + 20,
-          right: 42,
+            ? 32
+            : (panel?.right || 408) + 40,
+          right: mobile ? 32 : 64,
         },
         maxZoom: 17.5,
         duration: 500,
@@ -723,12 +741,24 @@ export default function MapView({
     map.getCanvas().style.cursor = selecting ? "crosshair" : "";
   }, [selecting]);
 
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    const visibility = routeActive && !showStops ? "none" : "visible";
+    const apply = () => {
+      for (const id of ["stop-clusters", "stop-cluster-count", "vta-stops"])
+        if (map.getLayer(id)) map.setLayoutProperty(id, "visibility", visibility);
+    };
+    if (map.getLayer("vta-stops")) apply();
+    else map.once("load", apply);
+  }, [routeActive, showStops]);
+
   return (
     <div
       ref={container}
       className={`map ${selecting ? "map-selecting" : ""}`}
       role="application"
-      aria-label="Interactive map. Choose a starting point when map selection is active, or tap a VTA stop to choose your destination."
+      aria-label="Map. Every map action is also available in the route planner. Select a stop marker to choose it as your destination."
     />
   );
 }

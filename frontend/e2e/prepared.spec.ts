@@ -17,15 +17,12 @@ test("prepared production views work while the route engine is unavailable", asy
     timeout: 8000,
   });
   await page.getByRole("link", { name: "Open the map", exact: true }).first().click();
-  await expect(page.locator(".dataset-status.is-ready")).toContainText(
-    "transit stops",
-    { timeout: 8000 },
-  );
+  await expect(page.locator('main[data-data-state="ready"]')).toBeVisible({ timeout: 8000 });
   await page
-    .getByRole("button", { name: "Try a real Diridon journey" })
+    .getByRole("button", { name: "Try an example trip near Diridon Station" })
     .click();
-  await expect(page.locator(".selected-stop")).toContainText("Bay 11");
-  await page.getByRole("button", { name: "Access gaps", exact: true }).click();
+  await expect(page.locator(".field-value").nth(1)).toContainText("Bay 11");
+  await page.getByRole("button", { name: "Which stops are harder to reach by wheelchair?" }).click();
   await expect(page.locator(".gap-ranking li")).toHaveCount(10);
   await page.locator(".gap-ranking button").first().click();
   await expect(page.locator(".study-detail")).toContainText("Standard network");

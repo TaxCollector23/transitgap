@@ -1,18 +1,31 @@
 services:
   - type: web
-    name: transitgap-county
+    name: transitgap-api-preview
     runtime: python
     plan: free
     region: oregon
-    buildCommand: pip install . && python scripts/prepare_deployment_data.py && cd frontend && npm ci && npm run build
-    startCommand: uvicorn index:app --host 0.0.0.0 --port $PORT
-    healthCheckPath: /health
+    branch: main
+    buildCommand: pip install . && python scripts/prepare_render.py
+    startCommand: uvicorn backend.app.main:app --host 0.0.0.0 --port $PORT --workers 1
+    healthCheckPath: /health/live
     envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.10
       - key: TRANSITGAP_REGION
-        value: santa_clara_county
+        value: diridon
+      - key: TRANSITGAP_CACHE_ONLY
+        value: "1"
+      - key: TRANSITGAP_ASYNC_STARTUP
+        value: "1"
       - key: CORS_ORIGINS
         value: https://transitgap.vercel.app
-      - key: MCP_ALLOWED_HOSTS
-        value: transitgap-county.onrender.com,transitgap-county.onrender.com:*
-      - key: MCP_ALLOWED_ORIGINS
-        value: https://transitgap.vercel.app
+      - key: OMP_NUM_THREADS
+        value: "1"
+      - key: TRANSITGAP_DATA_ARCHIVE_URL
+        sync: false
+      - key: TRANSITGAP_DATA_ARCHIVE_SHA256
+        sync: false
+      - key: DATABASE_URL
+        sync: false
+      - key: TRANSITGAP_MODERATION_TOKEN
+        sync: false

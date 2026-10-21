@@ -1,30 +1,47 @@
 import { useEffect, useState } from "react";
-const API =
-  import.meta.env.VITE_API_URL ||
-  (import.meta.env.PROD ? "" : "http://localhost:8000");
-export default function StopService({ id }: { id: string }) {
-  const [data, setData] = useState<{
-    wheelchair_boarding: number;
-    service: {
-      routes: Array<{
-        route_id: string;
-        route_short_name: string;
-        route_long_name: string;
-      }>;
-      scheduled_departures: Array<{
-        departure: string;
-        headsign: string;
-        trip_id: string;
-        route: { route_short_name: string };
-      }>;
-    };
-  } | null>(null);
+import { API } from "./data";
+import type { Stop } from "./types";
+
+type Service = {
+  agency: string;
+  agency_url: string;
+  schedule_url?: string;
+  wheelchair_boarding: number;
+  station_url?: string | null;
+  service: {
+    routes: Array<{ route_id: string; route_short_name: string; route_long_name: string }>;
+    scheduled_departures: Array<{
+      departure: string;
+      headsign: string;
+      trip_id: string;
+      route: { route_short_name: string; route_long_name?: string } | null;
+    }>;
+    feed_info: Array<{ feed_end_date?: string; feed_start_date?: string }>;
+    schedule_validity?: { status: string; message: string | null };
+    message?: string | null;
+  } | null;
+};
+
+function boarding(value: number | undefined, agency: string) {
+  if (value === 1) return "Accessible boarding is recorded in the agency's data.";
+  if (value === 2) return "The agency's data records boarding here as not accessible.";
+  return `${agency}'s data doesn't record whether boarding here is accessible.`;
+}
+
+function pacificToday() {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Los_Angeles", year: "numeric", month: "2-digit", day: "2-digit",
+  }).format(new Date()).replace(/-/g, "");
+}
+
+function PlatformService({ stop, label }: { stop: Stop; label: string | null }) {
+  const [data, setData] = useState<Service | null>(null);
   const [failed, setFailed] = useState(false);
   useEffect(() => {
     setData(null);
     setFailed(false);
     const c = new AbortController();
-    fetch(`${API}/stops/${encodeURIComponent(id)}`, { signal: c.signal })
+    fetch(`${API}/stops/${encodeURIComponent(stop.stop_id)}`, { signal: c.signal })
       .then((r) => {
         if (!r.ok) throw Error();
         return r.json();
@@ -34,55 +51,83 @@ export default function StopService({ id }: { id: string }) {
         if (!c.signal.aborted) setFailed(true);
       });
     return () => c.abort();
-  }, [id]);
+  }, [stop.stop_id]);
+  if (failed) return <p>Schedule information is unavailable right now.</p>;
+  if (!data) return <p role="status">Loading schedule…</p>;
+  const service = data.service;
+  // Older API responses carry only feed_info; apply the same rule locally.
+  const feedEnd = service?.feed_info?.[0]?.feed_end_date;
+  const feedStart = service?.feed_info?.[0]?.feed_start_date;
+  const today = pacificToday();
+  const validity = service?.schedule_validity?.status ??
+    (feedStart && feedStart > today ? "not_yet_valid" : feedEnd && feedEnd < today ? "expired" : "current");
+  const scheduleLink = data.schedule_url || data.agency_url;
   return (
-    <details className="plain-details">
-      <summary>Stop service & boarding</summary>
-      {failed ? (
-        <p>Schedule unavailable.</p>
-      ) : !data ? (
-        <p>Loading schedule…</p>
-      ) : (
+    <div className="platform-service">
+      {label && <h4>{label}</h4>}
+      <p>{boarding(data.wheelchair_boarding, data.agency)}</p>
+      {service ? (
         <>
           <p>
-            Stop {id}. Boarding:{" "}
-            {data.wheelchair_boarding === 1
-              ? "accessible boarding recorded"
-              : data.wheelchair_boarding === 2
-                ? "not accessible recorded"
-                : "unknown"}
-            .
+            Routes: {service.routes.map((r) => r.route_short_name || r.route_long_name).join(", ") || "Not listed in the feed"}
           </p>
-          {data.service ? (
+          {validity === "not_yet_valid" || validity === "expired" ? (
+            <p>
+              {service.schedule_validity?.message ||
+                (validity === "expired" ? "This published schedule has ended." : "This published schedule hasn't started yet.")}{" "}
+              <a href={scheduleLink} target="_blank" rel="noreferrer">Check {data.agency} for current times</a>.
+            </p>
+          ) : service.scheduled_departures.length ? (
             <>
-              <p>
-                Routes:{" "}
-                {data.service.routes
-                  .map((r) => r.route_short_name || r.route_long_name)
-                  .join(", ") || "Unavailable"}
-              </p>
-              <h4>Scheduled, not real-time</h4>
+              <p>Next scheduled departures (from the published timetable, not live):</p>
               <ul>
-                {data.service.scheduled_departures.map((d) => (
+                {service.scheduled_departures.map((d) => (
                   <li key={`${d.trip_id}${d.departure}`}>
                     {new Date(d.departure).toLocaleTimeString("en-US", {
-                      hour: "numeric",
-                      minute: "2-digit",
-                      timeZone: "America/Los_Angeles",
+                      hour: "numeric", minute: "2-digit", timeZone: "America/Los_Angeles",
                     })}{" "}
-                    · {d.route?.route_short_name} · {d.headsign}
+                    · {d.route?.route_short_name || d.route?.route_long_name} · {d.headsign}
                   </li>
                 ))}
               </ul>
-              {data.service.scheduled_departures.length === 0 && (
-                <p>No departures found in the next 24 hours in this feed.</p>
-              )}
             </>
           ) : (
-            <p>Schedule unavailable.</p>
+            <p>No departures in the next 24 hours in the published timetable.</p>
           )}
         </>
+      ) : (
+        <p>Schedule information is unavailable right now.</p>
       )}
-    </details>
+    </div>
+  );
+}
+
+export default function StopService({ stops }: { stops: Stop[] }) {
+  const first = stops[0];
+  const entrances = first.entrances || [];
+  return (
+    <div className="stop-service">
+      {stops.map((stop) => (
+        <PlatformService key={stop.stop_id} stop={stop} label={stops.length > 1 ? stop.platform_name || stop.stop_name : null} />
+      ))}
+      {entrances.length > 0 && (
+        <>
+          <h4>Station entrances in the agency's data</h4>
+          <ul>
+            {entrances.map((entrance) => (
+              <li key={entrance.entrance_id}>
+                {entrance.name}
+                {entrance.wheelchair_boarding === 1 ? " · step-free access recorded" : entrance.wheelchair_boarding === 2 ? " · recorded as not step-free" : ""}
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+      {first.station_url && (
+        <p>
+          <a href={first.station_url} target="_blank" rel="noreferrer">Agency station page</a>
+        </p>
+      )}
+    </div>
   );
 }

@@ -1,8 +1,49 @@
+export type Entrance = {
+  entrance_id: string;
+  name: string;
+  latitude: number;
+  longitude: number;
+  wheelchair_boarding: number;
+};
 export type Stop = {
   stop_id: string;
   stop_name: string;
   latitude: number;
   longitude: number;
+  agency?: string;
+  agency_name?: string;
+  source_stop_id?: string;
+  wheelchair_boarding?: number;
+  station_id?: string | null;
+  station_name?: string | null;
+  platform_name?: string | null;
+  station_url?: string | null;
+  entrances?: Entrance[];
+  modes?: string[];
+};
+export type Maneuver = {
+  instruction: string;
+  distance_m: number;
+  status: string;
+  warnings: string[];
+  notes?: string[];
+  maneuver?: string;
+  kind?: string;
+  name?: string | null;
+  documented_concerns?: string[];
+  missing_information?: string[];
+  crossings?: { total: number; unmarked: number; signals: number; marked: number; unrecorded: number };
+  segment_range?: [number, number] | null;
+  location?: [number, number];
+};
+export type AccessibilitySummary = {
+  headline: string;
+  lines: string[];
+  documented_restrictions: Array<{ code: string; text: string; steps: number[] }>;
+  missing_information: Array<{ attribute: string; label: string; distance_m: number; share: number | null }>;
+  crossings: { total: number; unmarked: number; unrecorded_type: number };
+  unmapped_connectors: Array<{ segment: number; distance_m: number; position: "start" | "end" }>;
+  interpretation: string;
 };
 export type AttributeObservation = {
   attribute: string;
@@ -32,20 +73,25 @@ export type RouteResult = {
     status: string;
     reasons: string[];
     length_m: number;
+    name?: string | null;
+    kind?: string;
+    source?: string;
+    osm_id?: number | number[] | null;
   }>;
   data_confidence?: number | null;
-  directions?: Array<{
-    instruction: string;
-    distance_m: number;
-    status: string;
-    warnings: string[];
-  }>;
+  directions?: Maneuver[];
+  accessibility_summary?: AccessibilitySummary;
+  arrival?: { type: "entrance" | "stop"; name?: string; latitude?: number; longitude?: number; note?: string | null; wheelchair_boarding?: number };
+  reviewed_report_effects?: Array<Record<string, unknown>>;
+  same_mapped_route_as_standard?: boolean;
   distance_m: number;
   duration_seconds: number;
   walking_speed_mps_assumed: number;
   algorithm: string;
   algorithm_warning?: string | null;
   profile: string;
+  profile_explanation?: string;
+  selected_edges?: Array<{from:string;to:string;key:string|null;reference:string}>;
   optimization_objective?: string;
   optimization_cost_m?: number;
   uncertainty_cost_m?: number;
@@ -97,6 +143,37 @@ export type GapFeature = {
     interpretation: string;
   };
 };
+
+export type ReachabilityStop = {
+  stop_id: string;
+  stop_name: string;
+  latitude: number;
+  longitude: number;
+  connector_distance_m: number | null;
+};
+
+export type ReachabilityAnalysis = {
+  status: "OK" | "INSUFFICIENT_DOCUMENTED_DATA" | "STOP_CONNECTION_UNKNOWN" | "NO_SAMPLED_ORIGINS";
+  version: string;
+  study_area: { name: string; radius_m: number; center: { latitude: number; longitude: number } };
+  stop: ReachabilityStop & { wheelchair_boarding?: number };
+  gtfs_source: { url: string; feed_info: Array<Record<string, string>> };
+  osm_source: { url: string; source_name: string; cache_file_modified_at: string | null; manifest_generated_at: string | null; source_snapshot_date: string | null; observation_timestamp: string | null };
+  profile: string;
+  profile_assumptions: { speed_mps: number; time_budget_minutes: number; maximum_stop_connector_m: number };
+  sampling: { method: string; origin_sample_count: number; not_population_estimate: boolean };
+  documented: { reachable_sample_origins: number; reachable_graph_nodes: number; reachable_edge_count: number; geometry: GeoJSON.FeatureCollection };
+  possible: { reachable_sample_origins: number; reachable_graph_nodes: number; reachable_edge_count: number; geometry: GeoJSON.FeatureCollection };
+  unknown_gap: { sample_origin_count: number; edge_count: number; critical_unknown_edge_count: number; geometry: GeoJSON.FeatureCollection; examples: Array<{ osm_way_id: string; source_url: string; missing_critical_attributes: string[]; evidence_status: string }> };
+  example_paths: Array<{ origin_node: string; time_seconds: number; geometry: GeoJSON.Geometry; source_refs: Array<{ osm_way_id: string; url: string }> }>;
+  inspection_priorities: {
+    metric: string; method: string; candidate_limit: number; candidate_count_on_sample_paths: number;
+    evaluated_candidate_count: number; sample_pair_count: number; parallel_edge_policy: string;
+    candidates: Array<{ candidate_id: string; source_url: string; score: number | null; sample_count: number; status: string; affected_pairs: Array<[string, string]>; missing_critical_attributes: string[]; assumptions: string }>;
+  };
+  warnings: string[];
+  message?: string;
+};
 export type Observation = {
   id: string;
   latitude: number;
@@ -104,6 +181,7 @@ export type Observation = {
   category: string;
   description: string | null;
   created_at: string;
+  updated_at?: string;
   evidence_status: string;
   review_status: string;
 };

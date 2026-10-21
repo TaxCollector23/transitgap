@@ -9,6 +9,7 @@ test('city hero and editorial page work at all five target sizes', async ({ page
     await page.setViewportSize({ width, height });
     await page.goto('/');
     await page.evaluate(() => document.fonts.ready);
+    await page.locator(".landing-art").evaluate((image: HTMLImageElement) => image.decode());
     await expect(page.getByRole('heading', {name:'A city for all.',exact:true})).toBeVisible();
     await expect(page.locator('.landing-actions a')).toHaveCount(2);
     const state = await page.evaluate(() => {
@@ -23,7 +24,7 @@ test('city hero and editorial page work at all five target sizes', async ({ page
     });
     expect(state).toMatchObject({ height, art:height, loaded:true, white:'rgb(255, 255, 255)', black:true, overflow:false });
     expect(state.font).toContain('DM Sans');
-    await expect(page.locator('.network-preview,.landing-eyebrow,.eyebrow,.badge,.pill,details,svg')).toHaveCount(0);
+    await expect(page.locator('.network-preview,.landing-eyebrow,.eyebrow,.badge,.pill,details:not(.speech-settings),svg')).toHaveCount(0);
     await page.getByRole('link', {name:'How TransitGap works',exact:true}).click();
     await expect.poll(async()=> (await page.locator('#how-it-works').evaluate(e=>Math.abs(e.getBoundingClientRect().top-32))) < 2).toBe(true);
     await page.getByRole('navigation',{name:'Main navigation'}).getByRole('link',{name:'Data & methods'}).click();
@@ -35,9 +36,9 @@ test('city hero and editorial page work at all five target sizes', async ({ page
   await page.goto('/');
   await page.getByRole('link',{name:'Explore the map',exact:true}).click();
   await expect(page).toHaveURL(/\/app$/);
-  await expect(page.locator('.dataset-status.is-ready')).toBeVisible({timeout:30000});
+  await expect(page.locator('main[data-data-state="ready"]')).toBeVisible({timeout:30000});
   await page.reload();
-  await expect(page.locator('.dataset-status.is-ready')).toBeVisible({timeout:30000});
+  await expect(page.locator('main[data-data-state="ready"]')).toBeVisible({timeout:30000});
   await page.goBack();
   await expect(page.getByRole('heading',{name:'A city for all.',exact:true})).toBeVisible();
   expect(errors).toEqual([]);

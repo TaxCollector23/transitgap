@@ -8,7 +8,16 @@ from shapely.geometry import mapping
 from .data_loader import CENTER, COUNTY_REGION, load_county_boundary
 
 
-def export_frontend(graph, stops, gaps, region: str, public: Path):
+def public_stop(stop: dict) -> dict:
+    """A stop record without internal graph fields, including its entrances."""
+    hidden = {"graph_node", "connector_distance_m"}
+    public = {k: v for k, v in stop.items() if k not in hidden}
+    if "entrances" in public:
+        public["entrances"] = [{k: v for k, v in e.items() if k not in hidden} for e in public["entrances"]]
+    return public
+
+
+def export_frontend(graph, stops, gaps, region: str, public: Path, additional_stops=None, transit_sources=None):
     public.mkdir(parents=True, exist_ok=True)
     if region == COUNTY_REGION:
         boundary = load_county_boundary()
@@ -31,18 +40,12 @@ def export_frontend(graph, stops, gaps, region: str, public: Path):
     timestamp = datetime.now(timezone.utc).isoformat()
     bootstrap = {
         "coverage": coverage,
-        "stops": [
-            {
-                k: v
-                for k, v in stop.items()
-                if k not in {"graph_node", "connector_distance_m"}
-            }
-            for stop in stops
-        ],
+        "stops": [public_stop(stop) for stop in [*stops, *(additional_stops or [])]],
+        "transit_sources": transit_sources or {},
         "prepared_at": timestamp,
         "graph_nodes": graph.number_of_nodes(),
         "graph_edges": graph.number_of_edges(),
-        "source": "Build-time snapshot of the same OpenStreetMap graph and official VTA feed used by the routing API.",
+        "source": "Build-time snapshot of the OpenStreetMap graph and VTA, Caltrain, and BART public GTFS schedule feeds used by the routing API.",
     }
     (public / "bootstrap.json").write_text(json.dumps(bootstrap, separators=(",", ":")))
     summary = gaps.summary(10)

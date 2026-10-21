@@ -1,4 +1,4 @@
-"""Fetch real OSM and VTA data into the bundle before a Vercel deployment."""
+"""Fetch real OSM and transit-agency data into the bundle before deployment."""
 import os
 import sys
 import tempfile
@@ -28,6 +28,10 @@ print(f"Preparing {os.environ['TRANSITGAP_REGION']} walking paths and VTA stops�
 graph, stops = initialize()
 print(f"Prepared OSM graph: {len(graph.nodes)} nodes, {len(graph.edges)} edges")
 print(f"Prepared official VTA stops connected to the graph: {len(stops)}")
+from backend.app.transit_agencies import AGENCIES, load_agency_stops
+rail_stops, transit_sources = load_agency_stops(graph, root / "backend" / "data", os.environ["TRANSITGAP_REGION"], COUNTY_RADIUS_M if os.environ["TRANSITGAP_REGION"] == COUNTY_REGION else DEFAULT_RADIUS_M)
+for agency_id, source in transit_sources.items():
+    print(f"Prepared {source['name']} scheduled platforms connected to the graph: {source['stop_count']}")
 if os.environ["TRANSITGAP_REGION"] == COUNTY_REGION and county_graph.exists():
     compact = county_graph.with_suffix(".jsonl.gz")
     print("Packing a streaming JSON walking graph for deployment…", flush=True)
@@ -41,7 +45,18 @@ print(f"Prepared City of San Jose sidewalk comparison snapshot: {len(sidewalks.g
 from backend.app.transit import TransitSchedule
 from backend.app.gaps import GapIndex
 print("Preparing static GTFS schedule joins…", flush=True)
-TransitSchedule(root / "backend" / "data" / "gtfs_vta.zip", [s['stop_id'] for s in stops])
+from backend.app.transit import modes
+vta_schedule = TransitSchedule(root / "backend" / "data" / "gtfs_vta.zip", [s['stop_id'] for s in stops])
+for stop in stops:
+    stop["modes"] = modes(vta_schedule.route_types(stop["stop_id"]))
+for agency_id, config in AGENCIES.items():
+    ids = [stop["source_stop_id"] for stop in rail_stops if stop["agency"] == agency_id]
+    if ids:
+        agency_schedule = TransitSchedule(root / "backend" / "data" / config["file"], ids,
+                                          root / "backend" / "data" / f"schedule-{agency_id}-v2.json.gz")
+        for stop in rail_stops:
+            if stop["agency"] == agency_id:
+                stop["modes"] = modes(agency_schedule.route_types(stop["source_stop_id"]))
 print("Preparing a spatial sample of 32 ten-minute stop access studies…", flush=True)
 gaps = GapIndex(graph, stops, root / "backend" / "data")
 gaps.prepare(32)
@@ -52,5 +67,5 @@ print("Preparing immutable municipal evidence index…", flush=True)
 index = load_groundtruth(graph, stops, sidewalks, root / "backend" / "data", gaps.signature)
 print(f"Prepared {len(index.gaps)} municipal review candidates", flush=True)
 from backend.app.prepared_frontend import export_frontend
-export_frontend(graph, stops, gaps, os.environ['TRANSITGAP_REGION'], root / 'frontend' / 'public')
+export_frontend(graph, stops, gaps, os.environ['TRANSITGAP_REGION'], root / 'frontend' / 'public', rail_stops, transit_sources)
 print('Exported prepared stop and network-study snapshots for CDN delivery', flush=True)

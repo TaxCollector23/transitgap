@@ -18,7 +18,7 @@ def test_observation_is_persisted_as_unverified(tmp_path: Path):
     assert result["count"] == 1
     assert result["observations"][0]["id"] == created["id"]
     assert result["observations"][0]["evidence_status"] == "COMMUNITY_REPORTED"
-    assert result["observations"][0]["review_status"] == "UNREVIEWED"
+    assert result["observations"][0]["review_status"] == "UNVERIFIED"
 
 
 def test_report_input_validates_coordinates_and_text_length():

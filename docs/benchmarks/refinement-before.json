@@ -1,0 +1,36 @@
+{
+  "python": "3.12.3",
+  "region": "santa_clara_county",
+  "nodes": 291569,
+  "edges": 811314,
+  "graph_and_stops_load_seconds": 7.93,
+  "rss_mib": 949.19,
+  "peak_rss_mib": 994.09,
+  "cache_size_mib": 78.87,
+  "routes": {
+    "standard": {
+      "distance_m": 370.1,
+      "optimization_cost_m": 370.097,
+      "median_request_ms": 1.96,
+      "selected_edges": null
+    },
+    "wheelchair": {
+      "distance_m": 390.1,
+      "optimization_cost_m": 533.65,
+      "median_request_ms": 3.01,
+      "selected_edges": null
+    },
+    "stroller": {
+      "distance_m": 390.1,
+      "optimization_cost_m": 533.65,
+      "median_request_ms": 2.99,
+      "selected_edges": null
+    },
+    "low_vision": {
+      "distance_m": 370.1,
+      "optimization_cost_m": 585.81,
+      "median_request_ms": 3.26,
+      "selected_edges": null
+    }
+  }
+}

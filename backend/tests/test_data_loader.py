@@ -68,3 +68,46 @@ def test_stops_still_load_when_bundled_cache_is_read_only(tmp_path, monkeypatch)
     assert len(stops) == 1
     assert stops[0]["stop_id"] == "fixture"
     assert stops[0]["graph_node"] == "123"
+
+
+def test_compact_graph_certifies_admissible_geographic_scale(tmp_path):
+    import networkx as nx
+    from backend.app.routing import _heuristic, _run
+    from backend.app.models import Algorithm, Profile
+    graph=nx.MultiDiGraph()
+    for node,x in [('o',0),('x',1),('s',.001)]:graph.add_node(node,x=x,y=0)
+    graph.add_edge('o','s',length=10)
+    graph.add_edge('o','x',length=1)
+    graph.add_edge('x','s',length=1)
+    path=tmp_path/'short-lengths.jsonl.gz'
+    data_loader.write_compact_graph(graph,path)
+    loaded=data_loader.read_compact_graph(path)
+    assert 0 < loaded.graph['transitgap_heuristic_scale'] < 1
+    assert _heuristic(loaded,'x','s')<=1
+    assert _run(loaded,'o','s',Algorithm.astar,Profile.standard)[1]==2
+
+
+def test_vta_destinations_are_boarding_stops_linked_to_their_station(tmp_path):
+    feed = tmp_path / "gtfs_vta.zip"
+    with zipfile.ZipFile(feed, "w") as archive:
+        archive.writestr(
+            "stops.txt",
+            "stop_id,stop_name,stop_lat,stop_lon,location_type,parent_station,wheelchair_boarding\n"
+            "PS_TEST,Test Station,37.3296,-121.9030,1,,1\n"
+            "5374,Test Station,37.3296,-121.9030,0,PS_TEST,0\n"
+            "E1,Test Station Entrance,37.3297,-121.9030,2,PS_TEST,1\n"
+            "N1,Generic node,37.3296,-121.9030,3,PS_TEST,\n"
+            "100,Plain Bus Stop,37.3296,-121.9030,0,,2\n",
+        )
+    graph = nx.MultiDiGraph()
+    graph.add_node(1, y=37.3296, x=-121.903)
+    stops = data_loader.load_stops(graph, directory=tmp_path)
+    assert [s["stop_id"] for s in stops] == ["5374", "100"]
+    platform, bus = stops
+    assert platform["station_id"] == "PS_TEST" and platform["station_name"] == "Test Station"
+    assert platform["wheelchair_boarding"] == 1  # inherited from the parent station
+    assert [e["name"] for e in platform["entrances"]] == ["Test Station Entrance"]
+    assert bus["station_id"] is None and bus["wheelchair_boarding"] == 2
+    assert {s["agency"] for s in stops} == {"vta"}
+    # The cached stop list must keep the same answer.
+    assert [s["stop_id"] for s in data_loader.load_stops(graph, directory=tmp_path)] == ["5374", "100"]

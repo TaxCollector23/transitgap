@@ -1,9 +1,8 @@
 import { useEffect, useState, type FormEvent } from "react";
+import OriginSearch from "./OriginSearch";
 import type { GapFeature, Observation, SourceStatus } from "./types";
 
-const API =
-  import.meta.env.VITE_API_URL ||
-  (import.meta.env.PROD ? "" : "http://localhost:8000");
+import { API, serviceJSON } from "./data";
 const METERS_PER_MILE = 1609.344;
 type Props = {
   onFeatures: (
@@ -15,12 +14,20 @@ type Props = {
   reportPoint: [number, number] | null;
   onFocusCandidate: (point: [number, number]) => void;
   selectedCandidateId: string | null;
+  focusReport?: number;
+  mode?: "evidence" | "report";
+  onReport?: () => void;
 };
 const emptyPolygons: GeoJSON.FeatureCollection = {
   type: "FeatureCollection",
   features: [],
 };
 const categories = [
+  ["pedestrian_pothole", "Pothole on a pedestrian path"],
+  ["broken_pavement", "Broken pavement"],
+  ["blocked_curb_ramp", "Blocked curb ramp"],
+  ["construction_obstruction", "Construction obstruction"],
+  ["missing_tactile_paving", "Missing tactile paving, observed in person"],
   ["curb_ramp_present", "Curb ramp present"],
   ["curb_ramp_appears_absent", "Curb ramp appears absent"],
   ["stairs", "Stairs"],
@@ -38,6 +45,9 @@ export default function GroundTruthPanel({
   reportPoint,
   onFocusCandidate,
   selectedCandidateId,
+  focusReport = 0,
+  mode = "evidence",
+  onReport,
 }: Props) {
   const [gaps, setGaps] = useState<GapFeature[]>([]);
   const [reports, setReports] = useState<Observation[]>([]);
@@ -54,8 +64,12 @@ export default function GroundTruthPanel({
   const [category, setCategory] = useState("sidewalk_condition_issue");
   const [description, setDescription] = useState("");
   const [busy, setBusy] = useState(false);
-  const [reportsEnabled, setReportsEnabled] = useState(false);
+  const [reportsEnabled, setReportsEnabled] = useState<boolean | null>(null);
+  const [reportsState, setReportsState] = useState<"loading" | "ready" | "unavailable">("loading");
+  const [sourcesUnavailable, setSourcesUnavailable] = useState(false);
+  const [reportAvailabilityError, setReportAvailabilityError] = useState(false);
   const [message, setMessage] = useState("");
+  const [saved, setSaved] = useState("");
 
   function evidenceData(
     items: GapFeature[],
@@ -88,40 +102,33 @@ export default function GroundTruthPanel({
 
   async function refresh() {
     setEvidenceState("loading");
-    try {
-      const [sourceResponse, gapResponse, reportResponse, healthResponse] =
-        await Promise.all([
-          fetch(`${API}/data-sources`),
-          fetch(`${API}/accessibility/priorities?limit=80`),
-          fetch(`${API}/accessibility/observations?limit=100`),
-          fetch(`${API}/health`),
-        ]);
-      if (!sourceResponse.ok || !gapResponse.ok || !reportResponse.ok)
-        throw new Error("Accessibility evidence could not be loaded.");
-      if (healthResponse.ok)
-        setReportsEnabled(
-          (await healthResponse.json()).reports_enabled === true,
-        );
-      const nextSources = (await sourceResponse.json()) as SourceStatus;
-      const nextGaps = (
-        (await gapResponse.json()) as { candidates: GapFeature[] }
-      ).candidates;
-      const nextReports = (
-        (await reportResponse.json()) as { observations: Observation[] }
-      ).observations;
-      setSources(nextSources);
-      setGaps(nextGaps);
-      setReports(nextReports);
-      setEvidenceState("ready");
-      onFeatures(
-        evidenceData(nextGaps, nextReports),
-        showSidewalks ? sidewalks : emptyPolygons,
-      );
-    } catch (error) {
-      setEvidenceState("unavailable");
-      throw error;
-    }
+    setReportsState("loading");
+    setSourcesUnavailable(false);
+    setReportAvailabilityError(false);
+    // Source metadata and community/health requests must not hold back the
+    // independently available source-linked candidate records.
+    await Promise.allSettled([
+      serviceJSON(`${API}/data-sources`).then(data => setSources(data as SourceStatus))
+        .catch(() => setSourcesUnavailable(true)),
+      serviceJSON(`${API}/accessibility/priorities?limit=80`).then(data => {
+        setGaps(data.candidates as GapFeature[]);
+        setEvidenceState("ready");
+      }).catch(error => {
+        setEvidenceState("unavailable");
+        setMessage(error instanceof Error ? error.message : "Accessibility evidence unavailable.");
+      }),
+      serviceJSON(`${API}/accessibility/observations?limit=100`).then(data => {
+        setReports(data.observations as Observation[]);
+        setReportsState("ready");
+      }).catch(() => setReportsState("unavailable")),
+      serviceJSON(`${API}/health`).then(data => setReportsEnabled(data.reports_enabled === true))
+        .catch(() => { setReportsEnabled(null); setReportAvailabilityError(true); }),
+    ]);
   }
+
+  useEffect(() => {
+    onFeatures(evidenceData(mode === "report" ? [] : gaps, reports), showSidewalks ? sidewalks : emptyPolygons);
+  }, [gaps, reports, showSidewalks, sidewalks, onFeatures, mode]);
 
   useEffect(() => {
     void refresh().catch((error: unknown) =>
@@ -130,6 +137,9 @@ export default function GroundTruthPanel({
       ),
     );
   }, []);
+  useEffect(() => {
+    if (focusReport) document.getElementById("report-title")?.focus();
+  }, [focusReport, reportsEnabled]);
   useEffect(() => {
     if (reportPoint) {
       setLatitude(String(reportPoint[0].toFixed(6)));
@@ -172,6 +182,7 @@ export default function GroundTruthPanel({
     event.preventDefault();
     setBusy(true);
     setMessage("");
+    setSaved("");
     try {
       const response = await fetch(`${API}/accessibility/observations`, {
         method: "POST",
@@ -183,16 +194,16 @@ export default function GroundTruthPanel({
           description,
         }),
       });
-      if (!response.ok)
-        throw new Error(
-          "Report could not be saved. Check that its coordinates are inside the study area.",
-        );
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        throw new Error(typeof error.detail === "string" ? error.detail : "Report could not be saved. Check the location and try again.");
+      }
       setLatitude("");
       setLongitude("");
       setDescription("");
       onClearReportPoint();
-      setMessage("Report saved as unverified community evidence.");
-      await refresh();
+      setSaved("Report saved as unverified community evidence.");
+      void refresh();
     } catch (error) {
       setMessage(
         error instanceof Error ? error.message : "Report could not be saved.",
@@ -202,16 +213,71 @@ export default function GroundTruthPanel({
     }
   }
 
+  const locationText = latitude && longitude ? `${Number(latitude).toFixed(5)}, ${Number(longitude).toFixed(5)}` : "";
+  if (mode === "report")
+    return (
+      <section className="groundtruth-panel report-panel" aria-labelledby="report-title">
+        <h2 id="report-title" tabIndex={-1}>Report an issue</h2>
+        <p>Tell others about a sidewalk or crossing problem. Reports are shown as unverified until someone reviews them. Please don't include personal details.</p>
+        {reportsEnabled === false ? (
+          <p role="status" className="notice">Public reporting is paused until durable storage is connected. No report will be saved here.</p>
+        ) : reportsEnabled === null ? (
+          <p role="status">{reportAvailabilityError ? "Reporting availability could not be checked. No report can be submitted until the service responds." : "Checking report availability…"}</p>
+        ) : (
+          <>
+            <section className="report-step" aria-labelledby="report-where">
+              <h3 id="report-where">1. Where is the problem?</h3>
+              {locationText ? (
+                <div className="field-value">
+                  <span className="field-value-text"><strong>{reportPoint ? "Point chosen on the map" : "Chosen location"}</strong><span>{locationText}</span></span>
+                  <button type="button" className="text-button field-change" onClick={() => { setLatitude(""); setLongitude(""); onClearReportPoint(); }}>Change<span className="sr-only"> report location</span></button>
+                </div>
+              ) : (
+                <>
+                  <div className="origin-actions">
+                    <button type="button" className="button" onClick={() => {
+                      if (!navigator.geolocation) { setMessage("Location is not available in this browser. Choose on the map or search an address."); return; }
+                      navigator.geolocation.getCurrentPosition(
+                        (position) => { setLatitude(String(position.coords.latitude)); setLongitude(String(position.coords.longitude)); },
+                        () => setMessage("Your location couldn't be used. Choose on the map or search an address."),
+                        { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 },
+                      );
+                    }}>Use my location</button>
+                    <button type="button" className="button" onClick={onRequestLocation}>Choose on map</button>
+                  </div>
+                  <OriginSearch label="Address or place of the problem" onChoose={([lat, lon]) => { setLatitude(String(lat)); setLongitude(String(lon)); }} />
+                </>
+              )}
+            </section>
+            <form className="report-form" onSubmit={(event) => void submit(event)}>
+              <label htmlFor="report-observation"><span className="report-step-title">2. What's the problem?</span></label>
+              <select id="report-observation" value={category} onChange={(event) => setCategory(event.target.value)}>
+                {categories.map(([value, label]) => (
+                  <option key={value} value={value}>{label}</option>
+                ))}
+              </select>
+              <label htmlFor="report-details"><span className="report-step-title">3. Details</span> (optional)</label>
+              <textarea id="report-details" maxLength={500} rows={3} value={description} onChange={(event) => setDescription(event.target.value)} placeholder="What did you see? For example: the curb ramp is blocked by a pole." />
+              <button className="button button-primary report-submit" disabled={busy || !latitude || !longitude} aria-describedby="report-submit-hint" type="submit">
+                {busy ? "Saving…" : "Submit report"}
+              </button>
+              {(!latitude || !longitude) && <p className="field-hint" id="report-submit-hint">Choose where the problem is (step 1) to submit.</p>}
+            </form>
+          </>
+        )}
+        {message && <p className="notice error" role="alert">{message}</p>}
+        {saved && <p className="notice success" role="status">{saved}</p>}
+      </section>
+    );
   return (
     <section className="groundtruth-panel" aria-label="Accessibility evidence">
       <div className="groundtruth-heading">
         <div>
-          <h3>Sidewalk data gaps</h3>
+          <h2>Sidewalk records that need review</h2>
           <p>
-            These are places where records disagree or leave questions. They are
-            suggestions for review, not confirmed barriers. Countywide routes
-            use OSM walking paths; City sidewalk comparisons currently cover the
-            Diridon pilot area.
+            Places where map and city records disagree or leave questions. These
+            are suggestions for an in-person check, not confirmed barriers. City
+            sidewalk records currently cover the Diridon area only.
           </p>
         </div>
         <button
@@ -228,13 +294,14 @@ export default function GroundTruthPanel({
           {message}
         </p>
       )}
+      {sourcesUnavailable && <p role="status">Source metadata is unavailable. Candidate records still include their individual source details.</p>}
       {evidenceState === "loading" && (
         <p className="evidence-message" role="status">
           <span className="spinner" />
           Loading sidewalk evidence…
         </p>
       )}
-      {evidenceState === "unavailable" && (
+      {(evidenceState === "unavailable" || sourcesUnavailable || reportsState === "unavailable" || reportAvailabilityError) && (
         <button
           className="text-button"
           type="button"
@@ -286,7 +353,8 @@ export default function GroundTruthPanel({
           City sidewalk record
         </span>
       </div>
-      <div className="gap-list" aria-label="Priority inspection suggestions">
+      <p>These comparison scores use proximity to sampled routes. For computed journey reachability changes, use the stop study in Access gaps.</p>
+      <div className="gap-list" aria-label="Route-proximity review suggestions">
         {gaps.slice(0, 12).map((gap) => (
           <button
             key={gap.id}
@@ -313,7 +381,7 @@ export default function GroundTruthPanel({
           <p className="evidence-empty">
             {message
               ? "Evidence could not be loaded. Try again after the service is available."
-              : "No review candidates are available for this area right now."}
+              : evidenceState === "loading" ? "Loading review candidates…" : "No review candidates are available for this area right now."}
           </p>
         )}
       </div>
@@ -354,7 +422,7 @@ export default function GroundTruthPanel({
               </dd>
             </div>
             <div>
-              <dt>Priority score</dt>
+              <dt>Route-proximity score</dt>
               <dd>
                 {selected.priority_score == null
                   ? "Unavailable"
@@ -364,98 +432,20 @@ export default function GroundTruthPanel({
           </dl>
         </article>
       )}
-      {reportsEnabled ? (
-        <form className="report-form" onSubmit={(event) => void submit(event)}>
-          <div>
-            <h4>Report something you saw</h4>
-            <p>
-              R marks where the observation happened. Reports stay unverified
-              until someone checks them.
-            </p>
-          </div>
-          <button
-            className="evidence-toggle"
-            type="button"
-            onClick={onRequestLocation}
-          >
-            {reportPoint ? "Move report pin on map" : "Place report pin on map"}
-          </button>
-          {reportPoint && (
-            <p className="report-point-selected" role="status">
-              Report location: {latitude}, {longitude}
-            </p>
-          )}
-          <div className="report-coordinates">
-            <label>
-              Latitude
-              <input
-                required
-                type="number"
-                step="any"
-                min="-90"
-                max="90"
-                value={latitude}
-                onChange={(event) => setLatitude(event.target.value)}
-              />
-            </label>
-            <label>
-              Longitude
-              <input
-                required
-                type="number"
-                step="any"
-                min="-180"
-                max="180"
-                value={longitude}
-                onChange={(event) => setLongitude(event.target.value)}
-              />
-            </label>
-          </div>
-          <label>
-            Observation
-            <select
-              value={category}
-              onChange={(event) => setCategory(event.target.value)}
-            >
-              {categories.map(([value, label]) => (
-                <option key={value} value={value}>
-                  {label}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label>
-            Details <span className="optional-label">optional</span>
-            <textarea
-              maxLength={500}
-              rows={2}
-              value={description}
-              onChange={(event) => setDescription(event.target.value)}
-              placeholder="Describe what you observed. Avoid personal details."
-            />
-          </label>
-          <button
-            className="button button-primary report-submit"
-            disabled={busy || !latitude || !longitude}
-            type="submit"
-          >
-            {busy ? "Saving…" : <>Submit report</>}
-          </button>
-        </form>
-      ) : (
+      {mode === "evidence" && onReport && (
         <p>
-          Public reporting is paused until durable storage is connected. No
-          report will be saved here.
+          Noticed a problem on a sidewalk or crossing?{" "}
+          <button type="button" className="text-button" onClick={onReport}>Report an issue</button>
         </p>
       )}
       <div className="community-reports">
         <h4>
           Community reports{" "}
-          {evidenceState === "ready" && <span>{reports.length}</span>}
+          {reportsState === "ready" && <span>{reports.length}</span>}
         </h4>
-        {evidenceState === "loading" ? (
+        {reportsState === "loading" ? (
           <p role="status">Loading community reports…</p>
-        ) : evidenceState === "unavailable" ? (
+        ) : reportsState === "unavailable" ? (
           <p>Community reports are unavailable. Their count is unknown.</p>
         ) : (
           <>
@@ -463,10 +453,11 @@ export default function GroundTruthPanel({
               <article key={report.id}>
                 <strong>{report.category.replace(/_/g, " ")}</strong>
                 <p>
-                  Unverified ·{" "}
+                  {report.review_status === "REVIEWED" ? "Reviewed community report" : report.review_status === "UNDER_REVIEW" ? "Under review" : "Unverified"} ·{" "}
                   {new Date(report.created_at).toLocaleDateString()}
                 </p>
                 {report.description && <p>{report.description}</p>}
+                <details><summary>Report details</summary><p>Report ID: {report.id}</p><p>Source: community observation. Last updated: {new Date(report.updated_at || report.created_at).toLocaleString()}.</p><a href={`${API}/accessibility/observations/${report.id}`} target="_blank" rel="noreferrer">Open report and review history</a></details>
               </article>
             ))}
             {reports.length === 0 && <p>No reports yet.</p>}

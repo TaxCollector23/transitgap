@@ -35,7 +35,7 @@ def routing_graph() -> nx.MultiDiGraph:
 def test_weighted_algorithms_return_equal_optimal_costs(routing_graph):
     for profile in Profile:
         results = [_run(routing_graph, 0, 2, algorithm, profile) for algorithm in Algorithm if algorithm != Algorithm.breadth_first]
-        expected = 44 if profile == Profile.prefer_documented_paths else 31.24 if profile in {Profile.wheelchair, Profile.stroller, Profile.avoid_mapped_stairs} else 25.3 if profile == Profile.low_vision else 22
+        expected = 44 if profile == Profile.prefer_documented_paths else 26.4 if profile == Profile.stroller else 31.24 if profile in {Profile.wheelchair, Profile.avoid_mapped_stairs} else 25.3 if profile == Profile.low_vision else 22
         assert [result[1] for result in results] == pytest.approx([expected] * len(results))
         assert all(path[0] == 0 and path[-1] == 2 for path, _ in results)
 
@@ -258,3 +258,13 @@ def test_comparison_marks_missing_profile_route_unavailable(client, monkeypatch)
     assert results[Profile.avoid_mapped_stairs.value]["route"] is None
     assert results[Profile.avoid_mapped_stairs.value]["error"] == "No path without mapped stairs"
     assert results[Profile.prefer_documented_paths.value]["available"] is True
+
+
+def test_astar_matches_dijkstra_when_stored_lengths_are_shorter_than_geographic_distance():
+    graph=nx.MultiDiGraph()
+    for node,x in [('o',0),('x',1),('s',.001)]:graph.add_node(node,x=x,y=0)
+    graph.add_edge('o','s',length=10)
+    graph.add_edge('o','x',length=1)
+    graph.add_edge('x','s',length=1)
+    for algorithm in (Algorithm.astar, Algorithm.dijkstra):
+        assert _run(graph,'o','s',algorithm,Profile.standard)==(['o','x','s'],2.0)

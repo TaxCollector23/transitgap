@@ -3,8 +3,10 @@ import { createRoot } from "react-dom/client";
 import "./styles.css";
 import LandingPage from "./LandingPage";
 import AppLoading, { AppLoadBoundary } from "./AppLoading";
+import { preloadPlannerData } from "./data";
 
 const App = React.lazy(() => import("./App"));
+if (window.location.pathname !== "/") preloadPlannerData();
 const page =
   window.location.pathname === "/" ? (
     <LandingPage />

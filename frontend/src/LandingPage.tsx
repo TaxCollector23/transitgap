@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import "./landing.css";
+import ReadAloud from "./ReadAloud";
 import { PREPARED, warmRouting } from "./data";
 
 const steps = [
@@ -38,6 +39,7 @@ export default function LandingPage() {
         </div>
       </section>
       <div className="landing-editorial">
+        <ReadAloud text={() => Array.from(document.querySelectorAll<HTMLElement>(".landing-copy h1,.landing-copy > p,.landing-editorial section h2,.landing-editorial section h3,.landing-editorial section p")).filter(e=>e.getClientRects().length && !e.closest('[hidden],[inert],[aria-hidden="true"]')).map(e=>e.innerText).join(". ")} />
         <section className="landing-split" id="why-transitgap">
           <h2>A nearby stop isn't always an easy stop to reach.</h2>
           <div>
@@ -72,7 +74,7 @@ export default function LandingPage() {
           <h2>Built on information you can examine.</h2>
           <div>
             <p>TransitGap uses public geographic and transit information to understand the paths connecting people to transit stops. Each source has its own strengths and limitations, which is why knowing where information comes from matters.</p>
-            <p><a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> supplies the walking network. <a href="https://www.vta.org/go/developers">VTA</a> supplies transit stops across Santa Clara County. <a href="https://geo.sanjoseca.gov/server/rest/services/OPN/OPN_OpenDataService/MapServer/185">San José municipal GIS</a> adds curb-ramp evidence in the Diridon pilot area.</p>
+            <p><a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> supplies the walking network. <a href="https://www.vta.org/go/developers">VTA</a>, <a href="https://www.caltrain.com/developer-resources">Caltrain</a>, and <a href="https://www.bart.gov/schedules/developers/gtfs">BART</a> publish the transit stop and schedule data. <a href="https://geo.sanjoseca.gov/server/rest/services/OPN/OPN_OpenDataService/MapServer/185">San José municipal GIS</a> adds curb-ramp evidence in the Diridon pilot area.</p>
             <p>Routes are based on recorded data, not field verification. <a href="https://github.com/TaxCollector23/transitgap/blob/main/docs/METHODOLOGY.md">Read the methods and limitations.</a></p>
           </div>
         </section>
@@ -89,6 +91,8 @@ export default function LandingPage() {
             <a href="https://github.com/TaxCollector23/transitgap">GitHub</a>
             <a href="https://www.openstreetmap.org/copyright">© OpenStreetMap contributors</a>
             <a href="https://www.vta.org/go/developers">VTA data</a>
+            <a href="https://www.caltrain.com/developer-resources">Caltrain data</a>
+            <a href="https://www.bart.gov/schedules/developers/gtfs">BART data</a>
           </nav>
         </footer>
       </div>

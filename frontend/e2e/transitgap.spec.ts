@@ -1,250 +1,298 @@
 import { expect, test, type Page } from "@playwright/test";
-const api = "http://127.0.0.1:8000";
+import AxeBuilder from "@axe-core/playwright";
+
+const api = process.env.TRANSITGAP_E2E_URL || "http://127.0.0.1:8000";
+const shots = "test-artifacts/screenshots";
+
+// Real county journeys, one per agency.
+const JOURNEYS = {
+  vta: { name: "VTA", origin: [37.32875, -121.90442], query: "San Jose Diridon (Bay 11)", option: /San Jose Diridon \(Bay 11\)/ },
+  caltrain: { name: "Caltrain", origin: [37.3452, -121.977], query: "Santa Clara Caltrain", option: /Santa Clara Caltrain Station/ },
+  bart: { name: "BART", origin: [37.364, -121.882], query: "Berryessa", option: /Berryessa \/ North San JoseBART station/ },
+} as const;
+
 async function open(page: Page) {
   await page.goto("/app");
-  await expect(page.locator(".dataset-status.is-ready")).toBeVisible({
-    timeout: 30_000,
-  });
+  await expect(page.locator('main[data-data-state="ready"]')).toBeVisible({ timeout: 60_000 });
   await expect(page.locator(".maplibregl-canvas")).toBeVisible();
-  await expect(page.locator(".map-loading")).toHaveCount(0, {
-    timeout: 20_000,
-  });
-}
-async function example(page: Page) {
-  await page
-    .getByRole("button", { name: "Try a real Diridon journey" })
-    .click();
-  await expect(page.locator(".selected-stop")).toContainText("Bay 11");
-}
-async function route(page: Page) {
-  const pending = page.waitForResponse(
-    (r) => r.url().endsWith("/route") && r.request().method() === "POST",
-  );
-  await page.getByRole("button", { name: "Find Route", exact: true }).click();
-  const r = await pending;
-  expect(r.status()).toBe(200);
-  await expect(
-    page.getByRole("region", { name: "Route details" }),
-  ).toBeVisible();
-  await expect(page.locator(".map")).toHaveAttribute(
-    "data-route-state",
-    "current",
-  );
-  return r.json();
 }
 
-test("landing scrolls on desktop and phone, explains the project and opens app", async ({
-  page,
-}) => {
-  for (const width of [1440, 390]) {
-    await page.setViewportSize({ width, height: 844 });
-    await page.goto("/");
-    await expect(
-      page.getByRole("heading", { name: /A city for all/ }),
-    ).toBeVisible();
-    await page.locator(".landing-footer").scrollIntoViewIfNeeded();
-    expect(await page.evaluate(() => scrollY)).toBeGreaterThan(200);
-    expect(
-      await page.evaluate(() => document.documentElement.scrollWidth),
-    ).toBeLessThanOrEqual(width);
-    await expect(
-      page.locator(".landing-eyebrow,.eyebrow,.method-icon"),
-    ).toHaveCount(0);
-    await page.screenshot({
-      path: `test-artifacts/screenshots/landing-${width}.png`,
-      fullPage: true,
-    });
+async function startAt(page: Page, [lat, lon]: readonly number[]) {
+  await page.getByText("Enter coordinates instead", { exact: true }).click();
+  await page.getByLabel("Latitude", { exact: true }).fill(String(lat));
+  await page.getByLabel("Longitude", { exact: true }).fill(String(lon));
+  await page.getByRole("button", { name: "Use coordinates" }).click();
+  await expect(page.getByRole("button", { name: "Change starting point" })).toBeVisible();
+}
+
+const stopOptions = (page: Page) => page.getByRole("listbox", { name: "Transit stops and stations" }).getByRole("option");
+
+async function goTo(page: Page, query: string, option: RegExp) {
+  const box = page.getByRole("combobox", { name: "Where are you going?" });
+  await box.fill(query);
+  await stopOptions(page).filter({ hasText: option }).first().click();
+  await expect(page.getByRole("button", { name: "Change destination" })).toBeVisible();
+}
+
+async function findRoute(page: Page) {
+  const pending = page.waitForResponse((r) => r.url().endsWith("/route") && r.request().method() === "POST", { timeout: 60_000 });
+  await page.getByRole("button", { name: "Find route", exact: true }).click();
+  const response = await pending;
+  expect(response.status()).toBe(200);
+  await expect(page.getByRole("heading", { level: 2, name: /^To / })).toBeVisible();
+  await expect(page.locator(".map")).toHaveAttribute("data-route-state", "current");
+  return response.json();
+}
+
+function checkDirections(result: { directions: Array<{ instruction: string; distance_m: number }>; distance_m: number }) {
+  const instructions = result.directions.map((d) => d.instruction);
+  for (const text of instructions) {
+    expect(text).not.toMatch(/unnamed|Information missing/i);
   }
-  await page.getByRole("link", { name: "Open TransitGap" }).click();
-  await expect(page.locator(".dataset-status.is-ready")).toBeVisible({
-    timeout: 30_000,
-  });
-  await page.reload();
-  await expect(page.locator(".dataset-status.is-ready")).toBeVisible();
+  const total = result.directions.reduce((sum, d) => sum + d.distance_m, 0);
+  expect(Math.abs(total - result.distance_m)).toBeLessThan(1);
+  // No two identical consecutive instructions (the old one-per-edge output).
+  for (let i = 1; i < instructions.length; i++)
+    expect(`${instructions[i - 1]}|${instructions[i]}`).not.toBe(`${instructions[i]}|${instructions[i]}`);
+}
+
+test("1. the primary task is obvious on first open", async ({ page }) => {
+  await open(page);
+  await expect(page.getByRole("heading", { name: "Where are you starting?" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Where are you going?" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "How do you travel?" })).toBeVisible();
+  const find = page.getByRole("button", { name: "Find route", exact: true });
+  await expect(find).toBeVisible();
+  await expect(find).toBeDisabled();
+  await expect(page.locator("#route-missing")).toHaveText("Choose where you're starting and where you're going.");
+  await expect(page.getByRole("radio", { name: "Walking" })).toBeChecked();
+  // No tutorial, dashboard tabs or technical status text on the first screen.
+  await expect(page.locator(".app-tabs, .dataset-status")).toHaveCount(0);
+  expect(await page.locator(".panel").innerText()).not.toMatch(/GTFS|graph|algorithm|segment/i);
+  await page.screenshot({ path: `${shots}/desktop-1440-first-open.png` });
 });
 
-test("real county routes, all five algorithms, mobility profiles and no repeated map fitting on text edits", async ({
-  page,
-}) => {
-  const errors: string[] = [];
-  page.on("pageerror", (e) => errors.push(e.message));
+test("2-3. find a stop by name and agency, and set an origin without the map", async ({ page }) => {
   await open(page);
-  await example(page);
-  let result = await route(page);
-  expect(result.profile).toBe("wheelchair");
-  expect(result.segments.length).toBeGreaterThan(0);
-  await expect(page.locator(".route-result")).toContainText("mi");
-  await expect(page.locator(".route-result")).toContainText(
-    "not field checked",
-  );
-  await page.locator(".advanced-settings summary").click();
-  for (const algorithm of [
-    "dijkstra",
-    "bidirectional_dijkstra",
-    "astar",
-    "bellman_ford",
-    "breadth_first",
-  ]) {
+  await startAt(page, JOURNEYS.bart.origin);
+  const box = page.getByRole("combobox", { name: "Where are you going?" });
+  await box.fill("berryessa");
+  await expect(stopOptions(page).filter({ hasText: /BART station/ })).toHaveCount(1);
+  await expect(stopOptions(page).filter({ hasText: /VTA bus stop/ }).first()).toBeVisible();
+  await page.getByRole("radio", { name: "BART" }).check();
+  await expect(stopOptions(page)).toHaveCount(1);
+  await page.getByRole("radio", { name: "Caltrain" }).check();
+  await box.fill("santa clara");
+  await expect(stopOptions(page).filter({ hasText: /Santa Clara Caltrain Station/ })).toHaveCount(1);
+  // Platforms are grouped into one station, not listed twice.
+  await expect(stopOptions(page).filter({ hasText: /Northbound|Southbound/ })).toHaveCount(0);
+  await page.getByRole("radio", { name: "All" }).check();
+  await box.fill("");
+  await expect(stopOptions(page).first()).toBeVisible();
+});
+
+for (const key of ["vta", "caltrain", "bart"] as const) {
+  test(`4-7. ${JOURNEYS[key].name} journey: route, profile change, directions and missing data`, async ({ page }) => {
+    const journey = JOURNEYS[key];
+    await open(page);
+    await startAt(page, journey.origin);
+    await goTo(page, journey.query, journey.option);
+    const walking = await findRoute(page);
+    expect(walking.profile).toBe("standard");
+    checkDirections(walking);
+    expect(walking.directions.length).toBeLessThanOrEqual(20);
+    await expect(page.locator(".directions > li")).toHaveCount(walking.directions.length);
+    await expect(page.locator(".route-headline")).toContainText("Walking");
+    await page.screenshot({ path: `${shots}/desktop-1440-${key}-walking.png` });
+
+    // 5. Changing the profile recalculates; the old route is never shown as current.
+    const pending = page.waitForResponse((r) => r.url().endsWith("/route") && r.request().method() === "POST", { timeout: 60_000 });
+    await page.getByRole("radio", { name: "Wheelchair" }).check();
+    const wheelchairResponse = await pending;
+    const wheelchair = await wheelchairResponse.json();
+    expect(wheelchairResponse.request().postDataJSON().profile).toBe("wheelchair");
+    expect(wheelchair.profile).toBe("wheelchair");
+    await expect(page.locator(".route-headline")).toContainText("Wheelchair");
+    checkDirections(wheelchair);
+
+    // 6-7. Readable directions and one route-level missing-data message.
+    await expect(page.locator(".directions > li").first()).toContainText(/Head|Go from/);
+    await expect(page.getByText("Information missing")).toHaveCount(0);
+    await expect(page.locator(".route-limitations")).toContainText("Some accessibility information is missing along this route.");
+    await page.locator("summary", { hasText: "Accessibility details" }).click();
+    await expect(page.locator(".route-result")).toContainText(/not recorded for/);
+    await page.locator("summary", { hasText: /^About / }).click();
+    await expect(page.locator(".stop-service")).toContainText(/boarding/i);
+    await page.screenshot({ path: `${shots}/desktop-1440-${key}-wheelchair-details.png`, fullPage: false });
+    const axe = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"]).analyze();
+    expect(axe.violations.map((v) => v.id)).toEqual([]);
+  });
+}
+
+test("all five profiles and five algorithms still route", async ({ page }) => {
+  await open(page);
+  await startAt(page, JOURNEYS.vta.origin);
+  await goTo(page, JOURNEYS.vta.query, JOURNEYS.vta.option);
+  await findRoute(page);
+  await page.getByRole("button", { name: "Edit trip" }).click();
+  await page.getByText("Advanced options", { exact: true }).click();
+  for (const algorithm of ["dijkstra", "bidirectional_dijkstra", "astar", "bellman_ford", "breadth_first"]) {
+    if (!(await page.getByLabel("Routing algorithm").isVisible())) await page.getByText("Advanced options", { exact: true }).click();
     await page.getByLabel("Routing algorithm").selectOption(algorithm);
-    result = await route(page);
+    const result = await findRoute(page);
     expect(result.algorithm).toBe(algorithm);
+    await page.getByRole("button", { name: "Edit trip" }).click();
   }
-  for (const profile of [
-    "standard",
-    "wheelchair",
-    "stroller",
-    "low_vision",
-    "prefer_documented_paths",
-  ]) {
-    await page.getByLabel("Route profile").selectOption(profile);
-    result = await route(page);
-    expect(result.profile).toBe(profile);
+  if (!(await page.getByLabel("Routing algorithm").isVisible())) await page.getByText("Advanced options", { exact: true }).click();
+  await page.getByLabel("Routing algorithm").selectOption("astar");
+  for (const profile of ["Walking", "Wheelchair", "Stroller", "Low vision"]) {
+    await page.getByRole("radio", { name: profile, exact: true }).check();
+    const result = await findRoute(page);
+    expect(result.profile).toBe({ Walking: "standard", Wheelchair: "wheelchair", Stroller: "stroller", "Low vision": "low_vision" }[profile]);
+    await page.getByRole("button", { name: "Edit trip" }).click();
   }
-  await page.waitForTimeout(650);
-  await page.evaluate(() => {
-    const w = window as any;
-    w.__fitCalls = 0;
-    const map = w.__transitGapMap;
-    const old = map.fitBounds.bind(map);
-    map.fitBounds = (...args: any[]) => {
-      w.__fitCalls++;
-      return old(...args);
-    };
-  });
-  await page.getByLabel("Search VTA stops").fill("Mountain View");
-  await expect(page.locator(".stop-option").first()).toBeVisible();
-  expect(await page.evaluate(() => (window as any).__fitCalls)).toBe(0);
-  expect(errors).toEqual([]);
+  if (!(await page.getByLabel("Routing algorithm").isVisible())) await page.getByText("Advanced options", { exact: true }).click();
+  await page.getByLabel("Prefer paths with documented accessibility information").check();
+  expect((await findRoute(page)).profile).toBe("prefer_documented_paths");
 });
 
-test("mobility detour, actual directions, scheduled service and share links", async ({
-  page,
-}) => {
+test("8-9. access gaps and reporting are one step away and return without losing the route", async ({ page }) => {
   await open(page);
-  await example(page);
-  await route(page);
-  await page
-    .getByRole("button", { name: "Compare with standard route" })
-    .click();
-  await expect(
-    page.getByRole("heading", { name: "Mobility detour" }),
-  ).toBeVisible({ timeout: 15_000 });
-  await page.getByText("Directions", { exact: true }).click();
-  await expect(page.locator(".directions>li").first()).toContainText(/Head/);
-  await page.getByText("Stop service & boarding", { exact: true }).click();
-  await expect(
-    page.getByRole("heading", { name: "Scheduled, not real-time" }),
-  ).toBeVisible();
-  await page.getByRole("button", { name: "Copy journey link" }).click();
-  await expect(page).toHaveURL(/lat=.*stop=/);
-  await page.reload();
-  await expect(page.locator(".selected-stop")).toContainText("Bay 11");
-  await expect(
-    page.getByRole("button", { name: "Find Route", exact: true }),
-  ).toBeEnabled();
+  await startAt(page, JOURNEYS.vta.origin);
+  await goTo(page, JOURNEYS.vta.query, JOURNEYS.vta.option);
+  await findRoute(page);
+  await page.getByRole("button", { name: "Which stops are harder to reach by wheelchair?" }).click();
+  await expect(page.getByRole("heading", { name: "Which stops are harder to reach by wheelchair?" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Where is accessibility information missing near a stop?" })).toBeVisible();
+  await expect(page.locator(".gap-ranking li").first()).toBeVisible({ timeout: 30_000 });
+  await page.getByRole("button", { name: "← Back to route planning" }).click();
+  await expect(page.getByRole("heading", { name: /^To San Jose Diridon/ })).toBeVisible();
+  await page.getByRole("button", { name: "Report an issue" }).click();
+  await expect(page.getByRole("heading", { name: "Report an issue", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "1. Where is the problem?" })).toBeVisible();
+  const health = await (await page.request.get(`${api}/health`)).json();
+  if (health.reports_enabled) {
+    await expect(page.getByLabel("2. What's the problem?")).toBeVisible();
+    await expect(page.getByRole("button", { name: "Submit report" })).toBeDisabled();
+    await expect(page.locator("#report-submit-hint")).toContainText("Choose where the problem is");
+  } else {
+    await expect(page.getByText("Public reporting is paused")).toBeVisible();
+    await expect(page.getByRole("button", { name: "Submit report" })).toHaveCount(0);
+  }
+  await page.screenshot({ path: `${shots}/desktop-1440-report.png` });
+  await page.getByRole("button", { name: "← Back to route planning" }).click();
+  await expect(page.getByRole("heading", { name: /^To San Jose Diridon/ })).toBeVisible();
 });
 
-test("network gaps render and create an editable factual letter", async ({
-  page,
-}) => {
+test("10. the whole primary flow works with a keyboard only", async ({ page }) => {
   await open(page);
-  await page.getByRole("button", { name: "Access gaps", exact: true }).click();
-  await expect(page.locator(".gap-ranking li")).toHaveCount(10);
-  await page.locator(".gap-ranking button").first().click();
-  await expect(page.locator(".study-detail")).toContainText(
-    "Standard network",
-    { timeout: 15_000 },
-  );
-  await page.getByRole("button", { name: "Prepare a letter" }).click();
-  await expect(page.getByLabel("Review and edit before sending")).toHaveValue(
-    /Please assess pedestrian access/,
-  );
-  await page
-    .getByLabel("Review and edit before sending")
-    .fill("My reviewed draft");
-  await expect(
-    page.getByText("This draft has not been sent.", { exact: true }),
-  ).toBeVisible();
-  await page.screenshot({ path: "test-artifacts/screenshots/access-gap.png" });
+  await page.keyboard.press("Tab");
+  await expect(page.getByRole("link", { name: "Skip to route planner" })).toBeFocused();
+  await page.getByText("Enter coordinates instead", { exact: true }).focus();
+  await page.keyboard.press("Enter");
+  await page.getByLabel("Latitude", { exact: true }).focus();
+  await page.keyboard.type(String(JOURNEYS.vta.origin[0]));
+  await page.keyboard.press("Tab");
+  await page.keyboard.type(String(JOURNEYS.vta.origin[1]));
+  await page.keyboard.press("Enter");
+  const box = page.getByRole("combobox", { name: "Where are you going?" });
+  await box.focus();
+  await page.keyboard.type("Diridon (Bay 11)");
+  await page.keyboard.press("ArrowDown");
+  await page.keyboard.press("ArrowUp");
+  await page.keyboard.press("Enter");
+  await expect(page.getByRole("button", { name: "Change destination" })).toBeVisible();
+  await page.getByRole("radio", { name: "Walking" }).focus();
+  await page.keyboard.press("ArrowRight");
+  await expect(page.getByRole("radio", { name: "Wheelchair" })).toBeChecked();
+  const pending = page.waitForResponse((r) => r.url().endsWith("/route"), { timeout: 60_000 });
+  await page.getByRole("button", { name: "Find route", exact: true }).focus();
+  await page.keyboard.press("Enter");
+  expect((await pending).status()).toBe(200);
+  await expect(page.locator("#route-title")).toBeFocused();
+  await page.keyboard.press("Tab");
+  await expect(page.locator(":focus")).toBeVisible();
 });
 
-test("mobile map selection, distinct A and B pins, cancellation and route fit", async ({
-  page,
-  context,
-}) => {
-  await page.setViewportSize({ width: 390, height: 844 });
-  await context.grantPermissions(["geolocation"]);
-  await context.setGeolocation({ latitude: 37.32875, longitude: -121.90442 });
+test("11. a backend outage keeps the map and the user's choices", async ({ page }) => {
   await open(page);
-  await page
-    .getByRole("button", { name: "Choose on map", exact: true })
-    .click();
-  await expect(page.locator(".panel")).toHaveClass(/panel-collapsed/);
-  await page.keyboard.press("Escape");
-  await expect(page.locator(".panel")).toHaveClass(/panel-expanded/);
-  await page.getByRole("button", { name: "Use my location" }).click();
-  await page.getByLabel("Search VTA stops").fill("San Jose Diridon (Bay 11)");
-  await page.locator(".stop-option").first().click();
-  await route(page);
-  await page.getByRole("button", { name: "Collapse route planner" }).click();
-  await expect(page.locator(".map-marker-origin")).toBeVisible();
-  await expect(page.locator(".map-marker-destination")).toBeVisible();
-  expect(
-    await page.evaluate(() => document.documentElement.scrollWidth),
-  ).toBeLessThanOrEqual(390);
-  await page.screenshot({
-    path: "test-artifacts/screenshots/mobile-route.png",
-  });
-  await page.getByRole("button", { name: "Expand route planner" }).click();
-  await page.getByRole("button", { name: "Reset", exact: true }).click();
-  await expect(
-    page.locator(".map-marker-origin,.map-marker-destination"),
-  ).toHaveCount(0);
+  await startAt(page, JOURNEYS.vta.origin);
+  await goTo(page, JOURNEYS.vta.query, JOURNEYS.vta.option);
+  await page.route("**/route", (r) => r.fulfill({ status: 503, contentType: "application/json", body: JSON.stringify({ detail: "Temporary outage" }) }));
+  await page.getByRole("button", { name: "Find route", exact: true }).click();
+  await expect(page.getByRole("alert")).toContainText("TransitGap is having trouble connecting. Your map is still available. Try again.");
+  await expect(page.locator(".maplibregl-canvas")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Change destination" })).toBeVisible();
+  await page.screenshot({ path: `${shots}/desktop-1440-outage.png` });
+  await page.unroute("**/route");
+  const pending = page.waitForResponse((r) => r.url().endsWith("/route"), { timeout: 60_000 });
+  await page.getByRole("alert").getByRole("button", { name: "Try again" }).click();
+  expect((await pending).status()).toBe(200);
+  await expect(page.getByRole("alert")).toHaveCount(0);
 });
 
-test("failure recovery and out-of-county location", async ({
-  page,
-  context,
-}) => {
+test("out-of-area starting points are refused in plain language", async ({ page, context }) => {
   await context.grantPermissions(["geolocation"]);
   await context.setGeolocation({ latitude: 37.8, longitude: -122.4 });
   await open(page);
   await page.getByRole("button", { name: "Use my location" }).click();
-  await expect(page.getByRole("alert")).toContainText("outside the supported");
-  await example(page);
-  await page.route("**/route", (r) =>
-    r.fulfill({
-      status: 503,
-      contentType: "application/json",
-      body: JSON.stringify({ detail: "Temporary outage" }),
-    }),
-  );
-  await page.getByRole("button", { name: "Find Route", exact: true }).click();
-  await expect(page.getByRole("alert")).toContainText("Temporary outage");
-  await page.unroute("**/route");
-  await route(page);
-  await expect(page.getByRole("alert")).toHaveCount(0);
+  await expect(page.getByRole("alert")).toContainText("outside the area TransitGap covers");
 });
 
-test("evidence loads only on request and stays distinct from field verification", async ({
-  page,
-}) => {
-  const evidence: string[] = [];
-  page.on("request", (r) => {
-    if (r.url().includes("/accessibility/")) evidence.push(r.url());
+for (const key of ["vta", "caltrain", "bart"] as const) {
+  test(`12. mobile ${JOURNEYS[key].name} journey at 390x844`, async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    const journey = JOURNEYS[key];
+    await open(page);
+    if (key === "vta") await page.screenshot({ path: `${shots}/mobile-390-first-open.png` });
+    await startAt(page, journey.origin);
+    await goTo(page, journey.query, journey.option);
+    const result = await findRoute(page);
+    checkDirections(result);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
+    // The sheet leaves the map visible.
+    const sheet = await page.locator(".panel").boundingBox();
+    expect(sheet!.height).toBeLessThan(844 * 0.62);
+    await expect(page.locator(".map-marker-origin")).toBeVisible();
+    await expect(page.locator(".map-marker-destination")).toBeVisible();
+    await page.screenshot({ path: `${shots}/mobile-390-${key}-summary.png` });
+    await page.getByRole("button", { name: /Show \d+ directions/ }).click();
+    await expect(page.getByRole("dialog", { name: /Directions to/ })).toBeVisible();
+    await expect(page.getByRole("dialog").locator(".directions > li")).toHaveCount(result.directions.length);
+    await page.screenshot({ path: `${shots}/mobile-390-${key}-directions.png` });
+    await page.getByRole("button", { name: "Back to map" }).click();
+    await expect(page.getByRole("dialog")).toHaveCount(0);
+    await page.getByRole("button", { name: "Show more map" }).click();
+    await expect(page.locator(".panel")).toHaveClass(/panel-collapsed/);
+    await expect(page.locator(".sheet-summary")).toContainText(/^To /);
+    await page.screenshot({ path: `${shots}/mobile-390-${key}-map.png` });
   });
+}
+
+test("map selection on mobile can be cancelled, and other stops can be shown during a route", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
   await open(page);
-  expect(evidence).toHaveLength(0);
-  await page.getByRole("button", { name: "Evidence", exact: true }).click();
-  await expect(
-    page.getByRole("heading", { name: "Sidewalk data gaps" }),
-  ).toBeVisible();
-  await expect(page.locator(".gap-item").first()).toBeVisible();
-  await page.locator(".gap-item").first().click();
-  await expect(
-    page.getByText("Evidence detail", { exact: true }),
-  ).toBeVisible();
-  await expect(page.locator(".eyebrow")).toHaveCount(0);
-  const health = await page.request.get(`${api}/health`);
-  expect((await health.json()).ready).toBe(true);
+  await page.getByRole("button", { name: "Choose on map", exact: true }).click();
+  await expect(page.locator(".panel")).toHaveClass(/panel-collapsed/);
+  await page.keyboard.press("Escape");
+  await expect(page.locator(".panel")).toHaveClass(/panel-expanded/);
+  await startAt(page, JOURNEYS.vta.origin);
+  await goTo(page, JOURNEYS.vta.query, JOURNEYS.vta.option);
+  await findRoute(page);
+  const toggle = page.getByRole("button", { name: "Show other stops" });
+  await toggle.click();
+  await expect(page.getByRole("button", { name: "Hide other stops" })).toHaveAttribute("aria-pressed", "true");
+});
+
+test("trip links reopen the same trip", async ({ page }) => {
+  await open(page);
+  await startAt(page, JOURNEYS.caltrain.origin);
+  await goTo(page, JOURNEYS.caltrain.query, JOURNEYS.caltrain.option);
+  await findRoute(page);
+  await page.getByRole("button", { name: "Copy link to this trip" }).click();
+  await expect(page).toHaveURL(/lat=.*stop=caltrain/);
+  await page.reload();
+  await expect(page.locator('main[data-data-state="ready"]')).toBeVisible({ timeout: 60_000 });
+  await expect(page.locator(".field-value").nth(1)).toContainText("Santa Clara Caltrain Station");
+  await expect(page.getByRole("button", { name: "Find route", exact: true })).toBeEnabled();
 });

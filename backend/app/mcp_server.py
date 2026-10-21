@@ -25,7 +25,7 @@ def get_coverage() -> dict[str, Any]:
 
 @server.tool()
 def search_transit_stops(query: str = "", limit: int = 10) -> dict[str, Any]:
-    """Search loaded VTA stops by name; results include coordinates and stop IDs."""
+    """Search loaded VTA, Caltrain, and BART stops by name."""
     api = _api()
     api._ready()
     cleaned = query.strip().casefold()
@@ -33,7 +33,7 @@ def search_transit_stops(query: str = "", limit: int = 10) -> dict[str, Any]:
         raise ValueError("query must be at most 200 characters and limit must be between 1 and 50")
     results = [
         {key: value for key, value in stop.items() if key not in {"graph_node", "connector_distance_m"}}
-        for stop in api.state["stops"]
+        for stop in (api.state.get("transit_stops") or api.state["stops"])
         if not cleaned or cleaned in stop["stop_name"].casefold()
     ][:limit]
     return {"query": query, "count": len(results), "stops": results}
@@ -42,7 +42,7 @@ def search_transit_stops(query: str = "", limit: int = 10) -> dict[str, Any]:
 @server.tool()
 def plan_route(origin_latitude: float, origin_longitude: float, destination_stop_id: str,
                algorithm: str = "dijkstra", profile: str = "standard") -> dict[str, Any]:
-    """Calculate a real walking route from a coordinate to a loaded VTA stop."""
+    """Calculate a real walking route from a coordinate to a loaded transit stop."""
     from .models import RouteRequest
     return _api().route(RouteRequest(
         origin_latitude=origin_latitude,
@@ -56,7 +56,7 @@ def plan_route(origin_latitude: float, origin_longitude: float, destination_stop
 @server.tool()
 def compare_routes(origin_latitude: float, origin_longitude: float,
                    destination_stop_id: str, algorithm: str = "astar") -> dict[str, Any]:
-    """Compare supported walking profiles for the same origin and VTA stop."""
+    """Compare supported walking profiles for the same origin and transit stop."""
     from .models import RouteComparisonRequest
     return _api().compare_routes(RouteComparisonRequest(
         origin_latitude=origin_latitude,
@@ -116,7 +116,7 @@ def get_gap_details(candidate_id: str) -> dict[str, Any]:
 
 @server.tool()
 def get_inspection_priorities(limit: int = 50, offset: int = 0) -> dict[str, Any]:
-    """Rank places for human review using TransitGap's implemented priority score."""
+    """List existing route-proximity review suggestions; this is not reachability-change scoring."""
     if not 1 <= limit <= 200 or not 0 <= offset <= 100_000:
         raise ValueError("limit must be 1-200 and offset must be between 0 and 100000")
     return _api()._groundtruth().get_priorities(limit=limit, offset=offset)

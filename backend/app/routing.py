@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from math import isfinite
 from time import perf_counter
 from typing import Any
@@ -21,6 +22,7 @@ from .accessibility import (
 )
 from .models import Algorithm, Profile
 from .geospatial import distance_m, nearest_graph_node
+from .directions import accessibility_summary, describe_edge, directions as group_directions, geometry_audit
 
 ACCESSIBILITY_WARNING = (
     "This route is not verified accessible. OpenStreetMap accessibility tags may be missing or out of date; "
@@ -28,7 +30,7 @@ ACCESSIBILITY_WARNING = (
 )
 WALKING_SPEED_MPS = 1.2
 MAX_SNAP_DISTANCE_M = 120.0
-from .profiles import evaluate, SPEED_MPS, OBJECTIVES
+from .profiles import assess, evaluate, SPEED_MPS, OBJECTIVES
 
 PROFILE_OBJECTIVES = {p: OBJECTIVES[p.value] for p in Profile}
 haversine_m = distance_m
@@ -119,12 +121,23 @@ def _geometry_coords(raw: Any) -> list[list[float]]:
     return coords
 
 
+def _report_extra(effects, u, v, key, profile):
+    if not effects:return 0.0
+    report=effects.get(json.dumps([str(u),str(v),str(key)],separators=(",",":")))
+    if not report:return 0.0
+    name="wheelchair" if profile.value=="avoid_mapped_stairs" else profile.value
+    relevant=[r for r in report.get("reports",[report]) if name in r.get("affected_profiles",[])]
+    if any(r["routing_effect"]=="block" for r in relevant):return None
+    return {"wheelchair":1.5,"stroller":1.0,"low_vision":.5}.get(name,.2) if relevant else 0.0
+
+
 def _best_edge(
     graph: nx.MultiDiGraph,
     u: Any,
     v: Any,
     profile: Profile,
     penalties: dict[str, float] | None = None,
+    report_effects: dict | None = None,
 ) -> tuple[Any, dict[str, Any], float, float]:
     data = graph.get_edge_data(u, v)
     if not data:
@@ -154,6 +167,9 @@ def _best_edge(
         cost = length * (
             (1.0 + penalty) if profile == Profile.prefer_documented_paths else factor
         )
+        extra = _report_extra(report_effects, u, v, key, profile)
+        if extra is None:continue
+        cost += length * extra
         if not isfinite(cost) or cost < 0:
             raise ValueError(f"Edge {u!r}->{v!r} has an invalid routing cost")
         candidates.append((cost, insertion_order, key, attrs, length, penalty))
@@ -172,10 +188,11 @@ def _weight(
     data: dict[str, Any],
     profile: Profile,
     penalties: dict[str, float] | None = None,
+    report_effects: dict | None = None,
 ) -> float | None:
     """NetworkX callback; for parallel arcs return their minimum eligible cost."""
     candidates = []
-    for _, attrs in _edge_options(graph, data):
+    for key, attrs in _edge_options(graph, data):
         if (
             not _public_access(attrs)
             or not node_public_access(graph.nodes[u])
@@ -196,6 +213,9 @@ def _weight(
         cost = length * (
             (1.0 + penalty) if profile == Profile.prefer_documented_paths else factor
         )
+        extra = _report_extra(report_effects, u, v, key, profile)
+        if extra is None:continue
+        cost += length * extra
         if not isfinite(cost) or cost < 0:
             raise ValueError(f"Edge {u!r}->{v!r} has an invalid routing cost")
         candidates.append(cost)
@@ -203,9 +223,11 @@ def _weight(
 
 
 def _heuristic(graph: nx.MultiDiGraph, a: Any, b: Any) -> float:
-    # Every optimization edge costs length * (1 + nonnegative penalty), so this
-    # straight-line physical distance is admissible for every supported profile.
-    return distance_m(
+    # Only the loaded immutable snapshot has a verified length/chord lower bound.
+    # Uncertified/mutable input graphs use zero (A* becomes Dijkstra), so short
+    # synthetic or malformed stored lengths cannot cause a suboptimal result.
+    scale = graph.graph.get("transitgap_heuristic_scale", 0.0)
+    return scale * distance_m(
         (float(graph.nodes[a]["y"]), float(graph.nodes[a]["x"])),
         (float(graph.nodes[b]["y"]), float(graph.nodes[b]["x"])),
     )
@@ -218,6 +240,7 @@ def _run(
     algorithm: Algorithm,
     profile: Profile,
     penalties: dict[str, float] | None = None,
+    report_effects: dict | None = None,
 ) -> tuple[list[Any], float]:
     """Run a real NetworkX algorithm against the same directed, profile-aware weights."""
     if start not in graph or end not in graph:
@@ -234,7 +257,7 @@ def _run(
                 raise ValueError(
                     "This search exceeded the time limit. Try A* or choose a nearer stop."
                 )
-            costs[key] = _weight(graph, u, v, data, profile, penalties)
+            costs[key] = _weight(graph, u, v, data, profile, penalties, report_effects)
         return costs[key]
 
     if algorithm == Algorithm.dijkstra:
@@ -306,7 +329,7 @@ def _run(
         graph, start, end, heuristic=lambda a, b: _heuristic(graph, a, b), weight=weight
     )
     cost = sum(
-        _weight(graph, u, v, graph.get_edge_data(u, v), profile, penalties)
+        weight(u, v, graph.get_edge_data(u, v))
         for u, v in zip(path, path[1:])
     )
     return path, float(cost)
@@ -349,6 +372,7 @@ def calculate_route(
     algorithm: Algorithm,
     profile: Profile,
     stop: dict[str, Any],
+    report_effects: dict | None = None,
 ) -> dict[str, Any]:
     started = perf_counter()
     lat, lon = map(float, origin)
@@ -383,7 +407,7 @@ def calculate_route(
         destination_node = int(destination_node)
     try:
         nodes, optimization_edge_cost = _run(
-            graph, nearest, destination_node, algorithm, profile, penalties
+            graph, nearest, destination_node, algorithm, profile, penalties, report_effects
         )
     except (nx.NodeNotFound, nx.NetworkXNoPath) as exc:
         raise LookupError(
@@ -398,7 +422,7 @@ def calculate_route(
     public_segments = []
     tagged_distance = 0.0
     for u, v in zip(nodes, nodes[1:]):
-        key, attrs, length, penalty = _best_edge(graph, u, v, profile, penalties)
+        key, attrs, length, penalty = _best_edge(graph, u, v, profile, penalties, report_effects)
         segment_coords = _edge_coords(graph, u, v, attrs)
         if coords and coords[-1] != segment_coords[0]:
             if (
@@ -415,7 +439,7 @@ def calculate_route(
         physical_edge_distance += length
         mapped_stair_segments += int(is_mapped_stairs(attrs))
         selected_edge_keys.append(
-            {"from": str(u), "to": str(v), "key": str(key) if key is not None else None}
+            {"from": str(u), "to": str(v), "key": str(key) if key is not None else None, "reference": json.dumps([str(u),str(v),str(key)],separators=(",",":"))}
         )
         _, _, status, reasons, known = evaluate(
             attrs, graph.nodes[u], graph.nodes[v], profile
@@ -433,8 +457,13 @@ def calculate_route(
                 "status": status,
                 "reasons": reasons,
                 "name": name,
+                "costs": ({"physical_distance_m":length,"difficulty_cost_m":0,"uncertainty_cost_m":length*penalty,"optimization_cost_m":length*(1+penalty)} if profile == Profile.prefer_documented_paths else assess(attrs, graph.nodes[u], graph.nodes[v], profile).costs(length)),
+                "documented_attributes": known,
+                "missing_attributes": list(assess(attrs, graph.nodes[u], graph.nodes[v], profile).missing),
                 "source": "OpenStreetMap; mapped, not field checked",
                 "osm_id": attrs.get("osmid"),
+                **describe_edge(attrs, graph.nodes[u], graph.nodes[v]),
+                "end_junction_degree": _junction_degree(graph, v),
             }
         )
         segments.append(
@@ -490,6 +519,7 @@ def calculate_route(
                 "reasons": ["Off-network connector; path not assessed"],
                 "name": None,
                 "source": "Straight-line connector, not a mapped sidewalk",
+                "kind": "connector",
             }
             public_segments.insert(0, connector) if points[
                 0
@@ -503,17 +533,24 @@ def calculate_route(
     accessibility["uncertainty_penalty_weights"] = (
         penalties if profile == Profile.prefer_documented_paths else None
     )
+    destination_info = {
+        key: stop[key] for key in ("stop_id", "stop_name", "latitude", "longitude", "agency", "agency_name") if key in stop
+    }
+    maneuvers = group_directions(public_segments, destination_info)
     return {
         "geometry": geometry,
         "distance_m": round(physical_distance, 1),
         "duration_seconds": round(physical_distance / SPEED_MPS[profile.value]),
         "walking_speed_mps_assumed": SPEED_MPS[profile.value],
+        "selected_edges": selected_edge_keys,
         "segments": public_segments,
         "data_confidence": round(tagged_distance / physical_distance, 4)
         if physical_distance
         else None,
         "data_confidence_definition": "Length-weighted share of applicable attributes documented in OSM; not verified accessibility",
-        "directions": directions(public_segments),
+        "directions": maneuvers,
+        "accessibility_summary": accessibility_summary(public_segments, maneuvers, physical_distance),
+        "geometry_audit": geometry_audit(public_segments),
         "algorithm": algorithm.value,
         "profile": profile.value,
         "optimization_objective": (
@@ -534,66 +571,15 @@ def calculate_route(
         "mapped_stair_segments": mapped_stair_segments,
         "accessibility": accessibility,
         "accessibility_warning": ACCESSIBILITY_WARNING,
-        "destination": {
-            key: stop[key] for key in ("stop_id", "stop_name", "latitude", "longitude")
-        },
+        "destination": destination_info,
     }
 
 
-def directions(segments):
-    """Maneuvers derived from ordered edge geometry; no invented road names."""
-    from math import atan2, cos, radians, sin, degrees
+def _junction_degree(graph: nx.MultiDiGraph, node: Any) -> int:
+    """Distinct mapped neighbours of a node, ignoring edge direction."""
+    return len((set(graph.successors(node)) | set(graph.predecessors(node))) - {node})
 
-    def bearing(a, b):
-        lat1, lat2, delta = radians(a[1]), radians(b[1]), radians(b[0] - a[0])
-        return (
-            degrees(
-                atan2(
-                    sin(delta) * cos(lat2),
-                    cos(lat1) * sin(lat2) - sin(lat1) * cos(lat2) * cos(delta),
-                )
-            )
-            + 360
-        ) % 360
 
-    result = []
-    previous = None
-    for segment in segments:
-        points = segment["geometry"]["coordinates"]
-        if len(points) < 2:
-            continue
-        heading = bearing(points[0], points[1])
-        delta = (heading - previous + 540) % 360 - 180 if previous is not None else 0
-        turn = (
-            "Head "
-            + [
-                "north",
-                "northeast",
-                "east",
-                "southeast",
-                "south",
-                "southwest",
-                "west",
-                "northwest",
-            ][int((heading + 22.5) / 45) % 8]
-            if previous is None
-            else "Turn right"
-            if delta > 35
-            else "Turn left"
-            if delta < -35
-            else "Continue"
-        )
-        name = segment.get("name") or "unnamed mapped path"
-        if "connector" in segment.get("source", "").lower():
-            name = "unassessed connection to the walking network"
-        reasons = segment.get("reasons", [])
-        result.append(
-            {
-                "instruction": f"{turn} on {name}",
-                "distance_m": segment["length_m"],
-                "status": segment["status"],
-                "warnings": reasons,
-            }
-        )
-        previous = bearing(points[-2], points[-1])
-    return result
+def directions(segments, destination=None):
+    """Grouped rider-facing maneuvers; see directions.py for the rules."""
+    return group_directions(segments, destination)

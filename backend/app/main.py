@@ -10,6 +10,8 @@ import math
 import os
 import time
 from collections import defaultdict, deque
+from contextvars import ContextVar
+from itertools import count
 from contextlib import asynccontextmanager
 from concurrent.futures import ThreadPoolExecutor
 from fastapi import FastAPI, HTTPException, Request
@@ -61,6 +63,11 @@ from .reachability import (
 from .mcp_server import asgi_app as mcp_asgi_app, server as mcp_server
 
 logger = logging.getLogger(__name__)
+PROCESS_INSTANCE_ID = uuid.uuid4().hex[:12]
+PROCESS_STARTED_AT = datetime.now(timezone.utc)
+PROCESS_STARTED_MONOTONIC = time.perf_counter()
+PROCESS_REQUEST_SEQUENCE = count(1)
+ACTIVE_REQUEST_CONTEXT: ContextVar[dict | None] = ContextVar("transitgap_request_context", default=None)
 state = {
     "graph": None,
     "stops": [],
@@ -75,6 +82,16 @@ state = {
     "reachability_index": None,
 }
 _report_rate: dict[str, deque[float]] = defaultdict(deque)
+
+def _runtime_event(event: str, **fields) -> None:
+    """Emit content-free, structured timing data correlated to a worker."""
+    try:
+        print(json.dumps({"event": event, "instance_id": PROCESS_INSTANCE_ID,
+                          "deployment_id": os.getenv("VERCEL_DEPLOYMENT_ID"), **fields},
+                         separators=(",", ":"), sort_keys=True), flush=True)
+    except OSError:
+        # Diagnostics must not turn a healthy route or loader into a failure.
+        pass
 
 
 
@@ -122,11 +139,16 @@ def _load() -> None:
     cpu_started=time.process_time()
     phase_wall,phase_cpu=started,cpu_started
     timings={}
+    database_timings={}
     phase_name="walking_network"
+    _runtime_event("initialization_started", stage=phase_name,
+                   process_started_at=PROCESS_STARTED_AT.isoformat())
     def phase(name):
         nonlocal phase_wall,phase_cpu,phase_name
         wall,cpu=time.perf_counter(),time.process_time()
         timings[phase_name]={"wall_seconds":round(wall-phase_wall,3),"cpu_seconds":round(cpu-phase_cpu,3)}
+        _runtime_event("initialization_stage_complete", stage=phase_name,
+                       next_stage=name, **timings[phase_name])
         phase_wall,phase_cpu,phase_name=wall,cpu,name
         state["initialization_phase"]=name
     try:
@@ -203,10 +225,17 @@ def _load() -> None:
             index, gt_error = None, str(exc)
         try:
             phase("report_storage")
-            initialize_observations()
+            database_started, database_cpu_started = time.perf_counter(), time.process_time()
+            initialize_observations(timings=database_timings)
             observations_ready = True
-        except Exception:
+            _runtime_event("database_initialization_complete", **database_timings,
+                           total_wall_seconds=round(time.perf_counter()-database_started,4),
+                           total_process_cpu_seconds=round(time.process_time()-database_cpu_started,4))
+        except Exception as exc:
             observations_ready = False
+            _runtime_event("database_initialization_failed", error_type=type(exc).__name__,
+                           total_wall_seconds=round(time.perf_counter()-database_started,4),
+                           total_process_cpu_seconds=round(time.process_time()-database_cpu_started,4))
             logger.exception("TransitGap community report store initialization failed")
         phase("ready")
         state.update(
@@ -228,9 +257,18 @@ def _load() -> None:
             initialization_phase="ready",
             initialization_cpu_seconds=round(time.process_time()-cpu_started,3),
             initialization_timings=timings,
+            database_initialization_timings=database_timings,
             schedule_cache_hits={"VTA":getattr(schedule,"cache_hit",None),**{k:getattr(v,"cache_hit",None) for k,v in agency_schedules.items()}},
         )
+        _runtime_event("initialization_ready", wall_seconds=state["initialization_seconds"],
+                       cpu_seconds=state["initialization_cpu_seconds"],
+                       rss_mib=_process_memory().get("rss_mib"), timings=timings,
+                       schedule_cache_hits=state["schedule_cache_hits"])
     except Exception as exc:
+        _runtime_event("initialization_failed", stage=phase_name,
+                       wall_seconds=round(time.perf_counter()-started,3),
+                       cpu_seconds=round(time.process_time()-cpu_started,3),
+                       error_type=type(exc).__name__)
         logger.exception("TransitGap data initialization failed")
         state.update(graph=None, stops=[], error=str(exc), initialization_phase="failed")
 
@@ -260,8 +298,43 @@ app.add_middleware(
     allow_credentials=False,
     allow_methods=["GET", "POST", "DELETE"],
     allow_headers=["*"],
-    expose_headers=["Mcp-Session-Id"],
+    expose_headers=["Mcp-Session-Id", "X-TransitGap-Instance", "X-TransitGap-Request-Number", "X-TransitGap-Request-ID", "X-TransitGap-Init-Phase"],
 )
+
+
+@app.middleware("http")
+async def instance_telemetry(request: Request, call_next):
+    sequence = next(PROCESS_REQUEST_SEQUENCE)
+    request_id = request.headers.get("x-vercel-id") if os.getenv("VERCEL") else None
+    request_id = request_id or uuid.uuid4().hex[:16]
+    started, cpu_started = time.perf_counter(), time.process_time()
+    context_token = ACTIVE_REQUEST_CONTEXT.set({"request_id": request_id, "request_number": sequence})
+    try:
+        response = await call_next(request)
+    except Exception as exc:
+        _runtime_event("request_failed", request_id=request_id, request_number=sequence,
+                       method=request.method, path=request.url.path,
+                       wall_seconds=round(time.perf_counter()-started,4),
+                       process_cpu_seconds=round(time.process_time()-cpu_started,4),
+                       initialization_phase=state.get("initialization_phase", "starting"),
+                       error_type=type(exc).__name__)
+        raise
+    finally:
+        ACTIVE_REQUEST_CONTEXT.reset(context_token)
+    wall = round(time.perf_counter()-started, 4)
+    process_cpu = round(time.process_time()-cpu_started, 4)
+    phase = state.get("initialization_phase", "starting")
+    response.headers["X-TransitGap-Instance"] = PROCESS_INSTANCE_ID
+    response.headers["X-TransitGap-Request-Number"] = str(sequence)
+    response.headers["X-TransitGap-Request-ID"] = request_id
+    response.headers["X-TransitGap-Init-Phase"] = str(phase)
+    if request.url.path in {"/health", "/health/live", "/routing/initialize", "/route"}:
+        _runtime_event("request_complete", request_id=request_id, request_number=sequence,
+                       method=request.method, path=request.url.path,
+                       status=response.status_code, wall_seconds=wall,
+                       process_cpu_seconds=process_cpu, initialization_phase=phase,
+                       ready=state.get("graph") is not None)
+    return response
 
 
 def _ready():
@@ -320,6 +393,9 @@ def _process_memory():
 def health():
     graph = state["graph"]
     return {
+        "runtime": {"instance_id": PROCESS_INSTANCE_ID,
+                    "process_started_at": PROCESS_STARTED_AT.isoformat(),
+                    "uptime_seconds": round(time.perf_counter()-PROCESS_STARTED_MONOTONIC, 3)},
         "ready": graph is not None and bool(state["stops"]),
         "build_sha": os.getenv("TRANSITGAP_BUILD_SHA") or os.getenv("VERCEL_GIT_COMMIT_SHA"),
         "datasets": {
@@ -355,6 +431,7 @@ def health():
         "initialization_seconds": state.get("initialization_seconds"),
         "initialization_cpu_seconds": state.get("initialization_cpu_seconds"),
         "initialization_timings": state.get("initialization_timings"),
+        "database_initialization_timings": state.get("database_initialization_timings"),
         "schedule_cache_hits": state.get("schedule_cache_hits"),
         "process_memory": _process_memory(),
     }
@@ -621,18 +698,19 @@ def submit_observation(payload: ObservationCreate, request: Request):
 
 @app.get("/health/live")
 def liveness():
-    return {"alive":True,"ready":state["graph"] is not None,"reports_ready":state.get("observations_ready",False),"error":state.get("error"),"phase":state.get("initialization_phase","starting")}
+    return {"alive":True,"ready":state["graph"] is not None,"reports_ready":state.get("observations_ready",False),"error":state.get("error"),"phase":state.get("initialization_phase","starting"),"instance_id":PROCESS_INSTANCE_ID}
 
 
-INITIALIZATION_REQUEST_SECONDS = 18
+INITIALIZATION_REQUEST_SECONDS = 45
 
 
 @app.post("/routing/initialize")
 async def initialize_routing():
     """Keep compute active during a bounded serverless warmup request.
 
-    A thread alone can be suspended after the last response. Awaiting the same
-    future keeps the invocation alive; shielding preserves it across timeouts.
+    A thread alone can be suspended after the last response. Await long enough
+    for the measured county initialization to finish in the same invocation;
+    shielding preserves it if the client's bounded request eventually expires.
     Other requests, CDN stop search and the map remain independent.
     """
     initialization = getattr(app.state, "initialization", None)
@@ -705,7 +783,21 @@ def moderate_report(identity: str, payload: ObservationReview, request: Request)
 def calculate_route(graph, origin, destination_node, algorithm, profile, stop, **kwargs):
     """Route to the best recorded arrival point for the stop (entrance or stop)."""
     if "report_effects" not in kwargs:
-        kwargs["report_effects"] = _routing_effects()
+        database_started, database_cpu_started = time.perf_counter(), time.process_time()
+        try:
+            kwargs["report_effects"] = _routing_effects()
+        except Exception as exc:
+            context = ACTIVE_REQUEST_CONTEXT.get() or {}
+            _runtime_event("routing_effects_read_failed", request_id=context.get("request_id"),
+                           error_type=type(exc).__name__,
+                           wall_seconds=round(time.perf_counter()-database_started,4),
+                           process_cpu_seconds=round(time.process_time()-database_cpu_started,4))
+            raise
+        else:
+            context = ACTIVE_REQUEST_CONTEXT.get() or {}
+            _runtime_event("routing_effects_read_complete", request_id=context.get("request_id"),
+                           wall_seconds=round(time.perf_counter()-database_started,4),
+                           process_cpu_seconds=round(time.process_time()-database_cpu_started,4))
     targets = _arrival_targets(stop, profile)
     if len(targets) == 1 and targets[0][2]["type"] == "stop":
         targets = [(destination_node, targets[0][1], targets[0][2])]

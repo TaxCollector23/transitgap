@@ -1,0 +1,312 @@
+{
+  "url": "https://transitgap.vercel.app",
+  "status": "incomplete",
+  "definition": "Observed newly deployed worker; serverless instance placement and OS caches are not controlled",
+  "polls": [
+    {
+      "elapsed_seconds": 25.15,
+      "error": "ReadTimeout"
+    },
+    {
+      "elapsed_seconds": 36.49,
+      "request_seconds": 10.339,
+      "status": 200,
+      "body": {
+        "alive": true,
+        "ready": true,
+        "reports_ready": true,
+        "error": null,
+        "phase": "ready"
+      }
+    }
+  ],
+  "first_route_request": {
+    "seconds": 0.173,
+    "status": 200,
+    "readiness_at_probe": true
+  },
+  "observed_ready_seconds": 36.663,
+  "health": {
+    "ready": true,
+    "build_sha": "5e7640a47fadc4fec84365b73279c2d396da27fc",
+    "datasets": {
+      "osm_walk_graph": "ready",
+      "vta_gtfs_stops": "ready",
+      "caltrain_gtfs_stops": "ready",
+      "bart_gtfs_stops": "ready"
+    },
+    "graph": {
+      "type": "directed_multigraph",
+      "nodes": 291569,
+      "directed_edges": 811314
+    },
+    "vta_stop_count": 3234,
+    "transit_stop_counts": {
+      "VTA": 3234,
+      "Caltrain": 34,
+      "BART": 4
+    },
+    "community_report_storage": "postgresql",
+    "reports_enabled": true,
+    "gap_stops_evaluated": 32,
+    "schedule_ready": true,
+    "data_freshness": [
+      {
+        "feed_publisher_name": "Santa Clara Valley Transportation Authority",
+        "feed_publisher_url": "https://www.vta.org",
+        "feed_lang": "EN",
+        "feed_start_date": "20261026",
+        "feed_end_date": "20270110",
+        "feed_version": "2026-10-09_14:57",
+        "feed_contact_email": "customer.service@vta.org",
+        "feed_contact_url": "https://www.vta.org/about/contact"
+      }
+    ],
+    "groundtruth_ready": true,
+    "groundtruth_error": null,
+    "error": null,
+    "initialization_seconds": 20.919,
+    "initialization_cpu_seconds": 20.805,
+    "initialization_timings": {
+      "walking_network": {
+        "wall_seconds": 15.717,
+        "cpu_seconds": 15.665
+      },
+      "rail_stops_and_schedules": {
+        "wall_seconds": 0.538,
+        "cpu_seconds": 0.537
+      },
+      "spatial_index": {
+        "wall_seconds": 0.0,
+        "cpu_seconds": 0.0
+      },
+      "prepared_gap_cache": {
+        "wall_seconds": 1.717,
+        "cpu_seconds": 1.689
+      },
+      "vta_schedule": {
+        "wall_seconds": 0.933,
+        "cpu_seconds": 0.931
+      },
+      "municipal_snapshot": {
+        "wall_seconds": 0.105,
+        "cpu_seconds": 0.101
+      },
+      "evidence_index": {
+        "wall_seconds": 1.723,
+        "cpu_seconds": 1.728
+      },
+      "report_storage": {
+        "wall_seconds": 0.186,
+        "cpu_seconds": 0.154
+      }
+    },
+    "schedule_cache_hits": {
+      "VTA": true,
+      "caltrain": true,
+      "bart": true
+    },
+    "process_memory": {
+      "rss_mib": 1245.02,
+      "peak_rss_mib": 1248.66
+    }
+  },
+  "routes": [
+    {
+      "agency": "VTA",
+      "profile": "standard",
+      "repeat": 0,
+      "status": 200,
+      "seconds": 0.171,
+      "distance_m": 370.1,
+      "directions": 11,
+      "arrival": {
+        "type": "stop",
+        "note": null
+      },
+      "geometry_sha256": "d2640002d59b60694a81efd2948ca712062a25e0a97eac9bf94c0434b8462109"
+    },
+    {
+      "agency": "VTA",
+      "profile": "standard",
+      "repeat": 1,
+      "status": 200,
+      "seconds": 0.142,
+      "distance_m": 370.1,
+      "directions": 11,
+      "arrival": {
+        "type": "stop",
+        "note": null
+      },
+      "geometry_sha256": "d2640002d59b60694a81efd2948ca712062a25e0a97eac9bf94c0434b8462109"
+    },
+    {
+      "agency": "VTA",
+      "profile": "wheelchair",
+      "repeat": 0,
+      "status": 200,
+      "seconds": 0.169,
+      "distance_m": 390.1,
+      "directions": 11,
+      "arrival": {
+        "type": "stop",
+        "note": null
+      },
+      "geometry_sha256": "22aa545fbf87c872572bd71f59e536d0ac10f96e604c6a112327994825cdb871"
+    },
+    {
+      "agency": "VTA",
+      "profile": "wheelchair",
+      "repeat": 1,
+      "status": 200,
+      "seconds": 0.155,
+      "distance_m": 390.1,
+      "directions": 11,
+      "arrival": {
+        "type": "stop",
+        "note": null
+      },
+      "geometry_sha256": "22aa545fbf87c872572bd71f59e536d0ac10f96e604c6a112327994825cdb871"
+    },
+    {
+      "agency": "VTA",
+      "profile": "stroller",
+      "repeat": 0,
+      "status": 200,
+      "seconds": 0.146,
+      "distance_m": 390.1,
+      "directions": 11,
+      "arrival": {
+        "type": "stop",
+        "note": null
+      },
+      "geometry_sha256": "22aa545fbf87c872572bd71f59e536d0ac10f96e604c6a112327994825cdb871"
+    },
+    {
+      "agency": "VTA",
+      "profile": "stroller",
+      "repeat": 1,
+      "status": 200,
+      "seconds": 0.174,
+      "distance_m": 390.1,
+      "directions": 11,
+      "arrival": {
+        "type": "stop",
+        "note": null
+      },
+      "geometry_sha256": "22aa545fbf87c872572bd71f59e536d0ac10f96e604c6a112327994825cdb871"
+    },
+    {
+      "agency": "VTA",
+      "profile": "low_vision",
+      "repeat": 0,
+      "status": 200,
+      "seconds": 0.154,
+      "distance_m": 370.1,
+      "directions": 11,
+      "arrival": {
+        "type": "stop",
+        "note": null
+      },
+      "geometry_sha256": "d2640002d59b60694a81efd2948ca712062a25e0a97eac9bf94c0434b8462109"
+    },
+    {
+      "agency": "VTA",
+      "profile": "low_vision",
+      "repeat": 1,
+      "status": 200,
+      "seconds": 0.155,
+      "distance_m": 370.1,
+      "directions": 11,
+      "arrival": {
+        "type": "stop",
+        "note": null
+      },
+      "geometry_sha256": "d2640002d59b60694a81efd2948ca712062a25e0a97eac9bf94c0434b8462109"
+    },
+    {
+      "agency": "Caltrain",
+      "profile": "standard",
+      "repeat": 0,
+      "status": 200,
+      "seconds": 0.441,
+      "distance_m": 4626.0,
+      "directions": 19,
+      "arrival": {
+        "type": "stop",
+        "note": null
+      },
+      "geometry_sha256": "2954abeb2d008279d0706fad4766d9b1ac58ca0a68d40bb52a1568e60fb01344"
+    },
+    {
+      "agency": "Caltrain",
+      "profile": "standard",
+      "repeat": 1,
+      "status": 200,
+      "seconds": 0.443,
+      "distance_m": 4626.0,
+      "directions": 19,
+      "arrival": {
+        "type": "stop",
+        "note": null
+      },
+      "geometry_sha256": "2954abeb2d008279d0706fad4766d9b1ac58ca0a68d40bb52a1568e60fb01344"
+    },
+    {
+      "agency": "Caltrain",
+      "profile": "wheelchair",
+      "repeat": 0,
+      "status": 200,
+      "seconds": 1.295,
+      "distance_m": 4659.9,
+      "directions": 19,
+      "arrival": {
+        "type": "stop",
+        "note": null
+      },
+      "geometry_sha256": "40909bba543e523b2a3df3d124a4b464a4ca4cf5705f87a0b02e52c464c3d6f9"
+    },
+    {
+      "agency": "Caltrain",
+      "profile": "wheelchair",
+      "repeat": 1,
+      "status": 200,
+      "seconds": 1.273,
+      "distance_m": 4659.9,
+      "directions": 19,
+      "arrival": {
+        "type": "stop",
+        "note": null
+      },
+      "geometry_sha256": "40909bba543e523b2a3df3d124a4b464a4ca4cf5705f87a0b02e52c464c3d6f9"
+    },
+    {
+      "agency": "Caltrain",
+      "profile": "stroller",
+      "repeat": 0,
+      "status": 200,
+      "seconds": 1.072,
+      "distance_m": 4707.6,
+      "directions": 23,
+      "arrival": {
+        "type": "stop",
+        "note": null
+      },
+      "geometry_sha256": "861fa1e9a264d20fa2f5f4a598f64576279b41a89feb33500493c0f4f321e851"
+    },
+    {
+      "agency": "Caltrain",
+      "profile": "stroller",
+      "repeat": 1,
+      "status": 200,
+      "seconds": 1.045,
+      "distance_m": 4707.6,
+      "directions": 23,
+      "arrival": {
+        "type": "stop",
+        "note": null
+      },
+      "geometry_sha256": "861fa1e9a264d20fa2f5f4a598f64576279b41a89feb33500493c0f4f321e851"
+    }
+  ]
+}

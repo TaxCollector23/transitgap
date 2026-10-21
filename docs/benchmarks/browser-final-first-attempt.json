@@ -1,0 +1,190 @@
+{
+  "base": "https://transitgap.vercel.app",
+  "label": "final",
+  "reports": [
+    {
+      "width": 390,
+      "height": 844,
+      "planner_ready_ms": 1263,
+      "map_canvas_ms": 1265,
+      "map_ready_ms": 1841,
+      "resources": [
+        {
+          "name": "index-BvqITYdk.js",
+          "duration_ms": 45,
+          "transfer_bytes": 77729,
+          "decoded_bytes": 240774
+        },
+        {
+          "name": "bootstrap.json",
+          "duration_ms": 41,
+          "transfer_bytes": 166617,
+          "decoded_bytes": 1130783
+        },
+        {
+          "name": "MapView-CJ7lNhWw.js",
+          "duration_ms": 281,
+          "transfer_bytes": 305714,
+          "decoded_bytes": 1087568
+        },
+        {
+          "name": "App-Buyruc7G.js",
+          "duration_ms": 183,
+          "transfer_bytes": 16370,
+          "decoded_bytes": 47663
+        },
+        {
+          "name": "maplibre-gl-worker-DJoMIXcx.js",
+          "duration_ms": -60,
+          "transfer_bytes": 300,
+          "decoded_bytes": 519571
+        },
+        {
+          "name": "maplibre-gl-worker-DJoMIXcx.js",
+          "duration_ms": -80,
+          "transfer_bytes": 153480,
+          "decoded_bytes": 519571
+        }
+      ],
+      "route_failure": "TimeoutError: locator.waitFor: Timeout 90000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('heading', { name: /^To /, level: 2 }) to be visible\u001b[22m\n"
+    },
+    {
+      "width": 768,
+      "height": 1024,
+      "planner_ready_ms": 1231,
+      "map_canvas_ms": 1257,
+      "map_ready_ms": 1716,
+      "resources": [
+        {
+          "name": "index-BvqITYdk.js",
+          "duration_ms": 46,
+          "transfer_bytes": 77729,
+          "decoded_bytes": 240774
+        },
+        {
+          "name": "bootstrap.json",
+          "duration_ms": 50,
+          "transfer_bytes": 166617,
+          "decoded_bytes": 1130783
+        },
+        {
+          "name": "MapView-CJ7lNhWw.js",
+          "duration_ms": 70,
+          "transfer_bytes": 305714,
+          "decoded_bytes": 1087568
+        },
+        {
+          "name": "App-Buyruc7G.js",
+          "duration_ms": 61,
+          "transfer_bytes": 16370,
+          "decoded_bytes": 47663
+        },
+        {
+          "name": "maplibre-gl-worker-DJoMIXcx.js",
+          "duration_ms": -78,
+          "transfer_bytes": 153480,
+          "decoded_bytes": 519571
+        },
+        {
+          "name": "maplibre-gl-worker-DJoMIXcx.js",
+          "duration_ms": -58,
+          "transfer_bytes": 300,
+          "decoded_bytes": 519571
+        }
+      ],
+      "walking_pointer_actions": 4
+    },
+    {
+      "width": 1440,
+      "height": 900,
+      "planner_ready_ms": 1485,
+      "map_canvas_ms": 1516,
+      "map_ready_ms": 1517,
+      "resources": [
+        {
+          "name": "index-BvqITYdk.js",
+          "duration_ms": 39,
+          "transfer_bytes": 77729,
+          "decoded_bytes": 240774
+        },
+        {
+          "name": "bootstrap.json",
+          "duration_ms": 53,
+          "transfer_bytes": 166617,
+          "decoded_bytes": 1130783
+        },
+        {
+          "name": "MapView-CJ7lNhWw.js",
+          "duration_ms": 60,
+          "transfer_bytes": 305714,
+          "decoded_bytes": 1087568
+        },
+        {
+          "name": "App-Buyruc7G.js",
+          "duration_ms": 56,
+          "transfer_bytes": 16370,
+          "decoded_bytes": 47663
+        },
+        {
+          "name": "maplibre-gl-worker-DJoMIXcx.js",
+          "duration_ms": -78,
+          "transfer_bytes": 153480,
+          "decoded_bytes": 519571
+        },
+        {
+          "name": "maplibre-gl-worker-DJoMIXcx.js",
+          "duration_ms": -62,
+          "transfer_bytes": 300,
+          "decoded_bytes": 519571
+        }
+      ],
+      "walking_pointer_actions": 4
+    },
+    {
+      "width": 1920,
+      "height": 1080,
+      "planner_ready_ms": 668,
+      "map_canvas_ms": 715,
+      "map_ready_ms": 2070,
+      "resources": [
+        {
+          "name": "index-BvqITYdk.js",
+          "duration_ms": 48,
+          "transfer_bytes": 77729,
+          "decoded_bytes": 240774
+        },
+        {
+          "name": "bootstrap.json",
+          "duration_ms": 55,
+          "transfer_bytes": 166617,
+          "decoded_bytes": 1130783
+        },
+        {
+          "name": "MapView-CJ7lNhWw.js",
+          "duration_ms": 55,
+          "transfer_bytes": 305714,
+          "decoded_bytes": 1087568
+        },
+        {
+          "name": "App-Buyruc7G.js",
+          "duration_ms": 48,
+          "transfer_bytes": 16370,
+          "decoded_bytes": 47663
+        },
+        {
+          "name": "maplibre-gl-worker-DJoMIXcx.js",
+          "duration_ms": -99,
+          "transfer_bytes": 153480,
+          "decoded_bytes": 519571
+        },
+        {
+          "name": "maplibre-gl-worker-DJoMIXcx.js",
+          "duration_ms": -80,
+          "transfer_bytes": 300,
+          "decoded_bytes": 519571
+        }
+      ],
+      "walking_pointer_actions": 4
+    }
+  ]
+}

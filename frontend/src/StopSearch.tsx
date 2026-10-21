@@ -51,7 +51,9 @@ export default function StopSearch({
         return {
           place,
           matches,
+          exact: terms.length > 0 && name === terms.join(" "),
           prefix: terms.length > 0 && name.startsWith(terms.join(" ")),
+          station: terms.length > 0 && /\bstation\b/i.test(place.description),
           distance: reference
             ? distanceM(reference, [place.latitude, place.longitude])
             : null,
@@ -60,7 +62,9 @@ export default function StopSearch({
       .filter((item) => item.matches)
       .sort(
         (a, b) =>
+          Number(b.exact) - Number(a.exact) ||
           Number(b.prefix) - Number(a.prefix) ||
+          Number(b.station) - Number(a.station) ||
           (a.distance ?? 0) - (b.distance ?? 0) ||
           a.place.name.localeCompare(b.place.name),
       )

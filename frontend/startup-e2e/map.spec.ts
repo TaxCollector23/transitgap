@@ -1,5 +1,30 @@
 import { test, expect } from "@playwright/test";
 
+test('station matches are discoverable among many nearby bus stops', async ({page}) => {
+  const busStops = Array.from({length:12}, (_,i) => ({stop_id:`bus-${i}`,stop_name:`Berryessa & Side ${i}`,
+    latitude:37.3296+i*.0001,longitude:-121.903,agency:'vta',modes:['bus']}));
+  await page.route('**/routing/initialize', route => route.fulfill({json:{ready:true}}));
+  await page.route('**/bootstrap.json', route => route.fulfill({json:{
+    coverage:{center:{latitude:37.3296,longitude:-121.903},radius_m:70000,region:'Santa Clara County'},
+    stops:[...busStops,
+      {stop_id:'exact-bus',stop_name:'Berryessa',latitude:37.34,longitude:-121.9,agency:'vta',modes:['bus']},
+      {stop_id:'bart',stop_name:'Berryessa / North San Jose',latitude:37.364,longitude:-121.874,agency:'bart'},
+      {stop_id:'rail-fixture',stop_name:'Berryessa Junction',latitude:37.4,longitude:-121.87,agency:'caltrain'},
+    ],
+  }}));
+  await page.goto('/app');
+  const search = page.getByRole('combobox',{name:'Where are you going?'});
+  await search.fill('Berryessa');
+  const results = page.getByRole('option');
+  await expect(results.nth(0)).toContainText('VTA bus stop'); // Exact names still win.
+  await expect(results.nth(1)).toContainText('BART station');
+  await expect(results.nth(2)).toContainText('Caltrain station');
+  await search.fill('Berryessa & Side 9');
+  await expect(results.first()).toContainText('Berryessa & Side 9');
+  await search.fill('');
+  await expect(results.first()).toContainText('Berryessa & Side 0'); // Empty search stays nearby.
+});
+
 test('the visible next action retries unavailable stop data', async ({page}) => {
   let available = false;
   await page.route('**/routing/initialize', route => route.fulfill({json:{ready:true}}));

@@ -116,10 +116,20 @@ def _arrival_targets(stop: dict, profile: Profile) -> list[tuple[str, dict, dict
 
 def _load() -> None:
     started = time.perf_counter()
+    cpu_started=time.process_time()
+    phase_wall,phase_cpu=started,cpu_started
+    timings={}
+    phase_name="walking_network"
+    def phase(name):
+        nonlocal phase_wall,phase_cpu,phase_name
+        wall,cpu=time.perf_counter(),time.process_time()
+        timings[phase_name]={"wall_seconds":round(wall-phase_wall,3),"cpu_seconds":round(cpu-phase_cpu,3)}
+        phase_wall,phase_cpu,phase_name=wall,cpu,name
+        state["initialization_phase"]=name
     try:
         state.update(initialization_phase="walking_network", error=None)
         graph, stops = initialize()
-        state["initialization_phase"] = "transit_schedules"
+        phase("rail_stops_and_schedules")
         configured_region = os.getenv("TRANSITGAP_REGION", "").strip().lower()
         region = configured_region or (
             COUNTY_REGION
@@ -148,9 +158,12 @@ def _load() -> None:
         for stop in rail_stops:
             agency_schedule = agency_schedules.get(stop["agency"])
             stop["modes"] = _modes(agency_schedule.route_types(stop["source_stop_id"])) if agency_schedule else []
+        phase("spatial_index")
         # Prepare the spherical index once, rather than in the first route.
         nearest_graph_node(graph, CENTER[0], CENTER[1])
+        phase("prepared_gap_cache")
         gaps = GapIndex(graph, stops, data_dir())
+        phase("vta_schedule")
         try:
             schedule = TransitSchedule(
                 data_dir() / "gtfs_vta.zip", [s["stop_id"] for s in stops]
@@ -160,7 +173,7 @@ def _load() -> None:
             schedule = None
         for stop in stops:
             stop["modes"] = _modes(schedule.route_types(stop["stop_id"])) if schedule else []
-        state["initialization_phase"] = "accessibility_evidence"
+        phase("municipal_snapshot")
         evidence_radius = DEFAULT_RADIUS_M
         try:
             city = load_sidewalks(radius_m=evidence_radius, allow_network=False)
@@ -178,6 +191,7 @@ def _load() -> None:
                     "error": str(exc),
                 },
             }
+        phase("evidence_index")
         try:
             index = load_groundtruth(graph, stops, city, data_dir(), gaps.signature)
             gt_error = None
@@ -185,12 +199,13 @@ def _load() -> None:
             logger.exception("TransitGap accessibility evidence index failed")
             index, gt_error = None, str(exc)
         try:
-            state["initialization_phase"] = "report_storage"
+            phase("report_storage")
             initialize_observations()
             observations_ready = True
         except Exception:
             observations_ready = False
             logger.exception("TransitGap community report store initialization failed")
+        phase("ready")
         state.update(
             graph=graph,
             stops=stops,
@@ -208,6 +223,9 @@ def _load() -> None:
             observations_ready=observations_ready,
             initialization_seconds=round(time.perf_counter() - started, 3),
             initialization_phase="ready",
+            initialization_cpu_seconds=round(time.process_time()-cpu_started,3),
+            initialization_timings=timings,
+            schedule_cache_hits={"VTA":getattr(schedule,"cache_hit",None),**{k:getattr(v,"cache_hit",None) for k,v in agency_schedules.items()}},
         )
     except Exception as exc:
         logger.exception("TransitGap data initialization failed")
@@ -279,6 +297,22 @@ def _reporting_enabled():
                 and (durability!="postgresql" or len(os.getenv("TRANSITGAP_REPORT_RATE_SECRET",""))>=32))
 
 
+def _process_memory():
+    import sys
+    peak=current=None
+    try:
+        import resource
+        peak=round(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss/(1024**2 if sys.platform=="darwin" else 1024),2)
+    except ImportError:
+        pass
+    try:
+        resident=int(Path('/proc/self/statm').read_text().split()[1])
+        current=round(resident*os.sysconf('SC_PAGE_SIZE')/1024**2,2)
+    except (OSError,ValueError,IndexError):
+        pass
+    return {"rss_mib":current,"peak_rss_mib":peak}
+
+
 @app.get("/health")
 def health():
     graph = state["graph"]
@@ -316,6 +350,10 @@ def health():
         "groundtruth_error": state["groundtruth_error"],
         "error": state["error"],
         "initialization_seconds": state.get("initialization_seconds"),
+        "initialization_cpu_seconds": state.get("initialization_cpu_seconds"),
+        "initialization_timings": state.get("initialization_timings"),
+        "schedule_cache_hits": state.get("schedule_cache_hits"),
+        "process_memory": _process_memory(),
     }
 
 

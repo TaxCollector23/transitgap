@@ -7,6 +7,7 @@ from pathlib import Path
 root = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(root))
 os.environ["TRANSITGAP_DATA_DIR"] = str(root / "backend" / "data")
+os.environ["TRANSITGAP_PREPARING_DATA"] = "1"
 os.environ.setdefault("TRANSITGAP_REGION", "santa_clara_county")
 os.environ.setdefault("TRANSITGAP_OVERPASS_URL", "https://overpass.private.coffee/api")
 import osmnx as ox

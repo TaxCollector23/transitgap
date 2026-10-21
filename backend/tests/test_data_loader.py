@@ -48,6 +48,26 @@ def test_cached_graph_load_is_reused_and_manifest_write_can_be_read_only(tmp_pat
     assert len(loads) == 1
 
 
+def test_serverless_graph_never_rescans_build_manifest(tmp_path,monkeypatch):
+    graph=nx.MultiDiGraph();graph.add_node(1,x=-121.9,y=37.3)
+    path=tmp_path/'walk-network-1500m.jsonl.gz'
+    data_loader.write_compact_graph(graph,path)
+    monkeypatch.setenv('VERCEL','1')
+    monkeypatch.delenv('TRANSITGAP_PREPARING_DATA',raising=False)
+    monkeypatch.setattr(data_loader,'_write_metadata',lambda *_:pytest.fail('runtime manifest regeneration'))
+    assert len(data_loader.load_graph(directory=tmp_path))==1
+
+
+def test_file_signature_tracks_content_instead_of_packaging_mtime(tmp_path):
+    import os
+    path=tmp_path/'source.zip';path.write_bytes(b'original')
+    first=data_loader.file_signature(path)
+    os.utime(path,(100,100))
+    assert data_loader.file_signature(path)==first
+    path.write_bytes(b'changed!')
+    assert data_loader.file_signature(path)!=first
+
+
 def test_stops_still_load_when_bundled_cache_is_read_only(tmp_path, monkeypatch):
     graph_path = tmp_path / "walk-network-1500m.graphml"
     graph_path.write_text("fixture graph", encoding="utf-8")

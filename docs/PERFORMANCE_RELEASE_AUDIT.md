@@ -98,7 +98,7 @@ unassisted human task success. Automated tests do not establish human usability.
 ## Validation and failures
 
 - Python unit/integration/routing/profile, PostgreSQL and existing inspection
-  contract suite: 161 passed. Three PostgreSQL cases use an isolated test database
+  contract suite: 164 passed. Three PostgreSQL cases use an isolated test database
   and per-test schemas. Routing algorithms and profiles run on independent small
   graphs and real county journeys. Expired/future feeds withhold departure times.
 - Frontend lint, TypeScript and production build: passed. MapLibre still produces
@@ -150,6 +150,20 @@ liveness and non-cancelling timeouts; all five built startup tests pass. Public
 verification of the corrected candidate follows before promotion. PostgreSQL
 effects are also always queried when configured, even if startup marked the store
 unavailable; outages cannot silently discard reviewed barriers.
+
+The held-warmup candidate reached readiness and returned a real wheelchair route,
+but reported 71.081 seconds of initialization wall time, so it was not promoted.
+Its health response is retained in production-warmup-before-cache-fix.json.
+Inspection then found prepared GTFS/stop cache identities based on nanosecond
+file mtimes and runtime manifest generation after timestamp mismatches. Cache
+identities now use content hashes, and immutable Vercel runtime never regenerates
+build manifests. Tests change only timestamps and reject accidental reparsing.
+Production health now exposes per-phase wall/CPU timings, GTFS cache hits and
+process RSS so deployed results can be interpreted rather than guessed.
+
+A repeat 28-case browser run had 27 passes and an ENOSPC failure while closing
+and writing artifacts for the algorithm case; there was no assertion failure in
+that case. It is rerun separately after disabling unnecessary video capture.
 
 ## Release status
 

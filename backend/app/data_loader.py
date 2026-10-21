@@ -2,6 +2,7 @@ from __future__ import annotations
 import csv, gzip, io, json, logging, os, zipfile
 import sys
 import math
+import hashlib
 from datetime import datetime, timezone
 from functools import lru_cache
 from pathlib import Path
@@ -30,6 +31,25 @@ GRAPH_SCHEMA_VERSION = 3
 STOP_SCHEMA_VERSION = 2
 logger = logging.getLogger(__name__)
 _GRAPH_CACHE: dict[str, tuple[int, int, nx.MultiDiGraph]] = {}
+
+
+@lru_cache(maxsize=16)
+def _content_digest(path: str, size: int, modified_ns: int) -> str:
+    digest=hashlib.sha256()
+    with open(path,'rb') as source:
+        for block in iter(lambda:source.read(1024*1024),b''):
+            digest.update(block)
+    return digest.hexdigest()
+
+
+def file_signature(path: Path) -> list:
+    """Portable cache identity; deployment extraction may change timestamps.
+
+    Stat fields invalidate the in-process digest cache, but only content/size are
+    serialized into prepared artifacts. Files are controlled build inputs.
+    """
+    stat=path.stat()
+    return [stat.st_size,_content_digest(str(path.resolve()),stat.st_size,stat.st_mtime_ns)]
 
 
 @lru_cache(maxsize=1)
@@ -230,6 +250,11 @@ def load_graph(radius_m: int = DEFAULT_RADIUS_M, directory: Path | None = None,
         try:
             graph = read_compact_graph(path) if path.name.endswith(".jsonl.gz") else ox.load_graphml(path)
             _GRAPH_CACHE[str(path.resolve())] = (stat.st_size, stat.st_mtime_ns, graph)
+            if os.getenv("VERCEL") and os.getenv("TRANSITGAP_PREPARING_DATA") != "1":
+                # Manifest generation scans all tags and imports build-only
+                # OSMnx dependencies. Packaged manifests are immutable build
+                # artifacts; extraction timestamps are not source freshness.
+                return graph
             metadata_path = path.with_suffix(".metadata.json")
             rewrite_metadata = True
             if metadata_path.exists():
@@ -308,12 +333,10 @@ def load_stops(graph: nx.MultiDiGraph, radius_m: int = DEFAULT_RADIUS_M,
     cache_path = directory / (f"stops-v{GRAPH_SCHEMA_VERSION}.{STOP_SCHEMA_VERSION}-santa-clara-county.json" if region == COUNTY_REGION
                               else f"stops-v{GRAPH_SCHEMA_VERSION}.{STOP_SCHEMA_VERSION}-{radius_m}m.json")
     try:
-        feed_stat = path.stat()
         graph_path = graph_cache_path(directory, radius_m, region)
         graph_stat = graph_path.stat() if graph_path.exists() else None
-        cache_meta = {"feed_size": feed_stat.st_size, "feed_mtime_ns": feed_stat.st_mtime_ns,
-                      "graph_size": graph_stat.st_size if graph_stat else None,
-                      "graph_mtime_ns": graph_stat.st_mtime_ns if graph_stat else None,
+        cache_meta = {"feed_content": file_signature(path),
+                      "graph_content": file_signature(graph_path) if graph_stat else None,
                       "radius_m": radius_m, "region": region}
         if not _refresh_requested() and cache_path.exists():
             cached = json.loads(cache_path.read_text(encoding="utf-8"))

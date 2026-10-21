@@ -24,6 +24,7 @@ with httpx.Client(base_url=args.url,timeout=30) as client:
     else:raise RuntimeError('Production routing did not become ready within 100 seconds')
     report['observed_ready_seconds']=round(time.perf_counter()-started,3)
     health=client.get('/health');health.raise_for_status();report['health']=health.json()
+    Path(args.output).write_text(json.dumps(report,indent=2)+'\n')
     assert report['health']['ready'] and report['health']['reports_enabled']
     assert report['health']['community_report_storage']=='postgresql'
     bootstrap=client.get('/bootstrap.json');bootstrap.raise_for_status();stops=bootstrap.json()['stops']

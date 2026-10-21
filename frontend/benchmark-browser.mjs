@@ -21,7 +21,7 @@ for(const [width,height] of [[390,844],[768,1024],[1440,900],[1920,1080]]) {
   await page.screenshot({path:`${folder}/${width}-initial.png`});
   const resources=await page.evaluate(()=>performance.getEntriesByType('resource').filter(e=>/\.js|bootstrap/.test(e.name)).map(e=>({name:e.name.split('/').pop(),duration_ms:Math.round(e.duration),transfer_bytes:e.transferSize,decoded_bytes:e.decodedBodySize})));
   reports.push({width,height,planner_ready_ms:plannerMs,map_canvas_ms:canvasMs,map_ready_ms:mapMs,resources});
-  if(width===1440 && !process.env.SKIP_ROUTE) {
+  if(!process.env.SKIP_ROUTE) {
     try {
     await page.getByRole('button',{name:'Use my location',exact:true}).click();
     await page.getByRole('button',{name:'Change starting point'}).waitFor();

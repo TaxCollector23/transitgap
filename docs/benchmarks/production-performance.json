@@ -1,6 +1,490 @@
 {
-  "url": "https://transitgap-q801qpvlp-rangan-alt.vercel.app",
-  "status": "incomplete",
+  "url": "https://transitgap.vercel.app",
+  "status": "passed",
   "definition": "Observed newly deployed worker; serverless instance placement and OS caches are not controlled",
-  "polls": []
+  "polls": [
+    {
+      "elapsed_seconds": 0.188,
+      "request_seconds": 0.158,
+      "status": 200,
+      "body": {
+        "alive": true,
+        "ready": true,
+        "reports_ready": true,
+        "error": null,
+        "phase": "ready"
+      }
+    }
+  ],
+  "first_route_request": {
+    "seconds": 0.256,
+    "status": 200,
+    "readiness_at_probe": true
+  },
+  "observed_ready_seconds": 0.444,
+  "health": {
+    "ready": true,
+    "build_sha": "a5d818577e9dfa874abb336e66b7357ff4ee93eb",
+    "datasets": {
+      "osm_walk_graph": "ready",
+      "vta_gtfs_stops": "ready",
+      "caltrain_gtfs_stops": "ready",
+      "bart_gtfs_stops": "ready"
+    },
+    "graph": {
+      "type": "directed_multigraph",
+      "nodes": 291569,
+      "directed_edges": 811314
+    },
+    "vta_stop_count": 3234,
+    "transit_stop_counts": {
+      "VTA": 3234,
+      "Caltrain": 34,
+      "BART": 4
+    },
+    "community_report_storage": "postgresql",
+    "reports_enabled": true,
+    "gap_stops_evaluated": 32,
+    "schedule_ready": true,
+    "data_freshness": [
+      {
+        "feed_publisher_name": "Santa Clara Valley Transportation Authority",
+        "feed_publisher_url": "https://www.vta.org",
+        "feed_lang": "EN",
+        "feed_start_date": "20261026",
+        "feed_end_date": "20270110",
+        "feed_version": "2026-10-09_14:57",
+        "feed_contact_email": "customer.service@vta.org",
+        "feed_contact_url": "https://www.vta.org/about/contact"
+      }
+    ],
+    "groundtruth_ready": true,
+    "groundtruth_error": null,
+    "error": null,
+    "initialization_seconds": 192.172,
+    "initialization_cpu_seconds": 17.626,
+    "initialization_timings": {
+      "walking_network": {
+        "wall_seconds": 13.405,
+        "cpu_seconds": 13.275
+      },
+      "rail_stops_and_schedules": {
+        "wall_seconds": 0.439,
+        "cpu_seconds": 0.436
+      },
+      "spatial_index": {
+        "wall_seconds": 0.0,
+        "cpu_seconds": 0.0
+      },
+      "prepared_gap_cache": {
+        "wall_seconds": 1.422,
+        "cpu_seconds": 1.41
+      },
+      "vta_schedule": {
+        "wall_seconds": 0.934,
+        "cpu_seconds": 0.927
+      },
+      "municipal_snapshot": {
+        "wall_seconds": 1.103,
+        "cpu_seconds": 1.103
+      },
+      "evidence_index": {
+        "wall_seconds": 0.33,
+        "cpu_seconds": 0.326
+      },
+      "report_storage": {
+        "wall_seconds": 174.539,
+        "cpu_seconds": 0.148
+      }
+    },
+    "schedule_cache_hits": {
+      "VTA": true,
+      "caltrain": true,
+      "bart": true
+    },
+    "process_memory": {
+      "rss_mib": 1246.02,
+      "peak_rss_mib": 1248.69
+    }
+  },
+  "routes": [
+    {
+      "agency": "VTA",
+      "profile": "standard",
+      "repeat": 0,
+      "status": 200,
+      "seconds": 0.151,
+      "distance_m": 370.1,
+      "directions": 11,
+      "arrival": {
+        "type": "stop",
+        "note": null
+      },
+      "geometry_sha256": "d2640002d59b60694a81efd2948ca712062a25e0a97eac9bf94c0434b8462109"
+    },
+    {
+      "agency": "VTA",
+      "profile": "standard",
+      "repeat": 1,
+      "status": 200,
+      "seconds": 0.147,
+      "distance_m": 370.1,
+      "directions": 11,
+      "arrival": {
+        "type": "stop",
+        "note": null
+      },
+      "geometry_sha256": "d2640002d59b60694a81efd2948ca712062a25e0a97eac9bf94c0434b8462109"
+    },
+    {
+      "agency": "VTA",
+      "profile": "wheelchair",
+      "repeat": 0,
+      "status": 200,
+      "seconds": 0.164,
+      "distance_m": 390.1,
+      "directions": 11,
+      "arrival": {
+        "type": "stop",
+        "note": null
+      },
+      "geometry_sha256": "22aa545fbf87c872572bd71f59e536d0ac10f96e604c6a112327994825cdb871"
+    },
+    {
+      "agency": "VTA",
+      "profile": "wheelchair",
+      "repeat": 1,
+      "status": 200,
+      "seconds": 0.184,
+      "distance_m": 390.1,
+      "directions": 11,
+      "arrival": {
+        "type": "stop",
+        "note": null
+      },
+      "geometry_sha256": "22aa545fbf87c872572bd71f59e536d0ac10f96e604c6a112327994825cdb871"
+    },
+    {
+      "agency": "VTA",
+      "profile": "stroller",
+      "repeat": 0,
+      "status": 200,
+      "seconds": 0.17,
+      "distance_m": 390.1,
+      "directions": 11,
+      "arrival": {
+        "type": "stop",
+        "note": null
+      },
+      "geometry_sha256": "22aa545fbf87c872572bd71f59e536d0ac10f96e604c6a112327994825cdb871"
+    },
+    {
+      "agency": "VTA",
+      "profile": "stroller",
+      "repeat": 1,
+      "status": 200,
+      "seconds": 0.164,
+      "distance_m": 390.1,
+      "directions": 11,
+      "arrival": {
+        "type": "stop",
+        "note": null
+      },
+      "geometry_sha256": "22aa545fbf87c872572bd71f59e536d0ac10f96e604c6a112327994825cdb871"
+    },
+    {
+      "agency": "VTA",
+      "profile": "low_vision",
+      "repeat": 0,
+      "status": 200,
+      "seconds": 0.235,
+      "distance_m": 370.1,
+      "directions": 11,
+      "arrival": {
+        "type": "stop",
+        "note": null
+      },
+      "geometry_sha256": "d2640002d59b60694a81efd2948ca712062a25e0a97eac9bf94c0434b8462109"
+    },
+    {
+      "agency": "VTA",
+      "profile": "low_vision",
+      "repeat": 1,
+      "status": 200,
+      "seconds": 0.179,
+      "distance_m": 370.1,
+      "directions": 11,
+      "arrival": {
+        "type": "stop",
+        "note": null
+      },
+      "geometry_sha256": "d2640002d59b60694a81efd2948ca712062a25e0a97eac9bf94c0434b8462109"
+    },
+    {
+      "agency": "Caltrain",
+      "profile": "standard",
+      "repeat": 0,
+      "status": 200,
+      "seconds": 0.351,
+      "distance_m": 4626.0,
+      "directions": 19,
+      "arrival": {
+        "type": "stop",
+        "note": null
+      },
+      "geometry_sha256": "2954abeb2d008279d0706fad4766d9b1ac58ca0a68d40bb52a1568e60fb01344"
+    },
+    {
+      "agency": "Caltrain",
+      "profile": "standard",
+      "repeat": 1,
+      "status": 200,
+      "seconds": 0.413,
+      "distance_m": 4626.0,
+      "directions": 19,
+      "arrival": {
+        "type": "stop",
+        "note": null
+      },
+      "geometry_sha256": "2954abeb2d008279d0706fad4766d9b1ac58ca0a68d40bb52a1568e60fb01344"
+    },
+    {
+      "agency": "Caltrain",
+      "profile": "wheelchair",
+      "repeat": 0,
+      "status": 200,
+      "seconds": 1.12,
+      "distance_m": 4659.9,
+      "directions": 19,
+      "arrival": {
+        "type": "stop",
+        "note": null
+      },
+      "geometry_sha256": "40909bba543e523b2a3df3d124a4b464a4ca4cf5705f87a0b02e52c464c3d6f9"
+    },
+    {
+      "agency": "Caltrain",
+      "profile": "wheelchair",
+      "repeat": 1,
+      "status": 200,
+      "seconds": 1.129,
+      "distance_m": 4659.9,
+      "directions": 19,
+      "arrival": {
+        "type": "stop",
+        "note": null
+      },
+      "geometry_sha256": "40909bba543e523b2a3df3d124a4b464a4ca4cf5705f87a0b02e52c464c3d6f9"
+    },
+    {
+      "agency": "Caltrain",
+      "profile": "stroller",
+      "repeat": 0,
+      "status": 200,
+      "seconds": 0.959,
+      "distance_m": 4707.6,
+      "directions": 23,
+      "arrival": {
+        "type": "stop",
+        "note": null
+      },
+      "geometry_sha256": "861fa1e9a264d20fa2f5f4a598f64576279b41a89feb33500493c0f4f321e851"
+    },
+    {
+      "agency": "Caltrain",
+      "profile": "stroller",
+      "repeat": 1,
+      "status": 200,
+      "seconds": 0.957,
+      "distance_m": 4707.6,
+      "directions": 23,
+      "arrival": {
+        "type": "stop",
+        "note": null
+      },
+      "geometry_sha256": "861fa1e9a264d20fa2f5f4a598f64576279b41a89feb33500493c0f4f321e851"
+    },
+    {
+      "agency": "Caltrain",
+      "profile": "low_vision",
+      "repeat": 0,
+      "status": 200,
+      "seconds": 1.598,
+      "distance_m": 5798.4,
+      "directions": 36,
+      "arrival": {
+        "type": "stop",
+        "note": null
+      },
+      "geometry_sha256": "c08a60e387870a5278c4d8586d6cfe59abc5026197fe289dc7d531cb9c0236cf"
+    },
+    {
+      "agency": "Caltrain",
+      "profile": "low_vision",
+      "repeat": 1,
+      "status": 200,
+      "seconds": 1.604,
+      "distance_m": 5798.4,
+      "directions": 36,
+      "arrival": {
+        "type": "stop",
+        "note": null
+      },
+      "geometry_sha256": "c08a60e387870a5278c4d8586d6cfe59abc5026197fe289dc7d531cb9c0236cf"
+    },
+    {
+      "agency": "BART",
+      "profile": "standard",
+      "repeat": 0,
+      "status": 200,
+      "seconds": 0.234,
+      "distance_m": 1585.7,
+      "directions": 9,
+      "arrival": {
+        "type": "entrance",
+        "entrance_id": "bart:BERY_3",
+        "name": "South Entrance / Exit",
+        "latitude": 37.3682021,
+        "longitude": -121.8745566,
+        "wheelchair_boarding": 0,
+        "note": "Route ends at an entrance recorded in the agency's GTFS feed. The path inside the station to the platform is not part of this route."
+      },
+      "geometry_sha256": "c25dce47853fecd0ba7bbd1807c08d3349e93a207612dfd4c5461178b6a6d79a"
+    },
+    {
+      "agency": "BART",
+      "profile": "standard",
+      "repeat": 1,
+      "status": 200,
+      "seconds": 0.209,
+      "distance_m": 1585.7,
+      "directions": 9,
+      "arrival": {
+        "type": "entrance",
+        "entrance_id": "bart:BERY_3",
+        "name": "South Entrance / Exit",
+        "latitude": 37.3682021,
+        "longitude": -121.8745566,
+        "wheelchair_boarding": 0,
+        "note": "Route ends at an entrance recorded in the agency's GTFS feed. The path inside the station to the platform is not part of this route."
+      },
+      "geometry_sha256": "c25dce47853fecd0ba7bbd1807c08d3349e93a207612dfd4c5461178b6a6d79a"
+    },
+    {
+      "agency": "BART",
+      "profile": "wheelchair",
+      "repeat": 0,
+      "status": 200,
+      "seconds": 0.443,
+      "distance_m": 1616.5,
+      "directions": 11,
+      "arrival": {
+        "type": "entrance",
+        "entrance_id": "bart:BERY_3",
+        "name": "South Entrance / Exit",
+        "latitude": 37.3682021,
+        "longitude": -121.8745566,
+        "wheelchair_boarding": 0,
+        "note": "Route ends at an entrance recorded in the agency's GTFS feed. The path inside the station to the platform is not part of this route."
+      },
+      "geometry_sha256": "6f099cbb2aaa4f29ac6334ef84810f775dde5692e02348d419ab829b638cf735"
+    },
+    {
+      "agency": "BART",
+      "profile": "wheelchair",
+      "repeat": 1,
+      "status": 200,
+      "seconds": 0.378,
+      "distance_m": 1616.5,
+      "directions": 11,
+      "arrival": {
+        "type": "entrance",
+        "entrance_id": "bart:BERY_3",
+        "name": "South Entrance / Exit",
+        "latitude": 37.3682021,
+        "longitude": -121.8745566,
+        "wheelchair_boarding": 0,
+        "note": "Route ends at an entrance recorded in the agency's GTFS feed. The path inside the station to the platform is not part of this route."
+      },
+      "geometry_sha256": "6f099cbb2aaa4f29ac6334ef84810f775dde5692e02348d419ab829b638cf735"
+    },
+    {
+      "agency": "BART",
+      "profile": "stroller",
+      "repeat": 0,
+      "status": 200,
+      "seconds": 0.354,
+      "distance_m": 1616.5,
+      "directions": 11,
+      "arrival": {
+        "type": "entrance",
+        "entrance_id": "bart:BERY_3",
+        "name": "South Entrance / Exit",
+        "latitude": 37.3682021,
+        "longitude": -121.8745566,
+        "wheelchair_boarding": 0,
+        "note": "Route ends at an entrance recorded in the agency's GTFS feed. The path inside the station to the platform is not part of this route."
+      },
+      "geometry_sha256": "6f099cbb2aaa4f29ac6334ef84810f775dde5692e02348d419ab829b638cf735"
+    },
+    {
+      "agency": "BART",
+      "profile": "stroller",
+      "repeat": 1,
+      "status": 200,
+      "seconds": 0.352,
+      "distance_m": 1616.5,
+      "directions": 11,
+      "arrival": {
+        "type": "entrance",
+        "entrance_id": "bart:BERY_3",
+        "name": "South Entrance / Exit",
+        "latitude": 37.3682021,
+        "longitude": -121.8745566,
+        "wheelchair_boarding": 0,
+        "note": "Route ends at an entrance recorded in the agency's GTFS feed. The path inside the station to the platform is not part of this route."
+      },
+      "geometry_sha256": "6f099cbb2aaa4f29ac6334ef84810f775dde5692e02348d419ab829b638cf735"
+    },
+    {
+      "agency": "BART",
+      "profile": "low_vision",
+      "repeat": 0,
+      "status": 200,
+      "seconds": 0.515,
+      "distance_m": 1934.3,
+      "directions": 20,
+      "arrival": {
+        "type": "entrance",
+        "entrance_id": "bart:BERY_3",
+        "name": "South Entrance / Exit",
+        "latitude": 37.3682021,
+        "longitude": -121.8745566,
+        "wheelchair_boarding": 0,
+        "note": "Route ends at an entrance recorded in the agency's GTFS feed. The path inside the station to the platform is not part of this route."
+      },
+      "geometry_sha256": "a48bae32fae791e98fdd3ea51b12879caac971af5dd308decfc20f521e1a4f94"
+    },
+    {
+      "agency": "BART",
+      "profile": "low_vision",
+      "repeat": 1,
+      "status": 200,
+      "seconds": 0.5,
+      "distance_m": 1934.3,
+      "directions": 20,
+      "arrival": {
+        "type": "entrance",
+        "entrance_id": "bart:BERY_3",
+        "name": "South Entrance / Exit",
+        "latitude": 37.3682021,
+        "longitude": -121.8745566,
+        "wheelchair_boarding": 0,
+        "note": "Route ends at an entrance recorded in the agency's GTFS feed. The path inside the station to the platform is not part of this route."
+      },
+      "geometry_sha256": "a48bae32fae791e98fdd3ea51b12879caac971af5dd308decfc20f521e1a4f94"
+    }
+  ],
+  "public_admin_status": 403,
+  "measurement_scope": "Public route checks after the same candidate had already been warmed and validated; this does not force a cold instance"
 }

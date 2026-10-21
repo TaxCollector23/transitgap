@@ -11,7 +11,10 @@ for study in data['studies']:
         old=candidates.get(item['candidate_id'])
         if old is None or (item['score'] or 0)>(old['score'] or 0):
             candidates[item['candidate_id']]={**item,'stop_id':study['stop_id']}
-ordered=sorted(candidates.values(),key=lambda x:(not any('kerb' in k for k in x['missing_critical_attributes']),-(x['score'] or 0),x['candidate_id']))[:8]
+ranked=sorted(candidates.values(),key=lambda x:(-(x['score'] or 0),x['candidate_id']))
+crossings=[item for item in ranked if any('kerb' in k for k in item['missing_critical_attributes'])][:4]
+chosen={item['candidate_id'] for item in crossings}
+ordered=crossings+[item for item in ranked if item['candidate_id'] not in chosen][:8-len(crossings)]
 by_pair={tuple(sorted(re.findall(r'nodes:(\d+):(\d+)',r['candidate_id'])[0])):r for r in ordered}
 nodes={}
 with gzip.open(root/'backend/data/walk-network-santa-clara-county.jsonl.gz','rt') as source:

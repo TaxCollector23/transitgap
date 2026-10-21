@@ -47,6 +47,8 @@ cold = time.perf_counter() - started
 if main.state['error']:
     raise RuntimeError(main.state['error'])
 cold_stages = dict(stages)
+cold_cpu = main.state.get('initialization_cpu_seconds')
+cold_phases = main.state.get('initialization_timings')
 graph = main.state['graph']
 routes = {}
 for agency, point in [('VTA', (37.32875, -121.90442)), ('Caltrain', (37.3452, -121.977)), ('BART', (37.364, -121.882))]:
@@ -70,5 +72,7 @@ peak = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / (1024**2 if sys.plat
 rss = int(subprocess.check_output(['ps','-o','rss=','-p',str(os.getpid())]).strip())/1024
 report = {'python':platform.python_version(),'platform':platform.platform(),'definition':'fresh interpreter, OS filesystem caches not flushed; warm repeats initialization in process', 'import_seconds':round(import_seconds,3),'cold_initialization_seconds':round(cold,3),'warm_initialization_seconds':round(warm,3),'cold_stages_seconds':{k:round(v,3) for k,v in cold_stages.items()},'steady_rss_mib':round(rss,2),'peak_rss_mib':round(peak,2),'nodes':len(graph),'directed_edges':graph.number_of_edges(),'agency_counts':{agency:sum(s.get('agency','VTA').lower()==agency.lower() for s in main.state['transit_stops']) for agency in ('VTA','Caltrain','BART')},'reachability_index_seconds':round(reachability_seconds,3),'routes':routes}
 Path(args.output).parent.mkdir(parents=True,exist_ok=True)
+report['initialization_cpu_seconds']=cold_cpu
+report['initialization_phases']=cold_phases
 Path(args.output).write_text(json.dumps(report,indent=2)+'\n')
 print(json.dumps(report,indent=2),flush=True)

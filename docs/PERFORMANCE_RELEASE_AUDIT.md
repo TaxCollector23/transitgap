@@ -10,17 +10,17 @@ flushed filesystem cache. The Mac and Vercel measurements must not be conflated.
 
 | Measurement | Before | After |
 |---|---:|---:|
-| Fresh initialization, excluding imports | 12.186 s | 8.972 s |
-| Graph load | 10.455 s | 6.745 s |
-| Repeated full initialization in the same process | 1.628 s | 1.966 s |
-| Steady RSS after benchmark | 1325.30 MiB | 1320.28 MiB |
-| Peak RSS | 1546.23 MiB | 1539.17 MiB |
+| Fresh initialization, excluding imports | 12.186 s | 6.759 s |
+| Graph load | 10.455 s | 5.028 s |
+| Repeated full initialization in the same process | 1.628 s | 1.663 s |
+| Steady RSS after benchmark | 1325.30 MiB | 1375.47 MiB |
+| Peak RSS | 1546.23 MiB | 1595.47 MiB |
 | Planner JavaScript (uncompressed) | 1,134.62 KB | 47.52 KB |
 
-The final saved local run improved initialization about 26% and graph loading
-about 35%. Earlier after-runs ranged from 6.78 to 8.97 seconds as other local
+The final saved local run (after the deployment cache fix) improved initialization about 45% and graph loading
+about 52%. Earlier after-runs ranged from 6.76 to 8.97 seconds as other local
 workloads varied; this is not a controlled confidence interval. Memory is
-essentially unchanged. Repeated full reinitialization regressed slightly and is
+slightly higher (about 50 MiB); no RAM reduction is claimed. Repeated full reinitialization is essentially unchanged and is
 not a warm route request: the real application initializes once per worker.
 MapLibre's roughly 1.09 MB chunk still downloads; code splitting lets the planner
 and destination search become usable without waiting for map JavaScript.
@@ -90,10 +90,7 @@ grouped. Directions, profile recalculation, marker hiding, A/B markers, mobile
 sheet, keyboard alternatives and Read Aloud remain. Typography and the pixel-art
 landing page are preserved. No new cosmetic feature was added.
 
-The basic location → destination → default walking → route flow has four pointer
-actions when counting input focus, both before and after. Selecting another
-profile adds one action. This is a scripted interaction count, not evidence of
-unassisted human task success. Automated tests do not establish human usability.
+The baseline planned location → destination → default walking → route flow could not complete because Find route stayed disabled in the observed attempt. The current public app completed that trip with four actual clicks at each of the four viewport sizes, counting input focus. Location permission was pregranted in the fixture; a first-time permission prompt and scrolling are not included. Selecting another profile adds one action. These scripted results are not evidence of unassisted human task success. Automated tests do not establish human usability.
 
 ## Validation and failures
 
@@ -163,14 +160,64 @@ process RSS so deployed results can be interpreted rather than guessed.
 
 A repeat 28-case browser run had 27 passes and an ENOSPC failure while closing
 and writing artifacts for the algorithm case; there was no assertion failure in
-that case. It is rerun separately after disabling unnecessary video capture.
+that case. It passed on a separate targeted rerun after disabling unnecessary video capture (1 passed). The subsequent final backend suite has 164 passes, including deployment timestamp/cache and warmup tests.
 
 ## Release status
 
-Local engineering gates above pass. Deployment-specific initialization, real
-public route timing, reporting readiness, after screenshots and MCP results are
-recorded separately after deployment in the production performance artifact.
-Do not infer a new public cold-start number from the local benchmark.
+The verified production candidate is `a5d8185`, deployment
+`dpl_BRDqWJcFKEYWifS5G1bbzWbU78KY`, promoted to https://transitgap.vercel.app/ .
+All 24 public route requests passed (three agencies × four profiles × two repeats).
+They ranged from 0.147 to 1.604 seconds, median 0.353 seconds in this sample.
+The observed readiness request took 0.444 seconds after candidate validation;
+this is a warm observation, not a forced cold start. The first protected candidate
+warmup request took 1.831 seconds including CLI overhead and also was not a
+controlled cold sample.
+
+Public health reports all GTFS caches hit and approximately 1,246 MiB resident /
+1,249 MiB peak RAM for that worker. It reports 17.626 seconds CPU but 192.172 seconds
+initialization wall time: 174.539 seconds were in report-store initialization,
+with only 0.148 CPU seconds there. A separate worker reported 18.813 CPU seconds /
+48.245 wall seconds, including a 30.847-second evidence phase with only 1.609 CPU
+seconds. These wall/CPU gaps demonstrate why a suspended serverless worker's
+lifetime timer is not a user navigation-latency measurement. Provider suspension,
+prewarming, I/O waits and worker placement are not controlled. No guaranteed
+production cold latency or universal speedup from those incomparable wall timers
+is claimed. A completely cold worker still needs substantial active graph work;
+Vercel remains an explicit limitation. Metadata generation is now build-only and GTFS/stop caches survive packaging timestamp changes, so the verified worker hits all three schedule caches. Bounded held warmup avoids relying on an
+unattended background thread alone.
+
+One production validation harness attempt failed on nullable station_name before the agency route loop; the harness now falls back to stop_name and all 24 checks pass. The protected unpromoted URL required Vercel-authenticated CLI checks; this was deployment protection, not an application test failure.
+
+The exact phase timings, cache hits, RSS, first request, all route timings and
+source SHA are in `production-performance.json` and `production-candidate.json`.
+Public reporting is enabled on PostgreSQL. Anonymous moderation returns 403;
+authenticated review queue returns 200 (empty at verification). No synthetic
+production observation was inserted. Actual report save/reload/review/revocation
+was verified on the isolated PostgreSQL database. MCP protocol 2026-07-28 passed
+13-tool discovery, coverage, stop search, real wheelchair route segments, gap
+retrieval and invalid-argument handling.
+
+Public browser checks captured all four required viewports with the map ready,
+performed real four-click walking trips at all four sizes, and confirmed no route failure. After
+measurements/screenshots are in `browser-after.json` and `docs/validation`.
+Observed planner readiness was 0.819–1.690 seconds and map readiness 1.493–2.509
+seconds on this machine/network sample. These are observations, not device-wide
+latency guarantees. The baseline planned four-action flow failed at readiness, while all four current viewport trips completed with four clicks. The previous observed startup failure is explicitly retained in the before artifact.
+
+The legacy-format control for all six real network analyses is in
+`performance-reachability-before.json`. It took 0.498–0.578 seconds per study on
+that run; the after run took 0.698–1.114 seconds. Analysis code was not optimized,
+and timing varied with local load. Documented/possible counts and full inspection
+candidate results are exactly equal. No reachability-analysis speedup is claimed.
+
+PR #9 remains a duplicate source PR to the older mobility branch; its implementation
+was integrated through reviewed PR #10 and release PR #8. It was not merged again.
+The current sprint uses PR #11. Local resource pressure caused one failed legacy
+control attempt without an artifact; the later isolated run completed. The Mac
+had roughly 1.3 GiB disk free during the ENOSPC episode; unrelated files were not
+deleted. The final release gates are passing code/fixture CI plus the actual local
+and public checks above. Engineering readiness is conditional on the documented
+serverless latency, source-data and provider limits; it is not safety certification.
 
 CAC submission is **not complete**. The independent student implementation, human
 field checks, genuine usability/screen-reader sessions, video, eligibility/portal

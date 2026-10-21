@@ -1,0 +1,1196 @@
+{
+  "dataset_sha256": "89c548b6f9084ab2d41273a6a508b7a9e2b01a2a4d295333be839717636ea031",
+  "graph_file": "transitgap-legacy.jsonl.gz",
+  "graph_nodes": 291569,
+  "directed_edges": 811314,
+  "astar_geographic_lower_bound_scale": 0.999999999999,
+  "pilot_radius_m": 1500,
+  "pilot_stop_count": 99,
+  "gtfs": [
+    {
+      "feed_publisher_name": "Santa Clara Valley Transportation Authority",
+      "feed_publisher_url": "https://www.vta.org",
+      "feed_lang": "EN",
+      "feed_start_date": "20261026",
+      "feed_end_date": "20270110",
+      "feed_version": "2026-10-09_14:57",
+      "feed_contact_email": "customer.service@vta.org",
+      "feed_contact_url": "https://www.vta.org/about/contact"
+    }
+  ],
+  "source_metadata": {
+    "schema_version": 3,
+    "source": "OpenStreetMap via Geofabrik Northern California",
+    "source_url": "https://download.geofabrik.de/north-america/us/california/norcal-latest.osm.pbf",
+    "center": {
+      "latitude": 37.3296,
+      "longitude": -121.903
+    },
+    "radius_m": 60000,
+    "region": "santa_clara_county",
+    "network_type": "walk",
+    "osmnx_version": "2.1.1",
+    "graph_file": "walk-network-santa-clara-county.jsonl.gz",
+    "graph_size_bytes": 37954881,
+    "graph_modified_at": "2026-10-21T04:18:38.006574+00:00",
+    "manifest_generated_at": "2026-10-21T04:18:38.775454+00:00",
+    "configured_way_tag_allowlist": [
+      "highway",
+      "footway",
+      "sidewalk",
+      "crossing",
+      "kerb",
+      "surface",
+      "smoothness",
+      "incline",
+      "wheelchair",
+      "tactile_paving",
+      "barrier",
+      "width",
+      "access",
+      "foot",
+      "indoor",
+      "lit",
+      "crossing:signals",
+      "traffic_signals:sound",
+      "name"
+    ],
+    "configured_node_tag_allowlist": [
+      "highway",
+      "crossing",
+      "kerb",
+      "surface",
+      "smoothness",
+      "incline",
+      "wheelchair",
+      "tactile_paving",
+      "barrier",
+      "width",
+      "access",
+      "foot",
+      "lit",
+      "crossing:signals",
+      "traffic_signals:sound"
+    ],
+    "observed_way_tag_counts": {
+      "highway": 811314,
+      "footway": 269284,
+      "sidewalk": 24444,
+      "crossing": 88330,
+      "kerb": 116,
+      "surface": 296082,
+      "smoothness": 5158,
+      "incline": 9036,
+      "wheelchair": 1996,
+      "tactile_paving": 4146,
+      "barrier": 0,
+      "width": 3594,
+      "access": 16560,
+      "foot": 11342,
+      "indoor": 1150,
+      "lit": 0,
+      "crossing:signals": 0,
+      "traffic_signals:sound": 0,
+      "name": 201104
+    },
+    "observed_node_tag_counts": {
+      "highway": 42831,
+      "crossing": 22365,
+      "kerb": 4080,
+      "surface": 198,
+      "smoothness": 0,
+      "incline": 0,
+      "wheelchair": 448,
+      "tactile_paving": 4893,
+      "barrier": 3448,
+      "width": 2,
+      "access": 864,
+      "foot": 74,
+      "lit": 0,
+      "crossing:signals": 0,
+      "traffic_signals:sound": 0
+    },
+    "tag_capture_note": "Observed counts describe stored graph attributes. Tags absent from an older cache may have been omitted at acquisition; they are not proof that the street has no such feature.",
+    "limitation": "Pedestrian network and accessibility tags are OpenStreetMap data, not a complete or field-verified sidewalk inventory."
+  },
+  "sampling": "SHA256 ordering v1, 150 nodes per stop, excluding stop node",
+  "first_prepared_process_startup_seconds": 11.544,
+  "second_in_process_startup_seconds": 1.529,
+  "phase_seconds": {
+    "initialize": [
+      9.9188,
+      0.0129
+    ],
+    "TransitSchedule": [
+      0.0011,
+      0.0029,
+      0.2048,
+      0.0005,
+      0.0017,
+      0.1572
+    ],
+    "nearest_graph_node": [
+      0.0,
+      0.0
+    ],
+    "GapIndex": [
+      0.5363,
+      0.5325
+    ],
+    "load_sidewalks": [
+      0.0317,
+      0.0292
+    ],
+    "load_groundtruth": [
+      0.1478,
+      0.6336
+    ],
+    "initialize_observations": [
+      0.0031,
+      0.0007
+    ]
+  },
+  "peak_rss_mib": 1533.59,
+  "routes": [
+    {
+      "profile": "standard",
+      "runs": [
+        {
+          "wall_seconds": 0.0035,
+          "distance_m": 370.1
+        },
+        {
+          "wall_seconds": 0.0031,
+          "distance_m": 370.1
+        }
+      ]
+    },
+    {
+      "profile": "wheelchair",
+      "runs": [
+        {
+          "wall_seconds": 0.0048,
+          "distance_m": 390.1
+        },
+        {
+          "wall_seconds": 0.0043,
+          "distance_m": 390.1
+        }
+      ]
+    },
+    {
+      "profile": "stroller",
+      "runs": [
+        {
+          "wall_seconds": 0.0043,
+          "distance_m": 390.1
+        },
+        {
+          "wall_seconds": 0.0042,
+          "distance_m": 390.1
+        }
+      ]
+    },
+    {
+      "profile": "low_vision",
+      "runs": [
+        {
+          "wall_seconds": 0.0049,
+          "distance_m": 370.1
+        },
+        {
+          "wall_seconds": 0.0046,
+          "distance_m": 370.1
+        }
+      ]
+    }
+  ],
+  "studies": [
+    {
+      "stop_id": "5459",
+      "policy": "profile_required",
+      "status": "INSUFFICIENT_DOCUMENTED_DATA",
+      "seconds": 0.4981,
+      "sample_count": 150,
+      "documented": 0,
+      "possible": 7,
+      "missing_attributes": {
+        "crossing_kerb": 157,
+        "incline_grade": 1,
+        "surface": 27,
+        "width": 311
+      },
+      "inspections": {
+        "metric": "sampled_journey_reachability_sensitivity",
+        "method": "Top 12 unknown physical segments by occurrence on deterministic shortest possible sample paths; then exact single-candidate blocked-versus-usable reachability within the time budget.",
+        "candidate_limit": 12,
+        "candidate_count_on_sample_paths": 26,
+        "evaluated_candidate_count": 12,
+        "sample_pair_count": 150,
+        "parallel_edge_policy": "An OSM way plus unordered endpoint pair identifies one physical candidate; both mapped directions are blocked together. Distinct OSM ways remain alternatives.",
+        "candidates": [
+          {
+            "candidate_id": "osm-way:674154528:nodes:5681153689:6313417227",
+            "source_url": "https://www.openstreetmap.org/way/674154528",
+            "score": 7,
+            "affected_pairs": [
+              [
+                13318505817,
+                "5459"
+              ],
+              [
+                2748923772,
+                "5459"
+              ],
+              [
+                3215349497,
+                "5459"
+              ],
+              [
+                5127932187,
+                "5459"
+              ],
+              [
+                5225235596,
+                "5459"
+              ],
+              [
+                6313610229,
+                "5459"
+              ],
+              [
+                7100985709,
+                "5459"
+              ]
+            ],
+            "sample_count": 150,
+            "assumptions": "Directed travel toward each stop; walk_seconds includes the selected profile cost. Other unknown connections remain usable in both hypothetical scenarios. Counts describe sampled graph journeys, not people, ridership, safety or official priority.",
+            "status": "MODELED",
+            "missing_critical_attributes": [
+              "width"
+            ]
+          },
+          {
+            "candidate_id": "osm-way:1452735623,417094005:nodes:5216842176:5216842177",
+            "source_url": "https://www.openstreetmap.org/way/1452735623",
+            "score": 1,
+            "affected_pairs": [
+              [
+                13318505817,
+                "5459"
+              ]
+            ],
+            "sample_count": 150,
+            "assumptions": "Directed travel toward each stop; walk_seconds includes the selected profile cost. Other unknown connections remain usable in both hypothetical scenarios. Counts describe sampled graph journeys, not people, ridership, safety or official priority.",
+            "status": "MODELED",
+            "missing_critical_attributes": [
+              "width"
+            ]
+          },
+          {
+            "candidate_id": "osm-way:269757572:nodes:2748923772:5225235589",
+            "source_url": "https://www.openstreetmap.org/way/269757572",
+            "score": 1,
+            "affected_pairs": [
+              [
+                2748923772,
+                "5459"
+              ]
+            ],
+            "sample_count": 150,
+            "assumptions": "Directed travel toward each stop; walk_seconds includes the selected profile cost. Other unknown connections remain usable in both hypothetical scenarios. Counts describe sampled graph journeys, not people, ridership, safety or official priority.",
+            "status": "MODELED",
+            "missing_critical_attributes": [
+              "crossing_kerb"
+            ]
+          },
+          {
+            "candidate_id": "osm-way:417094005:nodes:5216842176:5681153689",
+            "source_url": "https://www.openstreetmap.org/way/417094005",
+            "score": 1,
+            "affected_pairs": [
+              [
+                13318505817,
+                "5459"
+              ]
+            ],
+            "sample_count": 150,
+            "assumptions": "Directed travel toward each stop; walk_seconds includes the selected profile cost. Other unknown connections remain usable in both hypothetical scenarios. Counts describe sampled graph journeys, not people, ridership, safety or official priority.",
+            "status": "MODELED",
+            "missing_critical_attributes": [
+              "width"
+            ]
+          },
+          {
+            "candidate_id": "osm-way:1067036569,1067036570,417094005:nodes:5225235587:5681153689",
+            "source_url": "https://www.openstreetmap.org/way/1067036569",
+            "score": 0,
+            "affected_pairs": [],
+            "sample_count": 150,
+            "assumptions": "Directed travel toward each stop; walk_seconds includes the selected profile cost. Other unknown connections remain usable in both hypothetical scenarios. Counts describe sampled graph journeys, not people, ridership, safety or official priority.",
+            "status": "MODELED",
+            "missing_critical_attributes": [
+              "crossing_kerb",
+              "width"
+            ]
+          },
+          {
+            "candidate_id": "osm-way:1067036569,315567464,315567465:nodes:5225235587:5225235600",
+            "source_url": "https://www.openstreetmap.org/way/1067036569",
+            "score": 0,
+            "affected_pairs": [],
+            "sample_count": 150,
+            "assumptions": "Directed travel toward each stop; walk_seconds includes the selected profile cost. Other unknown connections remain usable in both hypothetical scenarios. Counts describe sampled graph journeys, not people, ridership, safety or official priority.",
+            "status": "MODELED",
+            "missing_critical_attributes": [
+              "width"
+            ]
+          },
+          {
+            "candidate_id": "osm-way:1472879670,363522324,623237476:nodes:3676865375:5127932187",
+            "source_url": "https://www.openstreetmap.org/way/1472879670",
+            "score": 0,
+            "affected_pairs": [],
+            "sample_count": 150,
+            "assumptions": "Directed travel toward each stop; walk_seconds includes the selected profile cost. Other unknown connections remain usable in both hypothetical scenarios. Counts describe sampled graph journeys, not people, ridership, safety or official priority.",
+            "status": "MODELED",
+            "missing_critical_attributes": [
+              "crossing_kerb",
+              "width"
+            ]
+          },
+          {
+            "candidate_id": "osm-way:1472879670:nodes:3676865375:6313417224",
+            "source_url": "https://www.openstreetmap.org/way/1472879670",
+            "score": 0,
+            "affected_pairs": [],
+            "sample_count": 150,
+            "assumptions": "Directed travel toward each stop; walk_seconds includes the selected profile cost. Other unknown connections remain usable in both hypothetical scenarios. Counts describe sampled graph journeys, not people, ridership, safety or official priority.",
+            "status": "MODELED",
+            "missing_critical_attributes": [
+              "width"
+            ]
+          },
+          {
+            "candidate_id": "osm-way:1472879670:nodes:5216842176:6313417224",
+            "source_url": "https://www.openstreetmap.org/way/1472879670",
+            "score": 0,
+            "affected_pairs": [],
+            "sample_count": 150,
+            "assumptions": "Directed travel toward each stop; walk_seconds includes the selected profile cost. Other unknown connections remain usable in both hypothetical scenarios. Counts describe sampled graph journeys, not people, ridership, safety or official priority.",
+            "status": "MODELED",
+            "missing_critical_attributes": [
+              "width"
+            ]
+          },
+          {
+            "candidate_id": "osm-way:25902648:nodes:5225235597:5225235598",
+            "source_url": "https://www.openstreetmap.org/way/25902648",
+            "score": 0,
+            "affected_pairs": [],
+            "sample_count": 150,
+            "assumptions": "Directed travel toward each stop; walk_seconds includes the selected profile cost. Other unknown connections remain usable in both hypothetical scenarios. Counts describe sampled graph journeys, not people, ridership, safety or official priority.",
+            "status": "MODELED",
+            "missing_critical_attributes": [
+              "width"
+            ]
+          },
+          {
+            "candidate_id": "osm-way:547178309:nodes:5225235587:5286985994",
+            "source_url": "https://www.openstreetmap.org/way/547178309",
+            "score": 0,
+            "affected_pairs": [],
+            "sample_count": 150,
+            "assumptions": "Directed travel toward each stop; walk_seconds includes the selected profile cost. Other unknown connections remain usable in both hypothetical scenarios. Counts describe sampled graph journeys, not people, ridership, safety or official priority.",
+            "status": "MODELED",
+            "missing_critical_attributes": [
+              "width"
+            ]
+          },
+          {
+            "candidate_id": "osm-way:547178309:nodes:5286985994:5286985995",
+            "source_url": "https://www.openstreetmap.org/way/547178309",
+            "score": 0,
+            "affected_pairs": [],
+            "sample_count": 150,
+            "assumptions": "Directed travel toward each stop; walk_seconds includes the selected profile cost. Other unknown connections remain usable in both hypothetical scenarios. Counts describe sampled graph journeys, not people, ridership, safety or official priority.",
+            "status": "MODELED",
+            "missing_critical_attributes": [
+              "width"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "stop_id": "5459",
+      "policy": "width_optional_sensitivity",
+      "status": "OK",
+      "seconds": 0.5406,
+      "sample_count": 150,
+      "documented": 1,
+      "possible": 7,
+      "missing_attributes": {
+        "crossing_kerb": 157,
+        "incline_grade": 1,
+        "surface": 27
+      },
+      "inspections": {
+        "metric": "sampled_journey_reachability_sensitivity",
+        "method": "Top 12 unknown physical segments by occurrence on deterministic shortest possible sample paths; then exact single-candidate blocked-versus-usable reachability within the time budget.",
+        "candidate_limit": 12,
+        "candidate_count_on_sample_paths": 26,
+        "evaluated_candidate_count": 12,
+        "sample_pair_count": 150,
+        "parallel_edge_policy": "An OSM way plus unordered endpoint pair identifies one physical candidate; both mapped directions are blocked together. Distinct OSM ways remain alternatives.",
+        "candidates": [
+          {
+            "candidate_id": "osm-way:674154528:nodes:5681153689:6313417227",
+            "source_url": "https://www.openstreetmap.org/way/674154528",
+            "score": 7,
+            "affected_pairs": [
+              [
+                13318505817,
+                "5459"
+              ],
+              [
+                2748923772,
+                "5459"
+              ],
+              [
+                3215349497,
+                "5459"
+              ],
+              [
+                5127932187,
+                "5459"
+              ],
+              [
+                5225235596,
+                "5459"
+              ],
+              [
+                6313610229,
+                "5459"
+              ],
+              [
+                7100985709,
+                "5459"
+              ]
+            ],
+            "sample_count": 150,
+            "assumptions": "Directed travel toward each stop; walk_seconds includes the selected profile cost. Other unknown connections remain usable in both hypothetical scenarios. Counts describe sampled graph journeys, not people, ridership, safety or official priority.",
+            "status": "MODELED",
+            "missing_critical_attributes": [
+              "width"
+            ]
+          },
+          {
+            "candidate_id": "osm-way:1452735623,417094005:nodes:5216842176:5216842177",
+            "source_url": "https://www.openstreetmap.org/way/1452735623",
+            "score": 1,
+            "affected_pairs": [
+              [
+                13318505817,
+                "5459"
+              ]
+            ],
+            "sample_count": 150,
+            "assumptions": "Directed travel toward each stop; walk_seconds includes the selected profile cost. Other unknown connections remain usable in both hypothetical scenarios. Counts describe sampled graph journeys, not people, ridership, safety or official priority.",
+            "status": "MODELED",
+            "missing_critical_attributes": [
+              "width"
+            ]
+          },
+          {
+            "candidate_id": "osm-way:269757572:nodes:2748923772:5225235589",
+            "source_url": "https://www.openstreetmap.org/way/269757572",
+            "score": 1,
+            "affected_pairs": [
+              [
+                2748923772,
+                "5459"
+              ]
+            ],
+            "sample_count": 150,
+            "assumptions": "Directed travel toward each stop; walk_seconds includes the selected profile cost. Other unknown connections remain usable in both hypothetical scenarios. Counts describe sampled graph journeys, not people, ridership, safety or official priority.",
+            "status": "MODELED",
+            "missing_critical_attributes": [
+              "crossing_kerb"
+            ]
+          },
+          {
+            "candidate_id": "osm-way:417094005:nodes:5216842176:5681153689",
+            "source_url": "https://www.openstreetmap.org/way/417094005",
+            "score": 1,
+            "affected_pairs": [
+              [
+                13318505817,
+                "5459"
+              ]
+            ],
+            "sample_count": 150,
+            "assumptions": "Directed travel toward each stop; walk_seconds includes the selected profile cost. Other unknown connections remain usable in both hypothetical scenarios. Counts describe sampled graph journeys, not people, ridership, safety or official priority.",
+            "status": "MODELED",
+            "missing_critical_attributes": [
+              "width"
+            ]
+          },
+          {
+            "candidate_id": "osm-way:1067036569,1067036570,417094005:nodes:5225235587:5681153689",
+            "source_url": "https://www.openstreetmap.org/way/1067036569",
+            "score": 0,
+            "affected_pairs": [],
+            "sample_count": 150,
+            "assumptions": "Directed travel toward each stop; walk_seconds includes the selected profile cost. Other unknown connections remain usable in both hypothetical scenarios. Counts describe sampled graph journeys, not people, ridership, safety or official priority.",
+            "status": "MODELED",
+            "missing_critical_attributes": [
+              "crossing_kerb",
+              "width"
+            ]
+          },
+          {
+            "candidate_id": "osm-way:1067036569,315567464,315567465:nodes:5225235587:5225235600",
+            "source_url": "https://www.openstreetmap.org/way/1067036569",
+            "score": 0,
+            "affected_pairs": [],
+            "sample_count": 150,
+            "assumptions": "Directed travel toward each stop; walk_seconds includes the selected profile cost. Other unknown connections remain usable in both hypothetical scenarios. Counts describe sampled graph journeys, not people, ridership, safety or official priority.",
+            "status": "MODELED",
+            "missing_critical_attributes": [
+              "width"
+            ]
+          },
+          {
+            "candidate_id": "osm-way:1472879670,363522324,623237476:nodes:3676865375:5127932187",
+            "source_url": "https://www.openstreetmap.org/way/1472879670",
+            "score": 0,
+            "affected_pairs": [],
+            "sample_count": 150,
+            "assumptions": "Directed travel toward each stop; walk_seconds includes the selected profile cost. Other unknown connections remain usable in both hypothetical scenarios. Counts describe sampled graph journeys, not people, ridership, safety or official priority.",
+            "status": "MODELED",
+            "missing_critical_attributes": [
+              "crossing_kerb",
+              "width"
+            ]
+          },
+          {
+            "candidate_id": "osm-way:1472879670:nodes:3676865375:6313417224",
+            "source_url": "https://www.openstreetmap.org/way/1472879670",
+            "score": 0,
+            "affected_pairs": [],
+            "sample_count": 150,
+            "assumptions": "Directed travel toward each stop; walk_seconds includes the selected profile cost. Other unknown connections remain usable in both hypothetical scenarios. Counts describe sampled graph journeys, not people, ridership, safety or official priority.",
+            "status": "MODELED",
+            "missing_critical_attributes": [
+              "width"
+            ]
+          },
+          {
+            "candidate_id": "osm-way:1472879670:nodes:5216842176:6313417224",
+            "source_url": "https://www.openstreetmap.org/way/1472879670",
+            "score": 0,
+            "affected_pairs": [],
+            "sample_count": 150,
+            "assumptions": "Directed travel toward each stop; walk_seconds includes the selected profile cost. Other unknown connections remain usable in both hypothetical scenarios. Counts describe sampled graph journeys, not people, ridership, safety or official priority.",
+            "status": "MODELED",
+            "missing_critical_attributes": [
+              "width"
+            ]
+          },
+          {
+            "candidate_id": "osm-way:25902648:nodes:5225235597:5225235598",
+            "source_url": "https://www.openstreetmap.org/way/25902648",
+            "score": 0,
+            "affected_pairs": [],
+            "sample_count": 150,
+            "assumptions": "Directed travel toward each stop; walk_seconds includes the selected profile cost. Other unknown connections remain usable in both hypothetical scenarios. Counts describe sampled graph journeys, not people, ridership, safety or official priority.",
+            "status": "MODELED",
+            "missing_critical_attributes": [
+              "width"
+            ]
+          },
+          {
+            "candidate_id": "osm-way:547178309:nodes:5225235587:5286985994",
+            "source_url": "https://www.openstreetmap.org/way/547178309",
+            "score": 0,
+            "affected_pairs": [],
+            "sample_count": 150,
+            "assumptions": "Directed travel toward each stop; walk_seconds includes the selected profile cost. Other unknown connections remain usable in both hypothetical scenarios. Counts describe sampled graph journeys, not people, ridership, safety or official priority.",
+            "status": "MODELED",
+            "missing_critical_attributes": [
+              "width"
+            ]
+          },
+          {
+            "candidate_id": "osm-way:547178309:nodes:5286985994:5286985995",
+            "source_url": "https://www.openstreetmap.org/way/547178309",
+            "score": 0,
+            "affected_pairs": [],
+            "sample_count": 150,
+            "assumptions": "Directed travel toward each stop; walk_seconds includes the selected profile cost. Other unknown connections remain usable in both hypothetical scenarios. Counts describe sampled graph journeys, not people, ridership, safety or official priority.",
+            "status": "MODELED",
+            "missing_critical_attributes": [
+              "width"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "stop_id": "4514",
+      "policy": "profile_required",
+      "status": "INSUFFICIENT_DOCUMENTED_DATA",
+      "seconds": 0.523,
+      "sample_count": 150,
+      "documented": 0,
+      "possible": 0,
+      "missing_attributes": {
+        "crossing_kerb": 147,
+        "incline_grade": 4,
+        "surface": 163,
+        "width": 372
+      },
+      "inspections": {
+        "metric": "sampled_journey_reachability_sensitivity",
+        "method": "Top 12 unknown physical segments by occurrence on deterministic shortest possible sample paths; then exact single-candidate blocked-versus-usable reachability within the time budget.",
+        "candidate_limit": 12,
+        "candidate_count_on_sample_paths": 0,
+        "evaluated_candidate_count": 0,
+        "sample_pair_count": 150,
+        "parallel_edge_policy": "An OSM way plus unordered endpoint pair identifies one physical candidate; both mapped directions are blocked together. Distinct OSM ways remain alternatives.",
+        "candidates": []
+      }
+    },
+    {
+      "stop_id": "4514",
+      "policy": "width_optional_sensitivity",
+      "status": "INSUFFICIENT_DOCUMENTED_DATA",
+      "seconds": 0.5424,
+      "sample_count": 150,
+      "documented": 0,
+      "possible": 0,
+      "missing_attributes": {
+        "crossing_kerb": 147,
+        "incline_grade": 4,
+        "surface": 163
+      },
+      "inspections": {
+        "metric": "sampled_journey_reachability_sensitivity",
+        "method": "Top 12 unknown physical segments by occurrence on deterministic shortest possible sample paths; then exact single-candidate blocked-versus-usable reachability within the time budget.",
+        "candidate_limit": 12,
+        "candidate_count_on_sample_paths": 0,
+        "evaluated_candidate_count": 0,
+        "sample_pair_count": 150,
+        "parallel_edge_policy": "An OSM way plus unordered endpoint pair identifies one physical candidate; both mapped directions are blocked together. Distinct OSM ways remain alternatives.",
+        "candidates": []
+      }
+    },
+    {
+      "stop_id": "5460",
+      "policy": "profile_required",
+      "status": "INSUFFICIENT_DOCUMENTED_DATA",
+      "seconds": 0.5026,
+      "sample_count": 150,
+      "documented": 0,
+      "possible": 9,
+      "missing_attributes": {
+        "crossing_kerb": 175,
+        "surface": 26,
+        "width": 338
+      },
+      "inspections": {
+        "metric": "sampled_journey_reachability_sensitivity",
+        "method": "Top 12 unknown physical segments by occurrence on deterministic shortest possible sample paths; then exact single-candidate blocked-versus-usable reachability within the time budget.",
+        "candidate_limit": 12,
+        "candidate_count_on_sample_paths": 33,
+        "evaluated_candidate_count": 12,
+        "sample_pair_count": 150,
+        "parallel_edge_policy": "An OSM way plus unordered endpoint pair identifies one physical candidate; both mapped directions are blocked together. Distinct OSM ways remain alternatives.",
+        "candidates": [
+          {
+            "candidate_id": "osm-way:760130210:nodes:7100985706:7100985707",
+            "source_url": "https://www.openstreetmap.org/way/760130210",
+            "score": 9,
+            "affected_pairs": [
+              [
+                10731733785,
+                "5460"
+              ],
+              [
+                10731752563,
+                "5460"
+              ],
+              [
+                13318505817,
+                "5460"
+              ],
+              [
+                2748923772,
+                "5460"
+              ],
+              [
+                3215349497,
+                "5460"
+              ],
+              [
+                5127932187,
+                "5460"
+              ],
+              [
+                5225235596,
+                "5460"
+              ],
+              [
+                6313610229,
+                "5460"
+              ],
+              [
+                7100985709,
+                "5460"
+              ]
+            ],
+            "sample_count": 150,
+            "assumptions": "Directed travel toward each stop; walk_seconds includes the selected profile cost. Other unknown connections remain usable in both hypothetical scenarios. Counts describe sampled graph journeys, not people, ridership, safety or official priority.",
+            "status": "MODELED",
+            "missing_critical_attributes": [
+              "crossing_kerb"
+            ]
+          },
+          {
+            "candidate_id": "osm-way:547178309:nodes:5225235587:7100985707",
+            "source_url": "https://www.openstreetmap.org/way/547178309",
+            "score": 4,
+            "affected_pairs": [
+              [
+                13318505817,
+                "5460"
+              ],
+              [
+                3215349497,
+                "5460"
+              ],
+              [
+                6313610229,
+                "5460"
+              ],
+              [
+                7100985709,
+                "5460"
+              ]
+            ],
+            "sample_count": 150,
+            "assumptions": "Directed travel toward each stop; walk_seconds includes the selected profile cost. Other unknown connections remain usable in both hypothetical scenarios. Counts describe sampled graph journeys, not people, ridership, safety or official priority.",
+            "status": "MODELED",
+            "missing_critical_attributes": [
+              "crossing_kerb",
+              "width"
+            ]
+          },
+          {
+            "candidate_id": "osm-way:547178309:nodes:3676865380:6863982185",
+            "source_url": "https://www.openstreetmap.org/way/547178309",
+            "score": 2,
+            "affected_pairs": [
+              [
+                10731733785,
+                "5460"
+              ],
+              [
+                10731752563,
+                "5460"
+              ]
+            ],
+            "sample_count": 150,
+            "assumptions": "Directed travel toward each stop; walk_seconds includes the selected profile cost. Other unknown connections remain usable in both hypothetical scenarios. Counts describe sampled graph journeys, not people, ridership, safety or official priority.",
+            "status": "MODELED",
+            "missing_critical_attributes": [
+              "crossing_kerb",
+              "width"
+            ]
+          },
+          {
+            "candidate_id": "osm-way:547178309:nodes:6863982185:7100985707",
+            "source_url": "https://www.openstreetmap.org/way/547178309",
+            "score": 2,
+            "affected_pairs": [
+              [
+                10731733785,
+                "5460"
+              ],
+              [
+                10731752563,
+                "5460"
+              ]
+            ],
+            "sample_count": 150,
+            "assumptions": "Directed travel toward each stop; walk_seconds includes the selected profile cost. Other unknown connections remain usable in both hypothetical scenarios. Counts describe sampled graph journeys, not people, ridership, safety or official priority.",
+            "status": "MODELED",
+            "missing_critical_attributes": [
+              "crossing_kerb",
+              "width"
+            ]
+          },
+          {
+            "candidate_id": "osm-way:1067036569,1067036570,417094005:nodes:5225235587:5681153689",
+            "source_url": "https://www.openstreetmap.org/way/1067036569",
+            "score": 1,
+            "affected_pairs": [
+              [
+                13318505817,
+                "5460"
+              ]
+            ],
+            "sample_count": 150,
+            "assumptions": "Directed travel toward each stop; walk_seconds includes the selected profile cost. Other unknown connections remain usable in both hypothetical scenarios. Counts describe sampled graph journeys, not people, ridership, safety or official priority.",
+            "status": "MODELED",
+            "missing_critical_attributes": [
+              "crossing_kerb",
+              "width"
+            ]
+          },
+          {
+            "candidate_id": "osm-way:363522330,547178309,623237446:nodes:3676865380:3676865382",
+            "source_url": "https://www.openstreetmap.org/way/363522330",
+            "score": 0,
+            "affected_pairs": [],
+            "sample_count": 150,
+            "assumptions": "Directed travel toward each stop; walk_seconds includes the selected profile cost. Other unknown connections remain usable in both hypothetical scenarios. Counts describe sampled graph journeys, not people, ridership, safety or official priority.",
+            "status": "MODELED",
+            "missing_critical_attributes": [
+              "crossing_kerb",
+              "width"
+            ]
+          },
+          {
+            "candidate_id": "osm-way:527132213,547342708,623237448:nodes:13102792781:13102792783",
+            "source_url": "https://www.openstreetmap.org/way/527132213",
+            "score": 0,
+            "affected_pairs": [],
+            "sample_count": 150,
+            "assumptions": "Directed travel toward each stop; walk_seconds includes the selected profile cost. Other unknown connections remain usable in both hypothetical scenarios. Counts describe sampled graph journeys, not people, ridership, safety or official priority.",
+            "status": "MODELED",
+            "missing_critical_attributes": [
+              "crossing_kerb",
+              "width"
+            ]
+          },
+          {
+            "candidate_id": "osm-way:547178309,620990612,620990613:nodes:5146272969:5225235635",
+            "source_url": "https://www.openstreetmap.org/way/547178309",
+            "score": 0,
+            "affected_pairs": [],
+            "sample_count": 150,
+            "assumptions": "Directed travel toward each stop; walk_seconds includes the selected profile cost. Other unknown connections remain usable in both hypothetical scenarios. Counts describe sampled graph journeys, not people, ridership, safety or official priority.",
+            "status": "MODELED",
+            "missing_critical_attributes": [
+              "crossing_kerb",
+              "width"
+            ]
+          },
+          {
+            "candidate_id": "osm-way:547178309:nodes:5225235587:5286985994",
+            "source_url": "https://www.openstreetmap.org/way/547178309",
+            "score": 0,
+            "affected_pairs": [],
+            "sample_count": 150,
+            "assumptions": "Directed travel toward each stop; walk_seconds includes the selected profile cost. Other unknown connections remain usable in both hypothetical scenarios. Counts describe sampled graph journeys, not people, ridership, safety or official priority.",
+            "status": "MODELED",
+            "missing_critical_attributes": [
+              "width"
+            ]
+          },
+          {
+            "candidate_id": "osm-way:547178309:nodes:5225235635:5286985995",
+            "source_url": "https://www.openstreetmap.org/way/547178309",
+            "score": 0,
+            "affected_pairs": [],
+            "sample_count": 150,
+            "assumptions": "Directed travel toward each stop; walk_seconds includes the selected profile cost. Other unknown connections remain usable in both hypothetical scenarios. Counts describe sampled graph journeys, not people, ridership, safety or official priority.",
+            "status": "MODELED",
+            "missing_critical_attributes": [
+              "width"
+            ]
+          },
+          {
+            "candidate_id": "osm-way:547178309:nodes:5286985994:5286985995",
+            "source_url": "https://www.openstreetmap.org/way/547178309",
+            "score": 0,
+            "affected_pairs": [],
+            "sample_count": 150,
+            "assumptions": "Directed travel toward each stop; walk_seconds includes the selected profile cost. Other unknown connections remain usable in both hypothetical scenarios. Counts describe sampled graph journeys, not people, ridership, safety or official priority.",
+            "status": "MODELED",
+            "missing_critical_attributes": [
+              "width"
+            ]
+          },
+          {
+            "candidate_id": "osm-way:623237448:nodes:13102792781:3676865382",
+            "source_url": "https://www.openstreetmap.org/way/623237448",
+            "score": 0,
+            "affected_pairs": [],
+            "sample_count": 150,
+            "assumptions": "Directed travel toward each stop; walk_seconds includes the selected profile cost. Other unknown connections remain usable in both hypothetical scenarios. Counts describe sampled graph journeys, not people, ridership, safety or official priority.",
+            "status": "MODELED",
+            "missing_critical_attributes": [
+              "width"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "stop_id": "5460",
+      "policy": "width_optional_sensitivity",
+      "status": "INSUFFICIENT_DOCUMENTED_DATA",
+      "seconds": 0.5776,
+      "sample_count": 150,
+      "documented": 0,
+      "possible": 9,
+      "missing_attributes": {
+        "crossing_kerb": 175,
+        "surface": 26
+      },
+      "inspections": {
+        "metric": "sampled_journey_reachability_sensitivity",
+        "method": "Top 12 unknown physical segments by occurrence on deterministic shortest possible sample paths; then exact single-candidate blocked-versus-usable reachability within the time budget.",
+        "candidate_limit": 12,
+        "candidate_count_on_sample_paths": 33,
+        "evaluated_candidate_count": 12,
+        "sample_pair_count": 150,
+        "parallel_edge_policy": "An OSM way plus unordered endpoint pair identifies one physical candidate; both mapped directions are blocked together. Distinct OSM ways remain alternatives.",
+        "candidates": [
+          {
+            "candidate_id": "osm-way:760130210:nodes:7100985706:7100985707",
+            "source_url": "https://www.openstreetmap.org/way/760130210",
+            "score": 9,
+            "affected_pairs": [
+              [
+                10731733785,
+                "5460"
+              ],
+              [
+                10731752563,
+                "5460"
+              ],
+              [
+                13318505817,
+                "5460"
+              ],
+              [
+                2748923772,
+                "5460"
+              ],
+              [
+                3215349497,
+                "5460"
+              ],
+              [
+                5127932187,
+                "5460"
+              ],
+              [
+                5225235596,
+                "5460"
+              ],
+              [
+                6313610229,
+                "5460"
+              ],
+              [
+                7100985709,
+                "5460"
+              ]
+            ],
+            "sample_count": 150,
+            "assumptions": "Directed travel toward each stop; walk_seconds includes the selected profile cost. Other unknown connections remain usable in both hypothetical scenarios. Counts describe sampled graph journeys, not people, ridership, safety or official priority.",
+            "status": "MODELED",
+            "missing_critical_attributes": [
+              "crossing_kerb"
+            ]
+          },
+          {
+            "candidate_id": "osm-way:547178309:nodes:5225235587:7100985707",
+            "source_url": "https://www.openstreetmap.org/way/547178309",
+            "score": 4,
+            "affected_pairs": [
+              [
+                13318505817,
+                "5460"
+              ],
+              [
+                3215349497,
+                "5460"
+              ],
+              [
+                6313610229,
+                "5460"
+              ],
+              [
+                7100985709,
+                "5460"
+              ]
+            ],
+            "sample_count": 150,
+            "assumptions": "Directed travel toward each stop; walk_seconds includes the selected profile cost. Other unknown connections remain usable in both hypothetical scenarios. Counts describe sampled graph journeys, not people, ridership, safety or official priority.",
+            "status": "MODELED",
+            "missing_critical_attributes": [
+              "crossing_kerb",
+              "width"
+            ]
+          },
+          {
+            "candidate_id": "osm-way:547178309:nodes:3676865380:6863982185",
+            "source_url": "https://www.openstreetmap.org/way/547178309",
+            "score": 2,
+            "affected_pairs": [
+              [
+                10731733785,
+                "5460"
+              ],
+              [
+                10731752563,
+                "5460"
+              ]
+            ],
+            "sample_count": 150,
+            "assumptions": "Directed travel toward each stop; walk_seconds includes the selected profile cost. Other unknown connections remain usable in both hypothetical scenarios. Counts describe sampled graph journeys, not people, ridership, safety or official priority.",
+            "status": "MODELED",
+            "missing_critical_attributes": [
+              "crossing_kerb",
+              "width"
+            ]
+          },
+          {
+            "candidate_id": "osm-way:547178309:nodes:6863982185:7100985707",
+            "source_url": "https://www.openstreetmap.org/way/547178309",
+            "score": 2,
+            "affected_pairs": [
+              [
+                10731733785,
+                "5460"
+              ],
+              [
+                10731752563,
+                "5460"
+              ]
+            ],
+            "sample_count": 150,
+            "assumptions": "Directed travel toward each stop; walk_seconds includes the selected profile cost. Other unknown connections remain usable in both hypothetical scenarios. Counts describe sampled graph journeys, not people, ridership, safety or official priority.",
+            "status": "MODELED",
+            "missing_critical_attributes": [
+              "crossing_kerb",
+              "width"
+            ]
+          },
+          {
+            "candidate_id": "osm-way:1067036569,1067036570,417094005:nodes:5225235587:5681153689",
+            "source_url": "https://www.openstreetmap.org/way/1067036569",
+            "score": 1,
+            "affected_pairs": [
+              [
+                13318505817,
+                "5460"
+              ]
+            ],
+            "sample_count": 150,
+            "assumptions": "Directed travel toward each stop; walk_seconds includes the selected profile cost. Other unknown connections remain usable in both hypothetical scenarios. Counts describe sampled graph journeys, not people, ridership, safety or official priority.",
+            "status": "MODELED",
+            "missing_critical_attributes": [
+              "crossing_kerb",
+              "width"
+            ]
+          },
+          {
+            "candidate_id": "osm-way:363522330,547178309,623237446:nodes:3676865380:3676865382",
+            "source_url": "https://www.openstreetmap.org/way/363522330",
+            "score": 0,
+            "affected_pairs": [],
+            "sample_count": 150,
+            "assumptions": "Directed travel toward each stop; walk_seconds includes the selected profile cost. Other unknown connections remain usable in both hypothetical scenarios. Counts describe sampled graph journeys, not people, ridership, safety or official priority.",
+            "status": "MODELED",
+            "missing_critical_attributes": [
+              "crossing_kerb",
+              "width"
+            ]
+          },
+          {
+            "candidate_id": "osm-way:527132213,547342708,623237448:nodes:13102792781:13102792783",
+            "source_url": "https://www.openstreetmap.org/way/527132213",
+            "score": 0,
+            "affected_pairs": [],
+            "sample_count": 150,
+            "assumptions": "Directed travel toward each stop; walk_seconds includes the selected profile cost. Other unknown connections remain usable in both hypothetical scenarios. Counts describe sampled graph journeys, not people, ridership, safety or official priority.",
+            "status": "MODELED",
+            "missing_critical_attributes": [
+              "crossing_kerb",
+              "width"
+            ]
+          },
+          {
+            "candidate_id": "osm-way:547178309,620990612,620990613:nodes:5146272969:5225235635",
+            "source_url": "https://www.openstreetmap.org/way/547178309",
+            "score": 0,
+            "affected_pairs": [],
+            "sample_count": 150,
+            "assumptions": "Directed travel toward each stop; walk_seconds includes the selected profile cost. Other unknown connections remain usable in both hypothetical scenarios. Counts describe sampled graph journeys, not people, ridership, safety or official priority.",
+            "status": "MODELED",
+            "missing_critical_attributes": [
+              "crossing_kerb",
+              "width"
+            ]
+          },
+          {
+            "candidate_id": "osm-way:547178309:nodes:5225235587:5286985994",
+            "source_url": "https://www.openstreetmap.org/way/547178309",
+            "score": 0,
+            "affected_pairs": [],
+            "sample_count": 150,
+            "assumptions": "Directed travel toward each stop; walk_seconds includes the selected profile cost. Other unknown connections remain usable in both hypothetical scenarios. Counts describe sampled graph journeys, not people, ridership, safety or official priority.",
+            "status": "MODELED",
+            "missing_critical_attributes": [
+              "width"
+            ]
+          },
+          {
+            "candidate_id": "osm-way:547178309:nodes:5225235635:5286985995",
+            "source_url": "https://www.openstreetmap.org/way/547178309",
+            "score": 0,
+            "affected_pairs": [],
+            "sample_count": 150,
+            "assumptions": "Directed travel toward each stop; walk_seconds includes the selected profile cost. Other unknown connections remain usable in both hypothetical scenarios. Counts describe sampled graph journeys, not people, ridership, safety or official priority.",
+            "status": "MODELED",
+            "missing_critical_attributes": [
+              "width"
+            ]
+          },
+          {
+            "candidate_id": "osm-way:547178309:nodes:5286985994:5286985995",
+            "source_url": "https://www.openstreetmap.org/way/547178309",
+            "score": 0,
+            "affected_pairs": [],
+            "sample_count": 150,
+            "assumptions": "Directed travel toward each stop; walk_seconds includes the selected profile cost. Other unknown connections remain usable in both hypothetical scenarios. Counts describe sampled graph journeys, not people, ridership, safety or official priority.",
+            "status": "MODELED",
+            "missing_critical_attributes": [
+              "width"
+            ]
+          },
+          {
+            "candidate_id": "osm-way:623237448:nodes:13102792781:3676865382",
+            "source_url": "https://www.openstreetmap.org/way/623237448",
+            "score": 0,
+            "affected_pairs": [],
+            "sample_count": 150,
+            "assumptions": "Directed travel toward each stop; walk_seconds includes the selected profile cost. Other unknown connections remain usable in both hypothetical scenarios. Counts describe sampled graph journeys, not people, ridership, safety or official priority.",
+            "status": "MODELED",
+            "missing_critical_attributes": [
+              "width"
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "comparison_scope": "Legacy-format graph control using the same current analysis code, not an independently reproduced historical deployment"
+}

@@ -28,7 +28,7 @@ with httpx.Client(base_url=args.url,timeout=30) as client:
     assert report['health']['ready'] and report['health']['reports_enabled']
     assert report['health']['community_report_storage']=='postgresql'
     bootstrap=client.get('/bootstrap.json');bootstrap.raise_for_status();stops=bootstrap.json()['stops']
-    journeys=[('VTA',(37.32875,-121.90442),[s for s in stops if s['stop_id']=='4514']),('Caltrain',(37.3452,-121.977),[s for s in stops if s.get('agency')=='caltrain' and 'Santa Clara' in s.get('station_name',s['stop_name'])]),('BART',(37.364,-121.882),[s for s in stops if s.get('agency')=='bart' and 'Berryessa' in s.get('station_name',s['stop_name'])])]
+    journeys=[('VTA',(37.32875,-121.90442),[s for s in stops if s['stop_id']=='4514']),('Caltrain',(37.3452,-121.977),[s for s in stops if s.get('agency')=='caltrain' and 'Santa Clara' in (s.get('station_name') or s['stop_name'])]),('BART',(37.364,-121.882),[s for s in stops if s.get('agency')=='bart' and 'Berryessa' in (s.get('station_name') or s['stop_name'])])]
     routes=[];report['routes']=routes
     for agency,point,candidates in journeys:
         stop=min(candidates,key=lambda s:(s['latitude']-point[0])**2+(s['longitude']-point[1])**2)

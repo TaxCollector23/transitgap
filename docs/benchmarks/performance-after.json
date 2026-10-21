@@ -2,22 +2,22 @@
   "python": "3.12.3",
   "platform": "macOS-26.6.2-arm64-arm-64bit",
   "definition": "fresh interpreter, OS filesystem caches not flushed; warm repeats initialization in process",
-  "import_seconds": 0.876,
-  "cold_initialization_seconds": 8.972,
-  "warm_initialization_seconds": 1.966,
+  "import_seconds": 0.772,
+  "cold_initialization_seconds": 6.759,
+  "warm_initialization_seconds": 1.663,
   "cold_stages_seconds": {
-    "load_graph": 6.745,
-    "load_stops": 0.028,
-    "load_agency_stops": 0.235,
-    "TransitSchedule": 0.223,
+    "load_graph": 5.028,
+    "load_stops": 0.04,
+    "load_agency_stops": 0.18,
+    "TransitSchedule": 0.149,
     "nearest_graph_node": 0.0,
-    "GapIndex": 0.725,
-    "load_sidewalks": 0.537,
-    "load_groundtruth": 0.16,
-    "initialize_observations": 0.004
+    "GapIndex": 0.528,
+    "load_sidewalks": 0.032,
+    "load_groundtruth": 0.147,
+    "initialize_observations": 0.005
   },
-  "steady_rss_mib": 1320.28,
-  "peak_rss_mib": 1539.17,
+  "steady_rss_mib": 1375.47,
+  "peak_rss_mib": 1595.47,
   "nodes": 291569,
   "directed_edges": 811314,
   "agency_counts": {
@@ -25,14 +25,14 @@
     "Caltrain": 34,
     "BART": 4
   },
-  "reachability_index_seconds": 0.225,
+  "reachability_index_seconds": 0.209,
   "routes": {
     "VTA/standard": {
       "stop_id": "5374",
       "milliseconds": [
-        2.611,
-        2.063,
-        2.998
+        2.405,
+        1.657,
+        1.613
       ],
       "distance_m": 125.0,
       "output_sha256": "58a5bff4d4283d68fe1397a63814714a16d1b5eaee0f0dcd1e116b3a0c72fa1d"
@@ -40,9 +40,9 @@
     "VTA/wheelchair": {
       "stop_id": "5374",
       "milliseconds": [
-        10.484,
-        8.393,
-        9.148
+        3.979,
+        3.699,
+        3.816
       ],
       "distance_m": 145.0,
       "output_sha256": "99c947de279ca73b634b170cc9e31ddf92690d6a0464d78027e6f572c5ddb4b0"
@@ -50,9 +50,9 @@
     "VTA/stroller": {
       "stop_id": "5374",
       "milliseconds": [
-        7.079,
-        12.702,
-        14.789
+        3.655,
+        3.608,
+        3.616
       ],
       "distance_m": 145.0,
       "output_sha256": "889f54662dea75ba010369ace09e33524b83db06c0ab6255c9cb4f98680bd444"
@@ -60,9 +60,9 @@
     "VTA/low_vision": {
       "stop_id": "5374",
       "milliseconds": [
-        6.2,
-        3.971,
-        4.179
+        3.624,
+        3.575,
+        3.587
       ],
       "distance_m": 125.0,
       "output_sha256": "ddbc45effc7e9d287bd246f4b20a0fa317249dcff0af853c3f5d83a57b988d90"
@@ -70,9 +70,9 @@
     "Caltrain/standard": {
       "stop_id": "caltrain:70232",
       "milliseconds": [
-        243.202,
-        182.269,
-        256.11
+        154.367,
+        154.132,
+        153.541
       ],
       "distance_m": 4394.6,
       "output_sha256": "fd67780bef76e9f10edb847794e162dbcf8f22422bc5d6d19bf085480cf5658f"
@@ -80,9 +80,9 @@
     "Caltrain/wheelchair": {
       "stop_id": "caltrain:70232",
       "milliseconds": [
-        521.275,
-        477.305,
-        495.601
+        427.179,
+        427.628,
+        450.348
       ],
       "distance_m": 4449.9,
       "output_sha256": "81acce66e1da52370924cba15575008409a4811e1bcaa9b32721d94be7656515"
@@ -90,9 +90,9 @@
     "Caltrain/stroller": {
       "stop_id": "caltrain:70232",
       "milliseconds": [
-        485.727,
-        483.767,
-        524.404
+        371.864,
+        372.752,
+        372.312
       ],
       "distance_m": 4436.4,
       "output_sha256": "77255f2c6149d45ad9f95cab3f0937b1bc8e3c7d7e37ed6f52ed6bd2945919e7"
@@ -100,9 +100,9 @@
     "Caltrain/low_vision": {
       "stop_id": "caltrain:70232",
       "milliseconds": [
-        814.786,
-        855.143,
-        785.126
+        503.45,
+        482.972,
+        485.175
       ],
       "distance_m": 4489.4,
       "output_sha256": "de963b7673db83dcb39bc87f3c0adf39ae03399738e44e8d76d6b6a9966158ad"
@@ -110,9 +110,9 @@
     "BART/standard": {
       "stop_id": "bart:S50-1",
       "milliseconds": [
-        34.257,
-        31.852,
-        34.016
+        27.359,
+        26.954,
+        26.911
       ],
       "distance_m": 1585.7,
       "output_sha256": "6f44b8651ba60575f180da83eddbd6c1135f5720624eff6638358260180feed2"
@@ -120,9 +120,9 @@
     "BART/wheelchair": {
       "stop_id": "bart:S50-1",
       "milliseconds": [
-        123.736,
-        124.915,
-        120.341
+        91.052,
+        90.758,
+        91.806
       ],
       "distance_m": 1616.5,
       "output_sha256": "af7bada7172c6c5d2efe64ab8875f2e16d20f3af942c8ceaddd7e4c560df4883"
@@ -130,9 +130,9 @@
     "BART/stroller": {
       "stop_id": "bart:S50-1",
       "milliseconds": [
-        94.537,
-        87.505,
-        83.978
+        79.102,
+        79.307,
+        79.907
       ],
       "distance_m": 1616.5,
       "output_sha256": "0bd4d6674c9689ab6d27531a2ecd8b27e4168d63d75a351546d7d0a46475869a"
@@ -140,12 +140,47 @@
     "BART/low_vision": {
       "stop_id": "bart:S50-1",
       "milliseconds": [
-        137.297,
-        137.329,
-        141.24
+        134.666,
+        134.883,
+        134.997
       ],
       "distance_m": 1934.3,
       "output_sha256": "ba88de6e5b082070977a89524877b71bc01212725786c9f4782ef67b7f317232"
+    }
+  },
+  "initialization_cpu_seconds": 6.738,
+  "initialization_phases": {
+    "walking_network": {
+      "wall_seconds": 5.068,
+      "cpu_seconds": 5.052
+    },
+    "rail_stops_and_schedules": {
+      "wall_seconds": 0.184,
+      "cpu_seconds": 0.183
+    },
+    "spatial_index": {
+      "wall_seconds": 0.0,
+      "cpu_seconds": 0.0
+    },
+    "prepared_gap_cache": {
+      "wall_seconds": 0.528,
+      "cpu_seconds": 0.528
+    },
+    "vta_schedule": {
+      "wall_seconds": 0.792,
+      "cpu_seconds": 0.792
+    },
+    "municipal_snapshot": {
+      "wall_seconds": 0.032,
+      "cpu_seconds": 0.032
+    },
+    "evidence_index": {
+      "wall_seconds": 0.147,
+      "cpu_seconds": 0.147
+    },
+    "report_storage": {
+      "wall_seconds": 0.005,
+      "cpu_seconds": 0.004
     }
   }
 }

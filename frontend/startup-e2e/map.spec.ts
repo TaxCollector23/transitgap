@@ -44,6 +44,9 @@ for (const viewport of [{width:1440,height:900},{width:390,height:844},{width:76
     await page.getByRole("button",{name:"Choose on map",exact:true}).click();
     await page.locator(".maplibregl-canvas").click({position:{x:viewport.width/2+(viewport.width>760?90:0),y:viewport.height/2}});
     await expect(page.locator(".map-marker-origin")).toBeVisible();
+    await expect(page.locator('#destination-title')).toBeFocused();
+    await expect(page.getByRole('button',{name:'Choose a destination',exact:true})).toBeVisible();
+    await expect(page.locator('.planner[data-next-step="destination"] .step-current')).toContainText('Where are you going?');
     expect(healthRequests).toBeGreaterThan(0);
     expect(bootstrapRequests).toBe(1);
     expect(glyphRequests).toEqual([]);

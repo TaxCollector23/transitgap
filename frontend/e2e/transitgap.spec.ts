@@ -61,9 +61,11 @@ test("1. the primary task is obvious on first open", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "Where are you starting?" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Where are you going?" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "How do you travel?" })).toBeVisible();
-  const find = page.getByRole("button", { name: "Find route", exact: true });
-  await expect(find).toBeVisible();
-  await expect(find).toBeDisabled();
+  const next = page.getByRole("button", { name: "Choose a starting point", exact: true });
+  await expect(next).toBeVisible();
+  await expect(next).toBeEnabled();
+  await next.click();
+  await expect(page.locator('#origin-title')).toBeFocused();
   await expect(page.locator("#route-missing")).toHaveText("Choose where you're starting and where you're going.");
   await expect(page.getByRole("radio", { name: "Walking" })).toBeChecked();
   // No tutorial, dashboard tabs or technical status text on the first screen.

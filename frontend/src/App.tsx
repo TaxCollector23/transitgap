@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ChevronDown, ChevronUp } from "lucide-react";
+import { ArrowRight, ChevronDown, ChevronUp } from "lucide-react";
 import { lazy, Suspense } from "react";
 import OriginSearch from "./OriginSearch";
 import StopSearch from "./StopSearch";
@@ -82,6 +82,7 @@ export default function App() {
   const places = useMemo(() => buildPlaces(stops), [stops]);
   const [origin, setOrigin] = useState<[number, number] | null>(null);
   const [originLabel, setOriginLabel] = useState("");
+  const [locating, setLocating] = useState(false);
   const [place, setPlace] = useState<Place | null>(null);
   const [algorithm, setAlgorithm] = useState("astar");
   const [profile, setProfile] = useState("standard");
@@ -209,6 +210,35 @@ export default function App() {
     : !place ? "Choose where you're going."
     : "";
   const canRoute = !missingReason && !calculating;
+  const plannerStep = !origin ? "origin" : !place ? "destination" : "ready";
+  const nextAction = !dataReady ? "Loading stops…" : !origin ? "Choose a starting point" : !place ? "Choose a destination" : "Find route";
+  const previousInputs = useRef({ origin, place });
+
+  const revealStep = useCallback((id: string) => {
+    requestAnimationFrame(() => {
+      const target = document.getElementById(id);
+      const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      target?.focus({ preventScroll: true });
+      target?.scrollIntoView({ block: "nearest", behavior: reduceMotion ? "instant" : "smooth" });
+      if (!reduceMotion) target?.closest(".step-section")?.animate(
+        [{ backgroundColor: "transparent" }, { backgroundColor: "#e9f2e8", offset: .35 }, { backgroundColor: "transparent" }],
+        { duration: 1200 },
+      );
+    });
+  }, []);
+
+  useEffect(() => {
+    const changed = previousInputs.current.origin !== origin || previousInputs.current.place !== place;
+    previousInputs.current = { origin, place };
+    if (!changed || (!origin && !place) || view !== "route" || showingResult || selecting) return;
+    revealStep(!origin ? "origin-title" : !place ? "destination-title" : "travel-title");
+  }, [origin, place, view, showingResult, selecting, revealStep]);
+
+  useEffect(() => {
+    if (!problem) return;
+    setPanelExpanded(true);
+    revealStep("planner-problem");
+  }, [problem, revealStep]);
 
   const cancelRouteRequest = () => {
     requestRef.current?.abort();
@@ -256,15 +286,21 @@ export default function App() {
       return;
     }
     setStatus("Finding your location…");
+    setLocating(true);
     navigator.geolocation.getCurrentPosition(
-      (position) => setStart([position.coords.latitude, position.coords.longitude], "Your location"),
-      (geoError) =>
+      (position) => {
+        setLocating(false);
+        setStart([position.coords.latitude, position.coords.longitude], "Your location");
+      },
+      (geoError) => {
+        setLocating(false);
         setProblem({
           message:
             geoError.code === 1
               ? "Location access was denied. Search an address or choose on the map instead."
               : "Your location couldn't be found. Search an address or choose on the map instead.",
-        }),
+        });
+      },
       { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 },
     );
   };
@@ -547,7 +583,7 @@ export default function App() {
 
   const sheetSummary = showingResult && result
     ? `To ${place?.name}: ${formatDistance(result.distance_m)}, ${formatDuration(result.duration_seconds)}`
-    : view === "route" ? "Plan a route" : view === "report" ? "Report an issue" : "Accessibility gaps";
+    : view === "route" ? nextAction : view === "report" ? "Report an issue" : "Accessibility gaps";
 
   return (
     <main
@@ -623,7 +659,10 @@ export default function App() {
             <a className="brand-lockup" href="/" aria-label="TransitGap home">
               <h1>TransitGap</h1>
             </a>
-            <span className="sheet-summary" aria-hidden={panelExpanded}>{sheetSummary}</span>
+            <button type="button" className="sheet-summary" aria-hidden={panelExpanded} tabIndex={panelExpanded ? -1 : 0}
+              onClick={() => { setPanelExpanded(true); if (view === "route" && !showingResult) revealStep(!origin ? "origin-title" : !place ? "destination-title" : "travel-title"); }}>
+              {sheetSummary}
+            </button>
             {view !== "report" && (
               <button className="text-button report-shortcut" type="button" onClick={() => goTo("report")}>
                 Report an issue
@@ -646,7 +685,7 @@ export default function App() {
               </button>
             )}
             {problem && (
-              <div className="notice error" role="alert">
+              <div className="notice error" role="alert" id="planner-problem" tabIndex={-1}>
                 <p>{problem.message}</p>
                 {problem.retry && (
                   <button className="button" type="button" onClick={problem.retry}>
@@ -675,14 +714,14 @@ export default function App() {
               />
             )}
             {view === "route" && !showingResult && (
-              <div className="planner" role="group" aria-label="Plan a route">
-                <section className="step-section" aria-labelledby="origin-title">
-                  <h2 id="origin-title" tabIndex={-1}>Where are you starting?</h2>
+              <div className="planner" role="group" aria-label="Plan a route" data-next-step={plannerStep}>
+                <section className={`step-section ${plannerStep === "origin" ? "step-current" : "step-complete"}`} aria-labelledby="origin-title">
+                  <h2 id="origin-title" tabIndex={-1}><span className="step-number" aria-hidden="true">{origin ? "✓" : "1"}</span>Where are you starting?</h2>
                   {origin ? (
                     <div className="field-value">
                       <span className="field-value-text">
                         <strong>{originLabel || "Starting point"}</strong>
-                        <span>{origin[0].toFixed(5)}, {origin[1].toFixed(5)}</span>
+                        <span className="sr-only">{origin[0].toFixed(5)}, {origin[1].toFixed(5)}</span>
                       </span>
                       <button type="button" className="text-button field-change" onClick={() => { cancelRouteRequest(); setOrigin(null); setOriginLabel(""); }}>
                         Change<span className="sr-only"> starting point</span>
@@ -691,7 +730,9 @@ export default function App() {
                   ) : (
                     <>
                       <div className="origin-actions">
-                        <button type="button" className="button" onClick={useMyLocation}>Use my location</button>
+                        <button type="button" className="button location-action" onClick={useMyLocation} disabled={locating} aria-busy={locating}>
+                          {locating ? <><span className="spinner" aria-hidden="true" /> Finding location…</> : "Use my location"}
+                        </button>
                         <button
                           type="button"
                           className="button"
@@ -711,8 +752,8 @@ export default function App() {
                     </>
                   )}
                 </section>
-                <section className="step-section" aria-labelledby="destination-title">
-                  <h2 id="destination-title"><label htmlFor="stop-search">Where are you going?</label></h2>
+                <section className={`step-section ${plannerStep === "destination" ? "step-current" : place ? "step-complete" : ""}`} aria-labelledby="destination-title">
+                  <h2 id="destination-title" tabIndex={-1}><span className="step-number" aria-hidden="true">{place ? "✓" : "2"}</span><label htmlFor="stop-search">Where are you going?</label></h2>
                   <StopSearch
                     places={places}
                     selected={place}
@@ -723,8 +764,8 @@ export default function App() {
                     onClear={() => { cancelRouteRequest(); setPlace(null); }}
                   />
                 </section>
-                <fieldset className="step-section profile-section">
-                  <legend><h2>How do you travel?</h2></legend>
+                <fieldset className={`step-section profile-section ${plannerStep === "ready" ? "step-current" : ""}`}>
+                  <legend><h2 id="travel-title" tabIndex={-1}><span className="step-number" aria-hidden="true">3</span>How do you travel?</h2></legend>
                   <div className="profile-options">
                     {PROFILES.map((option) => (
                       <label key={option.value}>
@@ -734,10 +775,6 @@ export default function App() {
                     ))}
                   </div>
                 </fieldset>
-                <button className="button button-primary find-route" type="button" onClick={() => void calculate()} disabled={!canRoute} aria-describedby={missingReason ? "route-missing" : undefined} aria-busy={calculating}>
-                  {calculating ? <><span className="spinner light" aria-hidden="true" /> {routingWarm ? "Finding route…" : "Preparing walking network…"}</> : "Find route"}
-                </button>
-                {missingReason && <p className="field-hint" id="route-missing">{missingReason}</p>}
                 {PREPARED && dataReady && !routingWarm && !warmingRouting && (
                   <button className="text-button" type="button" onClick={() => void startRouting()}>Try connecting again</button>
                 )}
@@ -842,6 +879,19 @@ export default function App() {
             </footer>
           </div>
         </div>
+        {view === "route" && !showingResult && !selecting && (
+          <div className={`planner-action ${canRoute ? "planner-action-ready" : ""}`}>
+            <button className="button button-primary find-route" type="button"
+              onClick={() => {
+                if (canRoute) void calculate();
+                else revealStep(!origin ? "origin-title" : "destination-title");
+              }}
+              disabled={!dataReady || calculating} aria-describedby={missingReason ? "route-missing" : undefined} aria-busy={calculating}>
+              {calculating ? <><span className="spinner light" aria-hidden="true" /> {routingWarm ? "Finding route…" : "Preparing walking network…"}</> : <>{nextAction}<ArrowRight size={18} aria-hidden="true" /></>}
+            </button>
+            {missingReason && <span className="sr-only" id="route-missing">{missingReason}</span>}
+          </div>
+        )}
       </aside>
       <div className="sr-only" role="status" aria-live="polite">{status}</div>
     </main>

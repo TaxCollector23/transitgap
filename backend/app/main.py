@@ -92,10 +92,13 @@ def _arrival_targets(stop: dict, profile: Profile) -> list[tuple[str, dict, dict
     coordinate. Step-free profiles use entrances the feed marks accessible
     when it records that; entrances marked inaccessible are never used for
     them. Stops without recorded entrances route to the stop itself."""
-    entrances = [e for e in stop.get("entrances") or [] if e.get("graph_node")]
+    entrances = [e for e in stop.get("entrances") or [] if e.get("graph_node") is not None]
     if profile in STEP_FREE_PROFILES:
+        recorded_entrances = entrances
         accessible = [e for e in entrances if e.get("wheelchair_boarding") == 1]
         entrances = accessible or [e for e in entrances if e.get("wheelchair_boarding") != 2]
+        if recorded_entrances and not entrances:
+            raise LookupError("The agency marks every recorded station entrance as not step-free. TransitGap cannot infer another accessible entrance; choose another destination or confirm access with the agency.")
     label = stop.get("station_name") or stop["stop_name"]
     targets = [
         (e["graph_node"],

@@ -149,6 +149,10 @@ def active_routing_effects(path=None):
     effects={}
     for row in rows:
         item=dict(row); item["affected_profiles"]=json.loads(item["affected_profiles"])
+        parts=json.loads(item["edge_reference"])
+        if not isinstance(parts,list) or len(parts)!=3 or any(isinstance(value,(list,dict)) or value is None for value in parts):
+            raise ValueError("Reviewed report contains an invalid mapped edge association")
+        item["edge_reference"]=json.dumps([str(value) for value in parts],separators=(",",":"))
         previous=effects.get(item["edge_reference"])
         effects[item["edge_reference"]] = {"reports":previous.get("reports",[previous])+[item]} if previous else item
     return effects

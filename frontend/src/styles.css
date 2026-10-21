@@ -846,7 +846,7 @@ a:focus-visible {
   background: #fff;
   font-size: 16px;
 }
-.field-hint { margin: 8px 0 0; font-size: 13px !important; line-height: 1.5 !important; color: #536158; }
+.field-hint { margin: 8px 0 0; font-size: 14px !important; line-height: 1.5 !important; color: #536158; }
 .field-value {
   display: flex;
   align-items: center;
@@ -930,7 +930,7 @@ a:focus-visible {
 .explore-links { display: grid; justify-items: start; gap: 2px; margin-top: 20px; padding-top: 12px; border-top: 1px solid var(--line); }
 .explore-links .text-button { margin: 0; min-height: 40px; text-align: left; color: #285342; }
 .back-link { border: 0; background: none; padding: 0; min-height: 44px; margin-bottom: 8px; color: var(--accent); font-size: 14px; text-decoration: underline; }
-.panel-footer p { flex-basis: 100%; margin: 0; font-size: 12px !important; line-height: 1.5 !important; }
+.panel-footer p { flex-basis: 100%; margin: 0; font-size: 14px !important; line-height: 1.5 !important; }
 
 /* ---- Route result ----------------------------------------------------- */
 .route-result { border-top: 0; padding-top: 0; margin-top: 0; }

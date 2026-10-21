@@ -2,6 +2,8 @@
 import os,tempfile
 from pathlib import Path
 import networkx as nx
+os.environ.pop('DATABASE_URL',None)
+os.environ.pop('TRANSITGAP_REPORTS_MIGRATED',None)
 os.environ['TRANSITGAP_OBSERVATIONS_DB']=str(Path(tempfile.mkdtemp(prefix='transitgap-ci-'))/'observations.sqlite3')
 os.environ['CORS_ORIGINS']='http://127.0.0.1:5174'
 os.environ['TRANSITGAP_MODERATION_TOKEN']='ci-only-synthetic-review-token-0000000000'

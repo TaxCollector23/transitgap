@@ -15,7 +15,7 @@ flushed filesystem cache. The Mac and Vercel measurements must not be conflated.
 | Repeated full initialization in the same process | 1.628 s | 1.663 s |
 | Steady RSS after benchmark | 1325.30 MiB | 1375.47 MiB |
 | Peak RSS | 1546.23 MiB | 1595.47 MiB |
-| Planner JavaScript (uncompressed) | 1,134.62 KB | 47.52 KB |
+| Planner JavaScript (uncompressed) | 1,134.62 KB | 47.66 KB |
 
 The final saved local run (after the deployment cache fix) improved initialization about 45% and graph loading
 about 52%. Earlier after-runs ranged from 6.76 to 8.97 seconds as other local
@@ -87,8 +87,7 @@ does not hide the map or unified destination search.
 The optional agency filter moved behind a disclosure. The search still covers
 all agencies by default and results name their agency/station. Rail platforms are
 grouped. Directions, profile recalculation, marker hiding, A/B markers, mobile
-sheet, keyboard alternatives and Read Aloud remain. Typography and the pixel-art
-landing page are preserved. No new cosmetic feature was added.
+sheet, keyboard alternatives and Read Aloud remain. The font family, colors and pixel-art landing page are preserved; essential helper/source text is at least 14 px. The municipal source wording now correctly describes sidewalk records rather than implying a curb-ramp inventory. No new cosmetic feature was added.
 
 The baseline planned location → destination → default walking → route flow could not complete because Find route stayed disabled in the observed attempt. The current public app completed that trip with four actual clicks at each of the four viewport sizes, counting input focus. Location permission was pregranted in the fixture; a first-time permission prompt and scrolling are not included. Selecting another profile adds one action. These scripted results are not evidence of unassisted human task success. Automated tests do not establish human usability.
 
@@ -235,3 +234,7 @@ release validation does not establish contest eligibility or completion.
 5. Set the isolated test DATABASE URL as documented and run pytest with the
    existing inspection contract; run frontend lint/build, all three Playwright
    configs, and `BENCHMARK_LABEL=after node benchmark-browser.mjs` for public checks.
+
+Final safety review: pytest and the fixture server now discard inherited production database credentials. All 164 backend tests and four PostgreSQL browser checks passed with a deliberately invalid inherited production DATABASE_URL and a separate explicit test database. GitHub code/fixture checks pass; its manually dispatched real-data job is skipped, with real-data integration/browser work executed locally as documented.
+
+A final PostgreSQL regression test reproduced a reviewed-effect mismatch when JSON edge references contained spaces/numeric IDs. The API now stores canonical string triples and effect loading normalizes legacy rows, preserving review history. The full backend suite returned 164 passes after the fix; malformed object references are rejected rather than treated as triples. Final landing lint/type/build and two five-viewport/keyboard landing tests passed after the provenance/readability correction.

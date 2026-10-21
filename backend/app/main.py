@@ -671,6 +671,7 @@ def review_queue(request: Request, limit: int = Query(100,ge=1,le=500), offset: 
 @app.post("/accessibility/observations/{identity}/review")
 def moderate_report(identity: str, payload: ObservationReview, request: Request):
     _require_reviewer(request)
+    reference=payload.edge_reference
     expiry=payload.effective_until.astimezone(timezone.utc) if payload.effective_until else None
     if payload.effective_until and payload.effective_until.tzinfo is None:raise HTTPException(422,detail="Review expiry must include a timezone.")
     profiles={"standard","wheelchair","stroller","low_vision","prefer_documented_paths"}
@@ -682,7 +683,7 @@ def moderate_report(identity: str, payload: ObservationReview, request: Request)
             raise HTTPException(503,detail="The walking network is still starting. Retry before applying a routing effect.")
         try:
             parts=json.loads(payload.edge_reference)
-            if len(parts)!=3:raise ValueError()
+            if not isinstance(parts,list) or len(parts)!=3:raise ValueError()
             def node(value):return int(value) if str(value).isdigit() else str(value)
             u,v,key=map(node,parts); graph=state["graph"]
             attrs=graph.get_edge_data(u,v,key)
@@ -691,8 +692,9 @@ def moderate_report(identity: str, payload: ObservationReview, request: Request)
             from shapely.geometry import LineString
             if _project(LineString(_edge_coords(graph,u,v,attrs))).distance(_project(Point(report["longitude"],report["latitude"])))>35:raise ValueError()
             if report["category"] in {"curb_ramp_present","missing_tactile_paving"} and payload.routing_effect=="block":raise ValueError()
+            reference=json.dumps([str(u),str(v),str(key)],separators=(",",":"))
         except Exception as exc:raise HTTPException(422,detail="The routing effect must reference an applicable mapped pedestrian edge within 35 metres of this report.") from exc
-    try:return review_observation(identity,status=payload.status.value,reviewer=payload.reviewer,reason=payload.reason,edge_reference=payload.edge_reference,routing_effect=payload.routing_effect,effective_until=expiry.isoformat() if expiry else None,affected_profiles=payload.affected_profiles)
+    try:return review_observation(identity,status=payload.status.value,reviewer=payload.reviewer,reason=payload.reason,edge_reference=reference,routing_effect=payload.routing_effect,effective_until=expiry.isoformat() if expiry else None,affected_profiles=payload.affected_profiles)
     except LookupError as exc:raise HTTPException(404,detail=str(exc)) from exc
     except Exception as exc:raise HTTPException(503,detail="Community report storage is unavailable.") from exc
 

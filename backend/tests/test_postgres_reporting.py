@@ -56,11 +56,14 @@ def test_pg_saved_reload_idempotency_validation_and_history(pg):
     assert TestClient(main.app).get('/accessibility/observations/'+identity).json()['id']==identity
     assert observations.active_routing_effects()=={}
     path='/accessibility/observations/'+identity+'/review'
-    review={'status':'REVIEWED','reviewer':'isolated-test','reason':'Synthetic test evidence only','edge_reference':json.dumps(['0','1','shortcut'],separators=(',',':')),'routing_effect':'block','effective_until':(datetime.now(timezone.utc)+timedelta(hours=1)).isoformat(),'affected_profiles':['wheelchair']}
+    review={'status':'REVIEWED','reviewer':'isolated-test','reason':'Synthetic test evidence only','edge_reference':json.dumps([0,1,'shortcut']),'routing_effect':'block','effective_until':(datetime.now(timezone.utc)+timedelta(hours=1)).isoformat(),'affected_profiles':['wheelchair']}
     assert pg.get('/admin/observations').status_code==403
     assert pg.post(path,json=review).status_code==403
     auth={'Authorization':'Bearer isolated-test-review-secret-00000000'}
+    malformed={**review,'edge_reference':json.dumps({'0':0,'1':1,'shortcut':2})}
+    assert pg.post(path,json=malformed,headers=auth).status_code==422
     assert pg.post(path,json=review,headers=auth).status_code==200
+    assert observations.observation_detail(identity)['edge_reference']=='["0","1","shortcut"]'
     effects=observations.active_routing_effects()
     from backend.app.routing import _run
     graph=main.state['graph']

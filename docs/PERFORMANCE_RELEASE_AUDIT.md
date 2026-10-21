@@ -330,3 +330,47 @@ human usability or assistive-technology sessions.
 At this point, two independent pre-fix instances reproduced the 503, one fresh
 candidate proved the first-route wait, and the final public deployment must
 still repeat that first-route check before reliability is considered established.
+
+## Final public release verification, October 21
+
+The final source release is commit `6f72a5b` (the subsequent merge `dda8de1`
+contains only this report and measurement files). Vercel production deployment
+`dpl_CpySKCw8gRgVxSmF1DmCVNJFkmUW` is Ready and aliased to
+`https://transitgap.vercel.app`.
+
+A fresh public worker's first application request was a real VTA `/route`,
+request number 1. It returned HTTP 200 with route geometry in 26.87 s including
+Vercel runtime setup and client/network overhead. The same worker reported
+initialization at 26.37 s wall / 18.38 s CPU and then passed a repeated
+24-request matrix: VTA, Caltrain and BART, each with standard, wheelchair,
+stroller and low-vision profiles twice. All 24 routes succeeded in 0.141–2.140
+s. The first initialization trace recorded 20.02 s wall / 13.96 s CPU for the
+county graph, 0.22 s database connection and schema work combined, and 1249.35
+MiB peak RSS. The full graph remains 291,569 nodes / 811,314 directed edges.
+
+This is the second independent post-fix fresh worker that succeeded on its first
+route: the protected production candidate returned HTTP 200 in 28.90 s, then
+passed 12/12 agency/profile routes; the public worker returned HTTP 200 in 26.87
+s, then passed 24/24. Thus the observed post-fix cold first-route success rate
+was 2/2, with 36/36 subsequent real routes successful. Across the pre-fix and
+post-fix measurements, the complete route matrices total 84/84 successful
+requests, while the three pre-fix direct-first-route probes all reproduced the
+503 that motivated the route wait. No new HTTP timeout occurred in these runs.
+These are repeated independent production observations, not a guarantee against
+all future provider or infrastructure failures.
+
+The final public Playwright run completed trips at 390x844, 768x1024, 1440x900
+and 1920x1080, each using four pointer actions. Planner readiness was 1.13–1.79
+s; map readiness was 1.72–1.92 s in this warmed-browser run. The first-route
+latency above is a separate cold API measurement; the browser run followed it,
+so these map timings do not represent cold backend startup. Its full resource
+measurements are saved as `production-browser-final-public.json`; local
+screenshots are in the ignored frontend test-artifact directory.
+
+The code change passed 171 backend tests (3 skipped, 122 existing warnings),
+plus GitHub `checks` and `fixture-browser` CI. GitHub's manually controlled
+`real-data` job was skipped. The separate evidence PR also passed both jobs. No
+paid always-running backend was created. Based on these two independent cold
+first-route successes and repeated all-agency/profile route matrices, the
+availability issue is verified as fixed for the deployed behavior measured
+here. Human usability and assistive-technology sessions remain unperformed.

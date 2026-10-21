@@ -21,6 +21,15 @@ def test_observation_is_persisted_as_unverified(tmp_path: Path):
     assert result["observations"][0]["review_status"] == "UNVERIFIED"
 
 
+def test_observation_initialization_exposes_database_connect_and_schema_timings(tmp_path: Path):
+    timings = {}
+    initialize_observations(tmp_path / "timed-reports.sqlite3", timings=timings)
+    assert timings["connect_wall_seconds"] >= 0
+    assert timings["connect_cpu_seconds"] >= 0
+    assert timings["schema_wall_seconds"] >= 0
+    assert timings["schema_cpu_seconds"] >= 0
+
+
 def test_report_input_validates_coordinates_and_text_length():
     payload = ObservationCreate(latitude=37.33, longitude=-121.9,
                                 category="uneven_surface", description="  loose paving  ")

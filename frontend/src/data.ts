@@ -122,10 +122,12 @@ export function warmRouting() {
   // StrictMode and overlapping callers share one cold-start request.
   if (routingWarmup) return routingWarmup;
   routingWarmup = (async () => {
-    const deadline = Date.now() + 45000;
+    // County graph initialization currently takes about 20 seconds on a cold
+    // production worker. Keep one invocation active through that work.
+    const deadline = Date.now() + 100000;
     while (Date.now() < deadline) {
       try {
-        const response = await fetch(`${API}/routing/initialize`, {method:"POST",cache:"no-store", signal:AbortSignal.timeout(Math.min(20000,deadline-Date.now()))});
+        const response = await fetch(`${API}/routing/initialize`, {method:"POST",cache:"no-store", signal:AbortSignal.timeout(Math.min(50000,deadline-Date.now()))});
         if (response.ok) {
           const health = await response.json();
           if (health.ready) return true;

@@ -6,6 +6,7 @@ active reviewed effects with explicit edge association and an expiry date.
 from __future__ import annotations
 from contextlib import contextmanager
 from datetime import datetime, timezone
+import time
 import json
 import os
 from pathlib import Path
@@ -29,7 +30,8 @@ class _Connection:
         return self.connection.execute(query.replace("?", "%s") if self.postgres else query, params)
 
 @contextmanager
-def _connect(path=None):
+def _connect(path=None, timings=None):
+    started, cpu_started = time.perf_counter(), time.process_time()
     postgres = bool(os.getenv("DATABASE_URL")) and path is None
     if postgres:
         import psycopg
@@ -42,6 +44,9 @@ def _connect(path=None):
         connection.row_factory=sqlite3.Row
         connection.execute("PRAGMA busy_timeout = 10000")
         connection.execute("PRAGMA foreign_keys = ON")
+    if timings is not None:
+        timings["connect_wall_seconds"] = round(time.perf_counter()-started, 4)
+        timings["connect_cpu_seconds"] = round(time.process_time()-cpu_started, 4)
     try:
         yield _Connection(connection, postgres)
         connection.commit()
@@ -52,35 +57,41 @@ def _connect(path=None):
         connection.close()
 
 
-def initialize_observations(path=None):
-    with _connect(path) as connection:
-        if connection.postgres and os.getenv("TRANSITGAP_REPORTS_MIGRATED") == "1":
-            version = connection.execute("SELECT version FROM observation_schema_migrations WHERE version='002'").fetchone()
-            if version is None:
-                raise RuntimeError("Report storage migration 002 must be applied by the database owner")
-            return
-        if connection.postgres:
-            connection.execute("SELECT pg_advisory_xact_lock(85439121)")
-        sql=(Path(__file__).parent/"migrations/001_observations.sql").read_text()
-        for statement in sql.split(";"):
-            if statement.strip():connection.execute(statement)
-        if connection.postgres:
-            columns={r["column_name"] for r in connection.execute("SELECT column_name FROM information_schema.columns WHERE table_name='observations' AND table_schema=current_schema()").fetchall()}
-        else:
-            columns={r["name"] for r in connection.execute("PRAGMA table_info(observations)").fetchall()}
-        for name, declaration in {"submission_key":"TEXT", "source":"TEXT NOT NULL DEFAULT 'community'", "edge_reference":"TEXT", "routing_effect":"TEXT NOT NULL DEFAULT 'none'", "effective_until":"TEXT", "affected_profiles":"TEXT NOT NULL DEFAULT '[]'"}.items():
-            if name not in columns:connection.execute(f"ALTER TABLE observations ADD COLUMN {name} {declaration}")
-        if connection.postgres:
-            review_columns={r["column_name"] for r in connection.execute("SELECT column_name FROM information_schema.columns WHERE table_name='observation_reviews' AND table_schema=current_schema()").fetchall()}
-        else:
-            review_columns={r["name"] for r in connection.execute("PRAGMA table_info(observation_reviews)").fetchall()}
-        if "affected_profiles" not in review_columns:connection.execute("ALTER TABLE observation_reviews ADD COLUMN affected_profiles TEXT NOT NULL DEFAULT '[]'")
-        connection.execute("UPDATE observations SET review_status='UNVERIFIED' WHERE review_status='UNREVIEWED'")
-        connection.execute("INSERT INTO observation_schema_migrations(version,applied_at) VALUES (?,?) ON CONFLICT(version) DO NOTHING",("001",datetime.now(timezone.utc).isoformat()))
-        for statement in (Path(__file__).parent/"migrations/002_submission_safety.sql").read_text().split(";"):
-            if statement.strip():
-                connection.execute(statement)
-        connection.execute("INSERT INTO observation_schema_migrations(version,applied_at) VALUES (?,?) ON CONFLICT(version) DO NOTHING",("002",datetime.now(timezone.utc).isoformat()))
+def initialize_observations(path=None, *, timings=None):
+    timings = timings if timings is not None else {}
+    with _connect(path, timings=timings) as connection:
+        schema_started, schema_cpu_started = time.perf_counter(), time.process_time()
+        try:
+            if connection.postgres and os.getenv("TRANSITGAP_REPORTS_MIGRATED") == "1":
+                version = connection.execute("SELECT version FROM observation_schema_migrations WHERE version='002'").fetchone()
+                if version is None:
+                    raise RuntimeError("Report storage migration 002 must be applied by the database owner")
+                return
+            if connection.postgres:
+                connection.execute("SELECT pg_advisory_xact_lock(85439121)")
+            sql=(Path(__file__).parent/"migrations/001_observations.sql").read_text()
+            for statement in sql.split(";"):
+                if statement.strip():connection.execute(statement)
+            if connection.postgres:
+                columns={r["column_name"] for r in connection.execute("SELECT column_name FROM information_schema.columns WHERE table_name='observations' AND table_schema=current_schema()").fetchall()}
+            else:
+                columns={r["name"] for r in connection.execute("PRAGMA table_info(observations)").fetchall()}
+            for name, declaration in {"submission_key":"TEXT", "source":"TEXT NOT NULL DEFAULT 'community'", "edge_reference":"TEXT", "routing_effect":"TEXT NOT NULL DEFAULT 'none'", "effective_until":"TEXT", "affected_profiles":"TEXT NOT NULL DEFAULT '[]'"}.items():
+                if name not in columns:connection.execute(f"ALTER TABLE observations ADD COLUMN {name} {declaration}")
+            if connection.postgres:
+                review_columns={r["column_name"] for r in connection.execute("SELECT column_name FROM information_schema.columns WHERE table_name='observation_reviews' AND table_schema=current_schema()").fetchall()}
+            else:
+                review_columns={r["name"] for r in connection.execute("PRAGMA table_info(observation_reviews)").fetchall()}
+            if "affected_profiles" not in review_columns:connection.execute("ALTER TABLE observation_reviews ADD COLUMN affected_profiles TEXT NOT NULL DEFAULT '[]'")
+            connection.execute("UPDATE observations SET review_status='UNVERIFIED' WHERE review_status='UNREVIEWED'")
+            connection.execute("INSERT INTO observation_schema_migrations(version,applied_at) VALUES (?,?) ON CONFLICT(version) DO NOTHING",("001",datetime.now(timezone.utc).isoformat()))
+            for statement in (Path(__file__).parent/"migrations/002_submission_safety.sql").read_text().split(";"):
+                if statement.strip():
+                    connection.execute(statement)
+            connection.execute("INSERT INTO observation_schema_migrations(version,applied_at) VALUES (?,?) ON CONFLICT(version) DO NOTHING",("002",datetime.now(timezone.utc).isoformat()))
+        finally:
+            timings["schema_wall_seconds"] = round(time.perf_counter()-schema_started, 4)
+            timings["schema_cpu_seconds"] = round(time.process_time()-schema_cpu_started, 4)
 
 
 def _public_report(row):

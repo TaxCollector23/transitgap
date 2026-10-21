@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { API } from "./data";
 export default function StopService({ id }: { id: string }) {
   const [data, setData] = useState<{
+    agency: string;
+    agency_url: string;
     wheelchair_boarding: number;
     service: {
       routes: Array<{
@@ -15,7 +17,8 @@ export default function StopService({ id }: { id: string }) {
         trip_id: string;
         route: { route_short_name: string };
       }>;
-    };
+      feed_info: Array<{ feed_end_date?: string }>;
+    } | null;
   } | null>(null);
   const [failed, setFailed] = useState(false);
   useEffect(() => {
@@ -33,6 +36,14 @@ export default function StopService({ id }: { id: string }) {
       });
     return () => c.abort();
   }, [id]);
+  const feedEnd = data?.service?.feed_info?.[0]?.feed_end_date;
+  const pacificDate = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Los_Angeles", year: "numeric", month: "2-digit", day: "2-digit",
+  }).format(new Date()).replace(/-/g, "");
+  const scheduleExpired = Boolean(
+    feedEnd && /^\d{8}$/.test(feedEnd) &&
+    feedEnd < pacificDate,
+  );
   return (
     <details className="plain-details">
       <summary>Stop service & boarding</summary>
@@ -42,6 +53,7 @@ export default function StopService({ id }: { id: string }) {
         <p>Loading schedule…</p>
       ) : (
         <>
+          <p>{data.agency}</p>
           <p>
             Stop {id}. Boarding:{" "}
             {data.wheelchair_boarding === 1
@@ -60,6 +72,12 @@ export default function StopService({ id }: { id: string }) {
                   .join(", ") || "Unavailable"}
               </p>
               <h4>Scheduled, not real-time</h4>
+              {scheduleExpired ? (
+                <p>
+                  This published schedule ended {`${feedEnd!.slice(4, 6)}/${feedEnd!.slice(6, 8)}/${feedEnd!.slice(0, 4)}`}.
+                  <a href={data.agency_url} target="_blank" rel="noreferrer">Check {data.agency} for current times.</a>
+                </p>
+              ) : <>
               <ul>
                 {data.service.scheduled_departures.map((d) => (
                   <li key={`${d.trip_id}${d.departure}`}>
@@ -75,6 +93,7 @@ export default function StopService({ id }: { id: string }) {
               {data.service.scheduled_departures.length === 0 && (
                 <p>No departures found in the next 24 hours in this feed.</p>
               )}
+              </>}
             </>
           ) : (
             <p>Schedule unavailable.</p>

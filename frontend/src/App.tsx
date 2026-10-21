@@ -241,7 +241,7 @@ export default function App() {
           setProfile(params.get("profile")!);
         setDataReady(true);
         setStatus(
-          `${stopData.stops.length} VTA stops loaded for ${nextCoverage.region || "the study area"}`,
+          `${stopData.stops.length.toLocaleString()} transit stops loaded for ${nextCoverage.region || "the study area"}`,
         );
       } catch (nextError) {
         setDataReady(false);
@@ -289,7 +289,8 @@ export default function App() {
     ];
     return stops
       .filter(
-        (stop) => !query || stop.stop_name.toLocaleLowerCase().includes(query),
+        (stop) => !query || stop.stop_name.toLocaleLowerCase().includes(query) ||
+          (stop.agency_name || stop.agency || "VTA").toLocaleLowerCase().includes(query),
       )
       .map((stop) => ({
         stop,
@@ -462,7 +463,7 @@ export default function App() {
     setError("");
     setStatus(
       dataReady
-        ? `${stops.length} VTA stops loaded for ${coverage?.region || "the study area"}`
+        ? `${stops.length.toLocaleString()} transit stops loaded for ${coverage?.region || "the study area"}`
         : "Route data unavailable",
     );
     setPanelExpanded(true);
@@ -686,7 +687,7 @@ export default function App() {
         <details className="map-legend">
           <summary>Map key</summary>
           <span>A · Your start</span>
-          <span>B · VTA stop</span>
+          <span>B · Transit stop (VTA, Caltrain, or BART)</span>
           <span className="legend-mapped">Solid green: mapped attributes</span>
           <span className="legend-unknown">
             Dashed grey: missing information
@@ -771,7 +772,7 @@ export default function App() {
               {loading
                 ? "Loading…"
                 : dataReady
-                  ? `${stops.length.toLocaleString()} VTA stops`
+                  ? `${stops.length.toLocaleString()} transit stops · VTA, Caltrain & BART`
                   : "Data unavailable"}
             </span>
             {PREPARED && dataReady && !routingWarm && (
@@ -779,13 +780,13 @@ export default function App() {
                 {warmingRouting ? <><span className="spinner" aria-hidden="true" /><span>Starting county routing. You can choose your journey while it loads.</span></> : <><span>The routing service hasn't connected yet. You can still explore stops and access gaps.</span><button className="text-button" type="button" onClick={() => void startRouting()}>Retry connection</button></>}
               </div>
             )}
-            {loading && <p className="connection-message" role="status"><span className="spinner" aria-hidden="true" /> Connecting to TransitGap’s routing service…</p>}
+            {loading && <p className="connection-message" role="status"><span className="spinner" aria-hidden="true" /> Loading transit stops…</p>}
             {!mapReady && <p className="connection-message" role="status">Map tiles are loading. You can use the text controls while they load.</p>}
-            <ReadAloud resetKey={`${profile}-${tab}-${resultIsStale}`} text={() => result && !resultIsStale ? `Route to ${result.destination.stop_name}. ${(result.distance_m / METERS_PER_MILE).toFixed(2)} miles. Estimated ${Math.round(result.duration_seconds / 60)} minutes. ${result.accessibility_warning}` : `TransitGap. ${stops.length} VTA stops. Choose where you are starting, choose a VTA stop, choose how you travel, then find your route. ${destination ? `Selected stop: ${destination.stop_name}.` : ""}`} sections={[
+            <ReadAloud resetKey={`${profile}-${tab}-${resultIsStale}`} text={() => result && !resultIsStale ? `Route to ${result.destination.stop_name}. ${(result.distance_m / METERS_PER_MILE).toFixed(2)} miles. Estimated ${Math.round(result.duration_seconds / 60)} minutes. ${result.accessibility_warning}` : `TransitGap. ${stops.length} transit stops from VTA, Caltrain, and BART. Choose where you are starting, choose a transit stop, choose how you travel, then find your route. ${destination ? `Selected stop: ${destination.stop_name}.` : ""}`} sections={[
               {label:"Route summary",text:()=>result && !resultIsStale ? `Route to ${result.destination.stop_name}. ${(result.distance_m / METERS_PER_MILE).toFixed(2)} miles. ${Math.round(result.duration_seconds / 60)} minutes. ${result.accessibility_warning}` : ""},
               {label:"Accessibility information",text:()=>result && !resultIsStale ? `${result.accessibility_warning} ${[...new Set(result.segments?.flatMap(s=>s.reasons) || [])].join('. ')}` : ""},
               {label:"Directions",text:()=>result && !resultIsStale ? (result.directions || []).map(d=>`${d.instruction} ${(d.distance_m/METERS_PER_MILE).toFixed(2)} miles. ${d.warnings.join('. ')}`).join('. ') : ""},
-              {label:"Selected transit stop",text:()=>destination ? `${destination.stop_name}. VTA stop ${destination.stop_id}. Scheduled transit information is available below the stop selector.` : ""},
+              {label:"Selected transit stop",text:()=>destination ? `${destination.stop_name}. ${destination.agency_name || "VTA"} stop ${destination.stop_id}. Scheduled transit information is available below the stop selector.` : ""},
             ]} />
             {tab === "route" && (
               <>
@@ -834,7 +835,7 @@ export default function App() {
                   className="step-section destination-section"
                   aria-labelledby="destination-title"
                 >
-                  <h2 id="destination-title">Which VTA stop?</h2>
+                  <h2 id="destination-title">Which transit stop?</h2>
                   {destination && (
                     <div className="selected-stop">
                       <span className="destination-pin">B</span>
@@ -858,9 +859,9 @@ export default function App() {
                       ref={searchRef}
                       id="stop-search"
                       type="search"
-                      aria-label="Search VTA stops"
+                      aria-label="Search transit stops"
                       value={searchText}
-                      placeholder="Search stops by name"
+                      placeholder="Search VTA, Caltrain, or BART"
                       autoComplete="off"
                       onFocus={() => setSearchOpen(true)}
                       onChange={(e) => {
@@ -874,7 +875,7 @@ export default function App() {
                     <div
                       className="stop-results"
                       id="stop-results"
-                      aria-label="VTA stop results"
+                      aria-label="Transit stop results"
                     >
                       {nearbyStops.map(({ stop, distance }) => (
                         <button
@@ -882,7 +883,7 @@ export default function App() {
                           key={stop.stop_id}
                           onClick={() => chooseStop(stop)}
                         >
-                          <span>{stop.stop_name}</span>
+                          <span>{stop.stop_name} {stop.agency_name && stop.agency_name !== "VTA" ? `· ${stop.agency_name}` : ""}</span>
                           <span>
                             {(distance / METERS_PER_MILE).toFixed(2)} mi
                           </span>

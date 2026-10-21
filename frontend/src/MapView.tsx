@@ -49,6 +49,7 @@ function stopFeatures(
       properties: {
         stop_id: stop.stop_id,
         stop_name: stop.stop_name,
+        agency: stop.agency_name || stop.agency || "VTA",
         selected: stop.stop_id === selectedId,
       },
       geometry: { type: "Point", coordinates: [stop.longitude, stop.latitude] },
@@ -288,7 +289,7 @@ export default function MapView({
           source: "vta-stops",
           filter: ["!", ["has", "point_count"]],
           paint: {
-            "circle-color": ["case", ["get", "selected"], "#d58c2e", "#176b5b"],
+            "circle-color": ["case", ["get", "selected"], "#d58c2e", ["match", ["get", "agency"], "Caltrain", "#81502b", "BART", "#3c536d", "#176b5b"]],
             "circle-radius": ["case", ["get", "selected"], 9, 6],
             "circle-stroke-color": "#ffffff",
             "circle-stroke-width": ["case", ["get", "selected"], 3, 2],

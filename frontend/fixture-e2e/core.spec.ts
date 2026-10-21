@@ -11,7 +11,7 @@ test('synthetic CI fixture: keyboard route, profile changes, voice fallback and 
  await page.getByText('Enter coordinates instead',{exact:true}).click();
  await page.getByLabel('Starting latitude').fill('37.32875');await page.getByLabel('Starting longitude').fill('-121.90442');
  await page.getByRole('button',{name:'Use coordinates',exact:true}).focus();await page.keyboard.press('Enter');
- await page.getByRole('searchbox',{name:'Search VTA stops'}).fill('SYNTHETIC');
+ await page.getByRole('searchbox',{name:'Search transit stops'}).fill('SYNTHETIC');
  await page.getByRole('button',{name:/SYNTHETIC CI Stop/}).click();
  const distances=[];
  for(const profile of ['standard','wheelchair','stroller','low_vision']){

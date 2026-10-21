@@ -31,6 +31,7 @@ from .data_loader import (
 from .models import Profile, RouteComparisonRequest, RouteRequest
 from .gaps import GapIndex
 from .transit import TransitSchedule
+from .transit_agencies import AGENCIES, load_agency_stops
 from .geospatial import nearest_graph_node
 from .profiles import SPEED_MPS, configuration
 from .routing import PROFILE_OBJECTIVES, calculate_route as base_calculate_route, _edge_coords
@@ -58,6 +59,9 @@ logger = logging.getLogger(__name__)
 state = {
     "graph": None,
     "stops": [],
+    "transit_stops": [],
+    "agency_schedules": {},
+    "transit_sources": {},
     "error": None,
     "radius_m": DEFAULT_RADIUS_M,
     "region": "diridon",
@@ -82,6 +86,21 @@ def _load() -> None:
             COUNTY_RADIUS_M if region == COUNTY_REGION else DEFAULT_RADIUS_M
         )
         radius = int(os.getenv("TRANSITGAP_RADIUS_M", default_radius))
+        if region == COUNTY_REGION:
+            rail_stops, transit_sources = load_agency_stops(graph, data_dir(), region, radius)
+        else:
+            rail_stops, transit_sources = [], {}
+        agency_schedules = {}
+        for agency_id, config in AGENCIES.items():
+            agency_stop_ids = [stop["source_stop_id"] for stop in rail_stops if stop["agency"] == agency_id]
+            if agency_stop_ids:
+                try:
+                    agency_schedules[agency_id] = TransitSchedule(
+                        data_dir() / config["file"], agency_stop_ids,
+                        data_dir() / f"schedule-{agency_id}-v1.json.gz",
+                    )
+                except Exception:
+                    logger.exception("%s schedule unavailable", config["name"])
         # Prepare the spherical index once, rather than in the first route.
         nearest_graph_node(graph, CENTER[0], CENTER[1])
         gaps = GapIndex(graph, stops, data_dir())
@@ -124,6 +143,9 @@ def _load() -> None:
         state.update(
             graph=graph,
             stops=stops,
+            transit_stops=[*stops, *rail_stops],
+            agency_schedules=agency_schedules,
+            transit_sources=transit_sources,
             error=None,
             radius_m=radius,
             region=region,
@@ -205,6 +227,8 @@ def health():
         "datasets": {
             "osm_walk_graph": "ready" if graph is not None else "unavailable",
             "vta_gtfs_stops": "ready" if state["stops"] else "unavailable",
+            "caltrain_gtfs_stops": "ready" if "caltrain" in state.get("transit_sources", {}) else "unavailable",
+            "bart_gtfs_stops": "ready" if "bart" in state.get("transit_sources", {}) else "unavailable",
         },
         "graph": (
             {
@@ -216,6 +240,10 @@ def health():
             else None
         ),
         "vta_stop_count": len(state["stops"]),
+        "transit_stop_counts": {
+            "VTA": len(state["stops"]),
+            **{source["name"]: source["stop_count"] for source in state.get("transit_sources", {}).values()},
+        },
         "community_report_storage": database_durability(),
         "reports_enabled": database_durability() in {"filesystem-persistent", "postgresql"} and state.get("observations_ready", False),
         "gap_stops_evaluated": len(state["gaps"].cache) if state.get("gaps") else 0,
@@ -291,7 +319,20 @@ def _bbox(
 
 @app.get("/data-sources")
 def data_sources():
-    return _groundtruth().source_status()
+    result = _groundtruth().source_status()
+    for agency_id, source in state.get("transit_sources", {}).items():
+        result["sources"].append({
+            "id": f"{agency_id}-gtfs",
+            "name": f"{source['name']} GTFS scheduled stops",
+            "status": "ready",
+            "url": source["developer_url"],
+            "feed_url": source["feed_url"],
+            "feature_count": source["stop_count"],
+            "feed_info": source["feed_info"],
+            "evidence_status": "SOURCE_DOCUMENTED",
+            "limitations": "Agency-published scheduled transit data and stop coordinates; this does not describe sidewalk access or real-time service.",
+        })
+    return result
 
 
 @app.get("/accessibility/gaps")
@@ -511,6 +552,7 @@ def calculate_route(*args,**kwargs):
 @app.get("/stops")
 def stops():
     _ready()
+    all_stops = state.get("transit_stops") or state["stops"]
     return {
         "stops": [
             {
@@ -518,9 +560,10 @@ def stops():
                 for k, v in stop.items()
                 if k != "graph_node" and k != "connector_distance_m"
             }
-            for stop in state["stops"]
+            for stop in all_stops
         ],
-        "count": len(state["stops"]),
+        "count": len(all_stops),
+        "sources": state.get("transit_sources", {}),
     }
 
 
@@ -573,13 +616,13 @@ def _route_inputs(latitude: float, longitude: float, stop_id: str):
             422, detail=f"Starting point is outside the supported area ({area})."
         )
     stop = next(
-        (candidate for candidate in state["stops"] if candidate["stop_id"] == stop_id),
+        (candidate for candidate in (state.get("transit_stops") or state["stops"]) if candidate["stop_id"] == stop_id),
         None,
     )
     if stop is None:
         raise HTTPException(
             404,
-            detail="The selected destination is not in the loaded VTA stop dataset.",
+            detail="The selected destination is not in the loaded transit stop data.",
         )
     return state["graph"], stop
 
@@ -638,7 +681,7 @@ def compare_routes(payload: RouteComparisonRequest):
             "longitude": payload.origin_longitude,
         },
         "destination": {
-            key: stop[key] for key in ("stop_id", "stop_name", "latitude", "longitude")
+            key: stop[key] for key in ("stop_id", "stop_name", "latitude", "longitude", "agency", "agency_name") if key in stop
         },
         "results": results,
     }
@@ -662,17 +705,22 @@ def stop_access(stop_id: str):
 @app.get("/stops/{stop_id}")
 def stop_detail(stop_id: str):
     _ready()
-    stop = next((s for s in state["stops"] if s["stop_id"] == stop_id), None)
+    all_stops = state.get("transit_stops") or state["stops"]
+    stop = next((s for s in all_stops if s["stop_id"] == stop_id), None)
     if stop is None:
-        raise HTTPException(404, detail="VTA stop not found")
-    schedule = state.get("schedule")
+        raise HTTPException(404, detail="Transit stop not found")
+    agency = stop.get("agency")
+    schedule = state.get("agency_schedules", {}).get(agency) if agency else state.get("schedule")
+    source_stop_id = stop.get("source_stop_id", stop_id)
     return {
         **{
             k: v
             for k, v in stop.items()
             if k not in {"graph_node", "connector_distance_m"}
         },
-        "service": schedule.details(stop_id) if schedule else None,
+        "agency": stop.get("agency_name", "VTA"),
+        "agency_url": AGENCIES.get(agency, {}).get("developer_url", "https://www.vta.org/go/developers"),
+        "service": schedule.details(source_stop_id) if schedule else None,
     }
 
 

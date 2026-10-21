@@ -113,7 +113,7 @@ test("real county routes, all five algorithms, mobility profiles and no repeated
     settledStyle = current;
     return settled;
   }).toBe(true);
-  await page.getByLabel("Search VTA stops").fill("Mountain View");
+  await page.getByLabel("Search transit stops").fill("Mountain View");
   await expect(page.locator(".stop-option").first()).toBeVisible();
   await expect(marker).toHaveAttribute("style", settledStyle);
   expect(errors).toEqual([]);
@@ -205,7 +205,7 @@ test("mobile map selection, distinct A and B pins, cancellation and route fit", 
   await page.keyboard.press("Escape");
   await expect(page.locator(".panel")).toHaveClass(/panel-expanded/);
   await page.getByRole("button", { name: "Use my location" }).click();
-  await page.getByLabel("Search VTA stops").fill("San Jose Diridon (Bay 11)");
+  await page.getByLabel("Search transit stops").fill("San Jose Diridon (Bay 11)");
   await page.locator(".stop-option").first().click();
   await route(page);
   await page.getByRole("button", { name: "Collapse route planner" }).click();

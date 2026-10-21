@@ -3,6 +3,10 @@ export type Stop = {
   stop_name: string;
   latitude: number;
   longitude: number;
+  agency?: "VTA" | "Caltrain" | "BART";
+  agency_name?: string;
+  source_stop_id?: string;
+  wheelchair_boarding?: number;
 };
 export type AttributeObservation = {
   attribute: string;

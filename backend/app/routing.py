@@ -562,7 +562,7 @@ def calculate_route(
         "accessibility": accessibility,
         "accessibility_warning": ACCESSIBILITY_WARNING,
         "destination": {
-            key: stop[key] for key in ("stop_id", "stop_name", "latitude", "longitude")
+            key: stop[key] for key in ("stop_id", "stop_name", "latitude", "longitude", "agency", "agency_name") if key in stop
         },
     }
 

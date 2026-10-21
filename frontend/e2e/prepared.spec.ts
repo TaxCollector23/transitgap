@@ -18,7 +18,7 @@ test("prepared production views work while the route engine is unavailable", asy
   });
   await page.getByRole("link", { name: "Open the map", exact: true }).first().click();
   await expect(page.locator(".dataset-status.is-ready")).toContainText(
-    "3,348",
+    "transit stops",
     { timeout: 8000 },
   );
   await page

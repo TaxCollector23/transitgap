@@ -1,12 +1,49 @@
+export type Entrance = {
+  entrance_id: string;
+  name: string;
+  latitude: number;
+  longitude: number;
+  wheelchair_boarding: number;
+};
 export type Stop = {
   stop_id: string;
   stop_name: string;
   latitude: number;
   longitude: number;
-  agency?: "VTA" | "Caltrain" | "BART";
+  agency?: string;
   agency_name?: string;
   source_stop_id?: string;
   wheelchair_boarding?: number;
+  station_id?: string | null;
+  station_name?: string | null;
+  platform_name?: string | null;
+  station_url?: string | null;
+  entrances?: Entrance[];
+  modes?: string[];
+};
+export type Maneuver = {
+  instruction: string;
+  distance_m: number;
+  status: string;
+  warnings: string[];
+  notes?: string[];
+  maneuver?: string;
+  kind?: string;
+  name?: string | null;
+  documented_concerns?: string[];
+  missing_information?: string[];
+  crossings?: { total: number; unmarked: number; signals: number; marked: number; unrecorded: number };
+  segment_range?: [number, number] | null;
+  location?: [number, number];
+};
+export type AccessibilitySummary = {
+  headline: string;
+  lines: string[];
+  documented_restrictions: Array<{ code: string; text: string; steps: number[] }>;
+  missing_information: Array<{ attribute: string; label: string; distance_m: number; share: number | null }>;
+  crossings: { total: number; unmarked: number; unrecorded_type: number };
+  unmapped_connectors: Array<{ segment: number; distance_m: number; position: "start" | "end" }>;
+  interpretation: string;
 };
 export type AttributeObservation = {
   attribute: string;
@@ -36,14 +73,17 @@ export type RouteResult = {
     status: string;
     reasons: string[];
     length_m: number;
+    name?: string | null;
+    kind?: string;
+    source?: string;
+    osm_id?: number | number[] | null;
   }>;
   data_confidence?: number | null;
-  directions?: Array<{
-    instruction: string;
-    distance_m: number;
-    status: string;
-    warnings: string[];
-  }>;
+  directions?: Maneuver[];
+  accessibility_summary?: AccessibilitySummary;
+  arrival?: { type: "entrance" | "stop"; name?: string; latitude?: number; longitude?: number; note?: string | null; wheelchair_boarding?: number };
+  reviewed_report_effects?: Array<Record<string, unknown>>;
+  same_mapped_route_as_standard?: boolean;
   distance_m: number;
   duration_seconds: number;
   walking_speed_mps_assumed: number;

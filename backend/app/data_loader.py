@@ -26,6 +26,8 @@ COUNTY_RADIUS_M = 60_000
 COUNTY_BOUNDARY_PATH = Path(__file__).resolve().parent / "data_sources" / "santa_clara_county.geojson"
 GTFS_URL = "https://gtfs.vta.org/gtfs_vta.zip"
 GRAPH_SCHEMA_VERSION = 3
+# Bump when the filtered stop record changes (boarding-only, stations, entrances).
+STOP_SCHEMA_VERSION = 2
 logger = logging.getLogger(__name__)
 _GRAPH_CACHE: dict[str, tuple[int, int, nx.MultiDiGraph]] = {}
 
@@ -294,8 +296,8 @@ def load_stops(graph: nx.MultiDiGraph, radius_m: int = DEFAULT_RADIUS_M,
             _download(GTFS_URL, path)
         except DatasetError as exc:
             raise DatasetError(f"{exc}. No previously cached official VTA feed is available.") from exc
-    cache_path = directory / (f"stops-v{GRAPH_SCHEMA_VERSION}-santa-clara-county.json" if region == COUNTY_REGION
-                              else f"stops-v{GRAPH_SCHEMA_VERSION}-{radius_m}m.json")
+    cache_path = directory / (f"stops-v{GRAPH_SCHEMA_VERSION}.{STOP_SCHEMA_VERSION}-santa-clara-county.json" if region == COUNTY_REGION
+                              else f"stops-v{GRAPH_SCHEMA_VERSION}.{STOP_SCHEMA_VERSION}-{radius_m}m.json")
     try:
         feed_stat = path.stat()
         graph_path = graph_cache_path(directory, radius_m, region)
@@ -316,11 +318,17 @@ def load_stops(graph: nx.MultiDiGraph, radius_m: int = DEFAULT_RADIUS_M,
     except (OSError, ValueError, TypeError):
         cache_meta = {}
     try:
+        from .transit_agencies import inherited_boarding, station_fields, station_records
         with zipfile.ZipFile(path) as archive:
             with archive.open("stops.txt") as source:
-                reader = csv.DictReader(io.TextIOWrapper(source, encoding="utf-8-sig", newline=""))
+                rows = list(csv.DictReader(io.TextIOWrapper(source, encoding="utf-8-sig", newline="")))
+                parents, entrances = station_records(rows)
                 result = []
-                for row in reader:
+                for row in rows:
+                    # Parent stations, entrances and generic nodes are not boarding
+                    # locations; offering them as stops duplicated stations.
+                    if row.get("location_type", "").strip() not in ("", "0"):
+                        continue
                     try:
                         lat, lon = float(row["stop_lat"]), float(row["stop_lon"])
                     except (KeyError, TypeError, ValueError):
@@ -338,7 +346,11 @@ def load_stops(graph: nx.MultiDiGraph, radius_m: int = DEFAULT_RADIUS_M,
                     distance = _distance_m((lat, lon), (float(n["y"]), float(n["x"])))
                     if distance > 150:
                         continue
-                    result.append({"stop_id": row.get("stop_id", ""), "stop_name": row.get("stop_name", ""), "latitude": lat, "longitude": lon, "graph_node": str(node), "connector_distance_m": round(distance, 1), "wheelchair_boarding": int(row.get("wheelchair_boarding") or 0)})
+                    result.append({"stop_id": row.get("stop_id", ""), "stop_name": row.get("stop_name", ""), "latitude": lat, "longitude": lon,
+                                   "graph_node": str(node), "connector_distance_m": round(distance, 1),
+                                   "agency": "vta", "agency_name": "VTA",
+                                   "wheelchair_boarding": inherited_boarding(row, parents),
+                                   **station_fields(row, parents, entrances, graph, "")})
                 if not result:
                     raise DatasetError("The official VTA feed loaded, but it contains no stops connected to this map region.")
                 if cache_meta:
@@ -357,10 +369,12 @@ def load_stops(graph: nx.MultiDiGraph, radius_m: int = DEFAULT_RADIUS_M,
         raise DatasetError(f"Could not read stops.txt from the official VTA GTFS feed: {exc}") from exc
 
 def _boarding_status(stops, path):
+    from .transit_agencies import inherited_boarding, station_records
     with zipfile.ZipFile(path) as archive:
         with archive.open("stops.txt") as source:
-            statuses = {r["stop_id"]: int(r.get("wheelchair_boarding") or 0)
-                        for r in csv.DictReader(io.TextIOWrapper(source, encoding="utf-8-sig"))}
+            rows = list(csv.DictReader(io.TextIOWrapper(source, encoding="utf-8-sig")))
+    parents, _ = station_records(rows)
+    statuses = {r["stop_id"]: inherited_boarding(r, parents) for r in rows}
     for stop in stops:
         stop["wheelchair_boarding"] = statuses.get(stop["stop_id"], 0)
     return stops

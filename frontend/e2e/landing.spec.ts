@@ -36,9 +36,9 @@ test('city hero and editorial page work at all five target sizes', async ({ page
   await page.goto('/');
   await page.getByRole('link',{name:'Explore the map',exact:true}).click();
   await expect(page).toHaveURL(/\/app$/);
-  await expect(page.locator('.dataset-status.is-ready')).toBeVisible({timeout:30000});
+  await expect(page.locator('main[data-data-state="ready"]')).toBeVisible({timeout:30000});
   await page.reload();
-  await expect(page.locator('.dataset-status.is-ready')).toBeVisible({timeout:30000});
+  await expect(page.locator('main[data-data-state="ready"]')).toBeVisible({timeout:30000});
   await page.goBack();
   await expect(page.getByRole('heading',{name:'A city for all.',exact:true})).toBeVisible();
   expect(errors).toEqual([]);

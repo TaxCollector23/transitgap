@@ -12,6 +12,12 @@ from zipfile import ZipFile
 from .data_loader import data_dir
 
 TIMEZONE = ZoneInfo("America/Los_Angeles")
+ROUTE_TYPES = {"0": "light_rail", "1": "subway", "2": "rail", "3": "bus", "11": "trolleybus"}
+
+
+def modes(route_types) -> list[str]:
+    """Plain mode names for GTFS route_type values served at a stop."""
+    return sorted({ROUTE_TYPES.get(str(value), "other") for value in route_types})
 
 
 def rows(archive, name):
@@ -39,7 +45,7 @@ class TransitSchedule:
             {},
         )
         self.feed_info = []
-        cache_path = cache_path or archive_path.with_name("schedule-v1.json.gz")
+        cache_path = cache_path or archive_path.with_name("schedule-v2.json.gz")
         signature = [
             archive_path.stat().st_size,
             archive_path.stat().st_mtime_ns,
@@ -65,6 +71,7 @@ class TransitSchedule:
                         "route_long_name",
                         "route_color",
                         "route_text_color",
+                        "route_type",
                     )
                 }
                 for r in rows(archive, "routes.txt")
@@ -120,11 +127,49 @@ class TransitSchedule:
             active.add(service) if kind == 1 else active.discard(service)
         return active
 
+    def validity(self, now=None):
+        """Whether today is inside the publisher's declared feed period.
+
+        feed_info dates are the publisher's statement of where the schedule is
+        complete and reliable. Without them, the calendar range is used."""
+        now = (now or datetime.now(TIMEZONE)).astimezone(TIMEZONE)
+        today = now.strftime("%Y%m%d")
+        info = self.feed_info[0] if self.feed_info else {}
+        start = (info.get("feed_start_date") or "").strip()
+        end = (info.get("feed_end_date") or "").strip()
+        source = "feed_info"
+        if not start and not end and self.calendar:
+            start = min(row["start_date"] for row in self.calendar.values())
+            end = max(row["end_date"] for row in self.calendar.values())
+            source = "calendar"
+
+        def shown(value):
+            return f"{value[4:6]}/{value[6:8]}/{value[0:4]}" if len(value) == 8 and value.isdigit() else value
+
+        if start and today < start:
+            status, message = "not_yet_valid", f"The published schedule starts {shown(start)}. Times for today aren't available from this feed."
+        elif end and today > end:
+            status, message = "expired", f"The published schedule ended {shown(end)}. Times shown by this feed may no longer be correct."
+        elif start or end:
+            status, message = "current", None
+        else:
+            status, message = "unknown", "The feed does not state the dates it covers."
+        return {"status": status, "feed_start_date": start or None, "feed_end_date": end or None,
+                "source": source, "message": message}
+
+    def route_types(self, stop_id):
+        return sorted({str(self.routes.get(self.trips[trip][0], {}).get("route_type", ""))
+                       for _, trip in self.events.get(stop_id, []) if trip in self.trips} - {""})
+
     def details(self, stop_id, now=None):
         now = (now or datetime.now(TIMEZONE)).astimezone(TIMEZONE)
         events = self.events.get(stop_id, [])
         serving = sorted({self.trips[trip][0] for _, trip in events})
+        validity = self.validity(now)
         departures = []
+        # Never present a schedule outside its declared period as current times.
+        if validity["status"] in {"not_yet_valid", "expired"}:
+            events = []
         # Yesterday covers GTFS 24:xx/25:xx times. Include tomorrow for late-night queries.
         for offset in (-1, 0, 1):
             date = now.date() + timedelta(days=offset)
@@ -152,7 +197,9 @@ class TransitSchedule:
             "timezone": str(TIMEZONE),
             "queried_at": now.isoformat(),
             "feed_info": self.feed_info,
-            "message": None
+            "schedule_validity": validity,
+            "message": validity["message"] if validity["status"] in {"not_yet_valid", "expired"}
+            else None
             if departures
             else "No scheduled departure found in the next 24 hours in this feed.",
         }

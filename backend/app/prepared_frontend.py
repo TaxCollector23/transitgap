@@ -8,6 +8,15 @@ from shapely.geometry import mapping
 from .data_loader import CENTER, COUNTY_REGION, load_county_boundary
 
 
+def public_stop(stop: dict) -> dict:
+    """A stop record without internal graph fields, including its entrances."""
+    hidden = {"graph_node", "connector_distance_m"}
+    public = {k: v for k, v in stop.items() if k not in hidden}
+    if "entrances" in public:
+        public["entrances"] = [{k: v for k, v in e.items() if k not in hidden} for e in public["entrances"]]
+    return public
+
+
 def export_frontend(graph, stops, gaps, region: str, public: Path, additional_stops=None, transit_sources=None):
     public.mkdir(parents=True, exist_ok=True)
     if region == COUNTY_REGION:
@@ -31,14 +40,7 @@ def export_frontend(graph, stops, gaps, region: str, public: Path, additional_st
     timestamp = datetime.now(timezone.utc).isoformat()
     bootstrap = {
         "coverage": coverage,
-        "stops": [
-            {
-                k: v
-                for k, v in stop.items()
-                if k not in {"graph_node", "connector_distance_m"}
-            }
-            for stop in [*stops, *(additional_stops or [])]
-        ],
+        "stops": [public_stop(stop) for stop in [*stops, *(additional_stops or [])]],
         "transit_sources": transit_sources or {},
         "prepared_at": timestamp,
         "graph_nodes": graph.number_of_nodes(),

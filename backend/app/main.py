@@ -30,7 +30,8 @@ from .data_loader import (
 )
 from .models import Profile, RouteComparisonRequest, RouteRequest
 from .gaps import GapIndex
-from .transit import TransitSchedule
+from .transit import TransitSchedule, modes as _modes
+from .prepared_frontend import public_stop as _public_stop
 from .transit_agencies import AGENCIES, load_agency_stops
 from .geospatial import nearest_graph_node
 from .profiles import SPEED_MPS, configuration
@@ -72,6 +73,42 @@ state = {
 _report_rate: dict[str, deque[float]] = defaultdict(deque)
 
 
+
+
+
+
+STEP_FREE_PROFILES = {Profile.wheelchair, Profile.avoid_mapped_stairs, Profile.stroller}
+
+
+def _arrival_targets(stop: dict, profile: Profile) -> list[tuple[str, dict, dict]]:
+    """Where a walking route should end for a stop.
+
+    A station entrance recorded in GTFS is a real, published access point, so
+    routes end there instead of drawing an unmapped line to a platform
+    coordinate. Step-free profiles use entrances the feed marks accessible
+    when it records that; entrances marked inaccessible are never used for
+    them. Stops without recorded entrances route to the stop itself."""
+    entrances = [e for e in stop.get("entrances") or [] if e.get("graph_node")]
+    if profile in STEP_FREE_PROFILES:
+        accessible = [e for e in entrances if e.get("wheelchair_boarding") == 1]
+        entrances = accessible or [e for e in entrances if e.get("wheelchair_boarding") != 2]
+    label = stop.get("station_name") or stop["stop_name"]
+    targets = [
+        (e["graph_node"],
+         {**stop, "stop_name": f"{label}, {e['name']}", "latitude": e["latitude"], "longitude": e["longitude"]},
+         {"type": "entrance", "entrance_id": e["entrance_id"], "name": e["name"],
+          "wheelchair_boarding": e.get("wheelchair_boarding", 0),
+          "note": "Route ends at an entrance recorded in the agency's GTFS feed. The path inside the station to the platform is not part of this route."})
+        for e in entrances
+    ]
+    if targets:
+        return targets
+    platform = stop
+    if stop.get("station_name") and stop.get("platform_name"):
+        platform = {**stop, "stop_name": f"{stop['station_name']}, {stop['platform_name']}"}
+    return [(stop["graph_node"], platform, {"type": "stop", "note": None})]
+
+
 def _load() -> None:
     started = time.perf_counter()
     try:
@@ -97,10 +134,13 @@ def _load() -> None:
                 try:
                     agency_schedules[agency_id] = TransitSchedule(
                         data_dir() / config["file"], agency_stop_ids,
-                        data_dir() / f"schedule-{agency_id}-v1.json.gz",
+                        data_dir() / f"schedule-{agency_id}-v2.json.gz",
                     )
                 except Exception:
                     logger.exception("%s schedule unavailable", config["name"])
+        for stop in rail_stops:
+            agency_schedule = agency_schedules.get(stop["agency"])
+            stop["modes"] = _modes(agency_schedule.route_types(stop["source_stop_id"])) if agency_schedule else []
         # Prepare the spherical index once, rather than in the first route.
         nearest_graph_node(graph, CENTER[0], CENTER[1])
         gaps = GapIndex(graph, stops, data_dir())
@@ -111,6 +151,8 @@ def _load() -> None:
         except Exception:
             logger.exception("GTFS schedule unavailable")
             schedule = None
+        for stop in stops:
+            stop["modes"] = _modes(schedule.route_types(stop["stop_id"])) if schedule else []
         evidence_radius = DEFAULT_RADIUS_M
         try:
             city = load_sidewalks(radius_m=evidence_radius, allow_network=False)
@@ -533,7 +575,34 @@ def moderate_report(identity: str, payload: ObservationReview, request: Request)
     except LookupError as exc:raise HTTPException(404,detail=str(exc)) from exc
 
 
-def calculate_route(*args,**kwargs):
+def calculate_route(graph, origin, destination_node, algorithm, profile, stop, **kwargs):
+    """Route to the best recorded arrival point for the stop (entrance or stop)."""
+    targets = _arrival_targets(stop, profile)
+    if len(targets) == 1 and targets[0][2]["type"] == "stop":
+        targets = [(destination_node, targets[0][1], targets[0][2])]
+    best = None
+    failure = None
+    for node, target_stop, arrival in targets:
+        try:
+            result = _calculate_single(graph, origin, node, algorithm, profile, target_stop, **kwargs)
+        except (LookupError, ValueError) as exc:
+            failure = exc
+            continue
+        if best is None or result["distance_m"] < best[0]["distance_m"]:
+            best = (result, arrival)
+    if best is None:
+        raise failure or LookupError("No walking route connects this starting point to the selected stop.")
+    result, arrival = best
+    result["destination"] = {
+        key: stop[key] for key in ("stop_id", "stop_name", "latitude", "longitude", "agency", "agency_name",
+                                    "station_name", "platform_name") if key in stop
+    }
+    result["arrival"] = arrival
+    result["arrival_options_considered"] = len(targets)
+    return result
+
+
+def _calculate_single(*args,**kwargs):
     effects={}
     if state.get("observations_ready") and database_durability() in {"filesystem-persistent","postgresql"}:
         try:effects=active_routing_effects()
@@ -554,14 +623,7 @@ def stops():
     _ready()
     all_stops = state.get("transit_stops") or state["stops"]
     return {
-        "stops": [
-            {
-                k: v
-                for k, v in stop.items()
-                if k != "graph_node" and k != "connector_distance_m"
-            }
-            for stop in all_stops
-        ],
+        "stops": [_public_stop(stop) for stop in all_stops],
         "count": len(all_stops),
         "sources": state.get("transit_sources", {}),
     }
@@ -710,16 +772,14 @@ def stop_detail(stop_id: str):
     if stop is None:
         raise HTTPException(404, detail="Transit stop not found")
     agency = stop.get("agency")
-    schedule = state.get("agency_schedules", {}).get(agency) if agency else state.get("schedule")
+    agency_schedules = state.get("agency_schedules", {})
+    schedule = agency_schedules.get(agency) if agency in agency_schedules else state.get("schedule")
     source_stop_id = stop.get("source_stop_id", stop_id)
     return {
-        **{
-            k: v
-            for k, v in stop.items()
-            if k not in {"graph_node", "connector_distance_m"}
-        },
+        **_public_stop(stop),
         "agency": stop.get("agency_name", "VTA"),
         "agency_url": AGENCIES.get(agency, {}).get("developer_url", "https://www.vta.org/go/developers"),
+        "schedule_url": AGENCIES.get(agency, {}).get("schedule_url", "https://www.vta.org/go/schedules"),
         "service": schedule.details(source_stop_id) if schedule else None,
     }
 

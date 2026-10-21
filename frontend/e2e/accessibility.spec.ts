@@ -6,7 +6,7 @@ test("landing, planner and gap study meet automated WCAG AA checks", async ({
   for (const path of ["/", "/app", "/app?view=gaps"]) {
     await page.goto(path);
     if (path.startsWith("/app"))
-      await expect(page.locator(".dataset-status.is-ready")).toBeVisible({
+      await expect(page.locator('main[data-data-state="ready"]')).toBeVisible({
         timeout: 30000,
       });
     else
@@ -14,7 +14,7 @@ test("landing, planner and gap study meet automated WCAG AA checks", async ({
         page.getByRole("heading", { name: /A city for all/ }),
       ).toBeVisible();
     const result = await new AxeBuilder({ page })
-      .withTags(["wcag2a", "wcag2aa", "wcag21aa"])
+      .withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"])
       .analyze();
     expect(
       result.violations.map((v) => ({

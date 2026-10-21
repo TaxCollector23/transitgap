@@ -1,7 +1,7 @@
 import { useEffect, useId, useRef, useState } from "react";
 
 type Section = { label: string; text: () => string };
-export default function ReadAloud({ text, sections = [], resetKey = "" }: { text: () => string; sections?: Section[]; resetKey?: string }) {
+export default function ReadAloud({ text, sections = [], resetKey = "", label = "Read aloud" }: { text: () => string; sections?: Section[]; resetKey?: string; label?: string }) {
   const id = useId();
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
   const [voiceURI, setVoiceURI] = useState("");
@@ -56,14 +56,14 @@ export default function ReadAloud({ text, sections = [], resetKey = "" }: { text
   }
   return <div className="read-aloud">
     <div className="speech-actions">
-      <button className="text-button" type="button" onClick={read}>Read aloud</button>
+      <button className="text-button" type="button" onClick={read}>{label}</button>
       {speaking && <>
         <button className="text-button" type="button" onClick={() => { if (paused) window.speechSynthesis.resume(); else window.speechSynthesis.pause(); setPaused(!paused); }}>{paused ? "Resume reading" : "Pause reading"}</button>
         <button className="text-button" type="button" onClick={stop}>Stop reading</button>
       </>}
     </div>
     <details className="speech-settings"><summary>Reading options</summary>
-      {sections.length > 0 && <label htmlFor={`${id}-scope`}>Content to read<select id={`${id}-scope`} value={scope} onChange={e => { stop(); setScope(Number(e.target.value)); }}><option value={-1}>Current page</option>{sections.map((section,index) => <option key={section.label} value={index}>{section.label}</option>)}</select></label>}
+      {sections.length > 0 && <label htmlFor={`${id}-scope`}>Content to read<select id={`${id}-scope`} value={scope} onChange={e => { stop(); setScope(Number(e.target.value)); }}><option value={-1}>Everything</option>{sections.map((section,index) => <option key={section.label} value={index}>{section.label}</option>)}</select></label>}
       <label htmlFor={`${id}-rate`}>Reading speed<select id={`${id}-rate`} value={rate} onChange={e => { stop(); setRate(Number(e.target.value)); }}>{[.75,1,1.25,1.5].map(v => <option key={v} value={v}>{v}×</option>)}</select></label>
       <label htmlFor={`${id}-voice`}>Device voice<select id={`${id}-voice`} value={voiceURI} onChange={e => { stop(); setVoiceURI(e.target.value); }}><option value="">Use available English voice</option>{voices.map(v => <option key={v.voiceURI} value={v.voiceURI}>{v.name}</option>)}</select></label>
     </details>

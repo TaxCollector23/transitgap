@@ -864,7 +864,17 @@ def stops():
 
 
 @app.post("/route")
-def route(payload: RouteRequest):
+async def route(payload: RouteRequest):
+    # A real trip may be the very first request to a newly started serverless
+    # worker. Join the shared county initialization task instead of making the
+    # user receive an immediate 503 while the map and stop search are already
+    # available. The same bounded wait is used by the explicit warmup endpoint.
+    initialization = getattr(app.state, "initialization", None)
+    if state["graph"] is None and initialization is not None and not initialization.done():
+        try:
+            await asyncio.wait_for(asyncio.shield(initialization), INITIALIZATION_REQUEST_SECONDS)
+        except TimeoutError:
+            pass
     graph, stop = _route_inputs(
         payload.origin_latitude, payload.origin_longitude, payload.destination_stop_id
     )

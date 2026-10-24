@@ -61,10 +61,15 @@ test('reporting disabled is explicit and never offers a submit form',async({page
 test('local speech controls pause, resume and stop',async({page})=>{
  await page.addInitScript(()=>{
   const calls:string[]=[];const spoken:string[]=[];(window as any).__speechCalls=calls;(window as any).__spokenText=spoken;
+  let active:any;let timer:number|undefined;
+  const finishLater=()=>{window.clearTimeout(timer);timer=window.setTimeout(()=>active?.onend?.(),80);};
   const voice={localService:true,lang:'en-US',voiceURI:'test-local',name:'Synthetic local voice',default:true};
   Object.defineProperty(window,'speechSynthesis',{configurable:true,value:{
    getVoices:()=>[voice],addEventListener:()=>{},removeEventListener:()=>{},
-   speak:(item:any)=>{calls.push('speak');spoken.push(item.text);},cancel:()=>calls.push('cancel'),pause:()=>calls.push('pause'),resume:()=>calls.push('resume')
+   speak:(item:any)=>{calls.push('speak');spoken.push(item.text);active=item;finishLater();},
+   cancel:()=>{calls.push('cancel');window.clearTimeout(timer);},
+   pause:()=>{calls.push('pause');window.clearTimeout(timer);},
+   resume:()=>{calls.push('resume');finishLater();}
   }});
   Object.defineProperty(window,'SpeechSynthesisUtterance',{configurable:true,value:class{constructor(public text:string){}}});
  });
@@ -76,7 +81,7 @@ test('local speech controls pause, resume and stop',async({page})=>{
  await page.getByRole('option',{name:/SYNTHETIC CI Stop/}).click();
  await page.getByRole('button',{name:'Find route',exact:true}).click();
  await page.getByRole('button',{name:'Read directions aloud',exact:true}).click();
- expect((await page.evaluate(()=>(window as any).__spokenText)).join(' ')).toContain('Map data shows stairs');
+ await expect.poll(async()=>(await page.evaluate(()=>(window as any).__spokenText)).join(' ')).toContain('Map data shows stairs');
  await expect(page.getByRole('button',{name:'Pause reading',exact:true})).toBeVisible();
  await page.getByRole('button',{name:'Pause reading',exact:true}).click();
  await page.getByRole('button',{name:'Resume reading',exact:true}).click();

@@ -42,6 +42,21 @@ type Props = {
 
 // Census internal point for California's 17th Congressional District.
 const center: [number, number] = [-121.9649511, 37.4260511];
+const diridonPilotCenter: [number, number] = [-121.903, 37.3296];
+const diridonPilotRadiusM = 1500;
+
+function circleGeometry(centerPoint: [number, number], radiusM: number): GeoJSON.Polygon {
+  const [longitude, latitude] = centerPoint;
+  const points: number[][] = [];
+  for (let i = 0; i <= 96; i += 1) {
+    const angle = (i * Math.PI) / 48;
+    points.push([
+      longitude + (radiusM / (111320 * Math.cos((latitude * Math.PI) / 180))) * Math.sin(angle),
+      latitude + (radiusM / 111320) * Math.cos(angle),
+    ]);
+  }
+  return { type: "Polygon", coordinates: [points] };
+}
 
 function stopFeatures(
   stops: Stop[],
@@ -114,16 +129,76 @@ function addCoverageLayer(map: Map, coverage: Coverage | null) {
     paint: { "fill-color": "#176b5b", "fill-opacity": 0.025 },
   });
   map.addLayer({
+    id: "coverage-edge-halo",
+    type: "line",
+    source: "coverage",
+    paint: {
+      "line-color": "#fffefa",
+      "line-width": 5,
+      "line-opacity": 0.95,
+    },
+  });
+  map.addLayer({
     id: "coverage-edge",
     type: "line",
     source: "coverage",
     paint: {
       "line-color": "#176b5b",
-      "line-width": 2,
-      "line-dasharray": [2, 2],
-      "line-opacity": 0.9,
+      "line-width": 2.5,
+      "line-dasharray": [2, 1.5],
+      "line-opacity": 1,
     },
   });
+  if (coverage.boundary) {
+    map.addSource("diridon-pilot-area", {
+      type: "geojson",
+      data: { type: "Feature", properties: {}, geometry: circleGeometry(diridonPilotCenter, diridonPilotRadiusM) },
+    });
+    map.addLayer({
+      id: "diridon-pilot-fill",
+      type: "fill",
+      source: "diridon-pilot-area",
+      paint: { "fill-color": "#b45622", "fill-opacity": 0.035 },
+    });
+    map.addLayer({
+      id: "diridon-pilot-edge",
+      type: "line",
+      source: "diridon-pilot-area",
+      paint: { "line-color": "#b45622", "line-width": 2, "line-dasharray": [1, 1.5], "line-opacity": 0.95 },
+    });
+    map.addSource("diridon-pilot-label", {
+      type: "geojson",
+      data: {
+        type: "Feature",
+        properties: { label: "Diridon pilot · detailed sidewalk records" },
+        geometry: { type: "Point", coordinates: diridonPilotCenter },
+      },
+    });
+    map.addLayer({
+      id: "diridon-pilot-label",
+      type: "symbol",
+      source: "diridon-pilot-label",
+      layout: { "text-field": ["get", "label"], "text-font": ["Arial Bold"], "text-size": 12, "text-offset": [0, 1.2], "text-allow-overlap": false },
+      paint: { "text-color": "#7a3b1d", "text-halo-color": "#fffefa", "text-halo-width": 2 },
+    });
+    map.addSource("coverage-label", {
+      type: "geojson",
+      data: {
+        type: "Feature",
+        properties: { label: "Santa Clara County route coverage" },
+        geometry: { type: "Point", coordinates: [coverage.center.longitude, coverage.center.latitude] },
+      },
+    });
+    map.addLayer({
+      id: "coverage-label",
+      type: "symbol",
+      source: "coverage-label",
+      minzoom: 0,
+      maxzoom: 10.8,
+      layout: { "text-field": ["get", "label"], "text-font": ["Arial Bold"], "text-size": 15, "text-allow-overlap": false },
+      paint: { "text-color": "#0f5c4c", "text-halo-color": "#fffefa", "text-halo-width": 2.5 },
+    });
+  }
 }
 
 export default function MapView({

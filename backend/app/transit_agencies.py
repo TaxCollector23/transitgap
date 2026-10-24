@@ -111,11 +111,21 @@ def station_fields(row: dict[str, str], parents: dict[str, dict[str, str]],
                    entrances: dict[str, list[dict[str, str]]], graph, prefix: str) -> dict[str, Any]:
     parent_id = row.get("parent_station", "").strip()
     parent = parents.get(parent_id)
+    description = row.get("stop_desc", "").strip()
+    direction = next(
+        (word for word in DIRECTION_WORDS if re.search(rf"\b{word}\b", description, re.IGNORECASE)),
+        None,
+    )
     fields: dict[str, Any] = {
         "station_id": f"{prefix}{parent_id}" if parent else None,
         "station_name": parent.get("stop_name", "").strip() if parent else None,
         "platform_name": platform_label(row, parent) if parent else None,
         "station_url": (parent.get("stop_url") or "").strip() or None if parent else None,
+        # Keep the agency-published stop description and any explicit travel
+        # direction. These make similarly named boarding locations distinct.
+        "direction": direction,
+        "stop_description": description or None,
+        "stop_code": row.get("stop_code", "").strip() or None,
     }
     if parent:
         fields["entrances"] = connected_entrances(graph, entrances.get(parent_id, []), prefix)

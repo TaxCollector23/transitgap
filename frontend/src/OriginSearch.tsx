@@ -44,7 +44,7 @@ export default function OriginSearch({
             setItems(data.results);
             if (!data.results.length)
               setMessage(data.reason === "outside_coverage"
-                ? "That place is outside Santa Clara County, which TransitGap covers. Try a place inside the county."
+                ? "That place is outside Santa Clara County. Choose a place inside the county boundary shown on the map."
                 : "No matching address was found. Try a street or landmark in Santa Clara County, or choose on the map.");
           } catch (error) {
             setMessage(

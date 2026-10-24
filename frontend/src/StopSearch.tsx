@@ -87,6 +87,7 @@ export default function StopSearch({
         <span className="field-value-text">
           <strong>{selected.name}</strong>
           <span>{selected.description}</span>
+          {selected.duplicateName && <span>{selected.disambiguation}</span>}
         </span>
         <button
           type="button"

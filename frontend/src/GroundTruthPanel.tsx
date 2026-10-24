@@ -41,40 +41,28 @@ const categories = [
   ["other", "Other accessibility concern"],
 ];
 
-function candidateExplanation(gap: GapFeature) {
+function candidateCheck(gap: GapFeature) {
   const hasCity = Boolean(gap.provenance.municipal_source);
   const hasOsm = Boolean(gap.provenance.osm_source);
   if (hasCity && hasOsm) {
     return gap.classification === "CONFLICTING_SOURCES"
-      ? "City and OpenStreetMap records disagree about this sidewalk detail. An in-person check could record the actual condition and measurement method."
-      : "City and OpenStreetMap records are close together here, but they may describe different paths. An in-person check could confirm what is present and connected."
+      ? "Check whether the City sidewalk record and the mapped path describe the same path; compare the sidewalk details in person."
+      : "Check whether the nearby City sidewalk record and mapped path describe the same path, and confirm where each one connects."
   }
   if (hasCity)
-    return "A City sidewalk record has no close mapped walking path match. This is a difference between data sources, not proof that a sidewalk or path is missing. An in-person check could confirm the path and where it connects."
+    return "Check whether the City sidewalk record connects to a walking path shown on the map. The records do not line up closely, which does not prove that a path is missing."
   const missingLabels: Record<string, string> = {
     width: "path width", surface: "surface", smoothness: "surface condition", wheelchair: "wheelchair access",
     incline: "slope", kerb: "curb ramp", crossing: "crossing details",
   };
-  const missing = gap.missing_information.map((item) => missingLabels[item] || item.replace(/_/g, " "));
-  const details = missing.length ? `The map doesn't record ${missing.join(", ")} here.` : "The map and City records do not provide enough detail to compare this location."
-  return `${details} An in-person check could record those details. This is an inspection suggestion, not a confirmed barrier.`
+  const missing = gap.missing_information.map((item) => missingLabels[item] || "another walking detail");
+  return missing.length
+    ? `The map does not list ${missing.join(", ")} here. Check these details in person.`
+    : "Available records do not give enough detail about this location. Compare the map with the sidewalk in person."
 }
 
-function candidateSummary(gap: GapFeature) {
-  const hasCity = Boolean(gap.provenance.municipal_source);
-  const hasOsm = Boolean(gap.provenance.osm_source);
-  if (hasCity && hasOsm && gap.classification === "CONFLICTING_SOURCES")
-    return "City and map records disagree; check the actual sidewalk condition and measurement.";
-  if (hasCity && !hasOsm)
-    return "A City sidewalk record has no nearby mapped-path match; check whether a path connects.";
-  const fields: Record<string, string> = {
-    width: "path width", surface: "surface", smoothness: "surface condition",
-    wheelchair: "wheelchair access", incline: "slope", kerb: "curb ramp", crossing: "crossing details",
-  };
-  const missing = gap.missing_information.map((item) => fields[item] || item.replace(/_/g, " "));
-  return missing.length
-    ? `The map doesn't record ${missing.join(", ")}; check in person.`
-    : "Available records don't give enough detail; check this location in person.";
+function candidateExplanation(gap: GapFeature) {
+  return `${candidateCheck(gap)} These are inspection suggestions, not confirmed barriers.`;
 }
 
 export default function GroundTruthPanel({
@@ -198,6 +186,7 @@ export default function GroundTruthPanel({
       setGaps(firstCandidates.slice(0, 80));
       setEvidenceState("ready");
       if (!onAdvocacySummary) return;
+      onAdvocacySummary({ status: "calculating" });
       try {
         const totalCandidateCount = Number(first.count);
         if (!Number.isFinite(totalCandidateCount) || totalCandidateCount < firstCandidates.length)
@@ -490,8 +479,8 @@ export default function GroundTruthPanel({
           City sidewalk record
         </span>
       </div>
-      <p>These comparison scores use proximity to sampled routes. For computed journey reachability changes, use the stop study in Access gaps.</p>
-      <div className="gap-list" aria-label="Route-proximity review suggestions">
+      <p>The list below points to places where sidewalk records may need a closer look. The separate Access gaps study shows how recorded paths affect a small sample of trips.</p>
+      <div className="gap-list" aria-label="Sidewalk review suggestions">
         {gaps.slice(0, 12).map((gap) => (
           <button
             key={gap.id}
@@ -502,20 +491,11 @@ export default function GroundTruthPanel({
               onFocusCandidate([gap.latitude, gap.longitude]);
             }}
           >
-            <span className="gap-score">
-              {gap.priority_score === null
-                ? "—"
-                : Math.round(gap.priority_score)}
-              <span>route proximity</span>
-            </span>
             <span className="gap-copy">
-              <strong>
-                {gap.classification.replace(/_/g, " ").toLowerCase()}
-              </strong>
-              <span>{candidateLocations.get(gap.id)
-                ? `Near ${candidateLocations.get(gap.id)!.stop_name} · ${formatDistance(candidateLocations.get(gap.id)!.distance_m)}`
-                : `${gap.latitude.toFixed(5)}, ${gap.longitude.toFixed(5)}`}</span>
-              <span>{candidateSummary(gap)}</span>
+              <strong>{candidateLocations.get(gap.id)
+                ? `Near ${candidateLocations.get(gap.id)!.stop_name}, ${formatDistance(candidateLocations.get(gap.id)!.distance_m)} — ${candidateCheck(gap)}`
+                : `Location detail not listed — ${candidateCheck(gap)}`}</strong>
+              <span>Inspection suggestion only; this is not a confirmed barrier.</span>
             </span>
           </button>
         ))}
@@ -530,49 +510,29 @@ export default function GroundTruthPanel({
       {selected && (
         <article className="gap-detail">
           <div className="gap-detail-title">
-            <strong>Evidence detail</strong>
+            <strong>What to check</strong>
             <button
               type="button"
               onClick={() => setSelected(null)}
-              aria-label="Close evidence detail"
+              aria-label="Close review detail"
             >
               ×
             </button>
           </div>
-          {candidateLocations.get(selected.id) && <p>Nearest transit stop in the loaded data: {candidateLocations.get(selected.id)!.stop_name}, {formatDistance(candidateLocations.get(selected.id)!.distance_m)} away.</p>}
+          {candidateLocations.get(selected.id) && <p>Look near {candidateLocations.get(selected.id)!.stop_name}, about {formatDistance(candidateLocations.get(selected.id)!.distance_m)} away.</p>}
           <p>{candidateExplanation(selected)}</p>
-          <p>The score describes how often this location is near the sampled routes; it does not measure barrier severity. These records are suggestions for inspection, not confirmed barriers.</p>
-          <dl>
-            <div>
-              <dt>Municipal source</dt>
-              <dd>
-                {selected.provenance.municipal_source?.status ||
-                  "No matching record"}
-              </dd>
-            </div>
-            <div>
-              <dt>OpenStreetMap</dt>
-              <dd>
-                {selected.provenance.osm_source?.status || "No matching record"}
-              </dd>
-            </div>
-            <div>
-              <dt>Nearest source distance</dt>
-              <dd>
-                {selected.matched_distance_m == null
-                  ? "Not matched"
-                  : `${(selected.matched_distance_m / METERS_PER_MILE).toFixed(2)} mi`}
-              </dd>
-            </div>
-            <div>
-              <dt>Route-proximity score</dt>
-              <dd>
-                {selected.priority_score == null
-                  ? "Unavailable"
-                  : `${selected.priority_score}/100 · inspection suggestion only`}
-              </dd>
-            </div>
-          </dl>
+          <details className="technical-detail">
+            <summary>Technical detail</summary>
+            <p>{selected.priority_score == null
+              ? "Review priority score is unavailable."
+              : `Review priority score: ${selected.priority_score}/100 — this is a proximity-based review priority, not a measure of barrier severity.`}</p>
+            <dl>
+              <div><dt>Municipal source status</dt><dd>{selected.provenance.municipal_source?.status || "No matching record"}</dd></div>
+              <div><dt>OpenStreetMap source status</dt><dd>{selected.provenance.osm_source?.status || "No matching record"}</dd></div>
+              <div><dt>Nearest source match</dt><dd>{selected.matched_distance_m == null ? "Not matched" : `${(selected.matched_distance_m / METERS_PER_MILE).toFixed(2)} mi`}</dd></div>
+              <div><dt>Recorded detail fields</dt><dd>{selected.missing_information.length ? selected.missing_information.join(", ") : "No missing field list"}</dd></div>
+            </dl>
+          </details>
         </article>
       )}
       {mode === "evidence" && onReport && (

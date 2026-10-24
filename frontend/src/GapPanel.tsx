@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { studySummary, stopAccess, civicLetter, reachabilityStops, stopReachability } from "./data";
+import { placeSearchDetail, type Place } from "./format";
 import type { ReachabilityAnalysis, ReachabilityStop } from "./types";
 export type GapDetail = {
   stop_id: string;
@@ -17,10 +18,12 @@ export default function GapPanel({
   onStudy,
   onReachability,
   onRanking,
+  places,
 }: {
   onStudy: (detail: GapDetail | null) => void;
   onReachability: (analysis: ReachabilityAnalysis | null, layers: { documented: boolean; unknown: boolean }) => void;
   onRanking: (stops: GapDetail[]) => void;
+  places: Place[];
 }) {
   const [items, setItems] = useState<Item[]>([]),
     [count, setCount] = useState(0),
@@ -38,6 +41,10 @@ export default function GapPanel({
   const [reachError, setReachError] = useState("");
   const [showDocumented, setShowDocumented] = useState(false);
   const [showUnknown, setShowUnknown] = useState(false);
+  const placeByStopId = useMemo(
+    () => new Map(places.flatMap((place) => place.stops.map((stop) => [stop.stop_id, place] as const))),
+    [places],
+  );
   useEffect(() => {
     reachabilityStops()
       .then((data) => {
@@ -249,7 +256,13 @@ export default function GapPanel({
       </p>
       <label htmlFor="reachability-stop">Stop</label>
       <select id="reachability-stop" value={pilotStopId} onChange={(e) => { setPilotStopId(e.target.value); setReachability(null); onReachability(null, { documented: false, unknown: false }); }}>
-        {pilotStops.map((stop) => <option key={stop.stop_id} value={stop.stop_id}>{stop.stop_name} · {stop.stop_id}</option>)}
+        {pilotStops.map((stop) => {
+          const place = placeByStopId.get(stop.stop_id);
+          const label = place?.duplicateName
+            ? `${stop.stop_name} · ${placeSearchDetail(place)}`
+            : stop.stop_name;
+          return <option key={stop.stop_id} value={stop.stop_id}>{label}</option>;
+        })}
       </select>
       <label htmlFor="reachability-profile">How do you travel?</label>
       <select id="reachability-profile" value={reachProfile} onChange={(e) => { setReachProfile(e.target.value); setReachability(null); onReachability(null, { documented: false, unknown: false }); }}>

@@ -15,6 +15,7 @@ from typing import Any
 
 DATA_SOURCES_FILE = "public-data-sources-v1.json"
 PRIORITIES_FILE = "public-accessibility-priorities-v1.json.gz"
+REACHABILITY_STOPS_FILE = "public-reachability-stops-v1.json"
 
 
 def with_agency_sources(result: dict[str, Any], transit_sources: dict[str, dict[str, Any]]) -> dict[str, Any]:
@@ -41,8 +42,13 @@ def _json_default(value: Any) -> Any:
     raise TypeError(f"Unsupported public snapshot value: {type(value).__name__}")
 
 
-def write_public_api_snapshots(directory: Path, index: Any, transit_sources: dict[str, dict[str, Any]]) -> None:
-    """Persist the complete public source and review-list responses at build time."""
+def write_public_api_snapshots(
+    directory: Path,
+    index: Any,
+    transit_sources: dict[str, dict[str, Any]],
+    reachability_stops: dict[str, Any] | None = None,
+) -> None:
+    """Persist public evidence responses that are safe before graph startup."""
     directory.mkdir(parents=True, exist_ok=True)
     sources = with_agency_sources(index.source_status(), transit_sources)
     priorities = index.get_priorities(limit=max(1, len(index.gaps)), offset=0)
@@ -60,6 +66,15 @@ def write_public_api_snapshots(directory: Path, index: Any, transit_sources: dic
     with gzip.open(priorities_temp, "wt", encoding="utf-8", compresslevel=6) as output:
         json.dump(priorities, output, default=_json_default, separators=(",", ":"))
     priorities_temp.replace(priorities_path)
+
+    if reachability_stops is not None:
+        stops_path = directory / REACHABILITY_STOPS_FILE
+        stops_temp = stops_path.with_suffix(stops_path.suffix + ".part")
+        stops_temp.write_text(
+            json.dumps(reachability_stops, default=_json_default, separators=(",", ":")),
+            encoding="utf-8",
+        )
+        stops_temp.replace(stops_path)
 
 
 @lru_cache(maxsize=8)

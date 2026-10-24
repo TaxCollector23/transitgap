@@ -76,8 +76,22 @@ print("Preparing immutable municipal evidence index…", flush=True)
 index = load_groundtruth(graph, stops, sidewalks, root / "backend" / "data", gaps.signature)
 print(f"Prepared {len(index.gaps)} municipal review candidates", flush=True)
 from backend.app.public_api_snapshots import write_public_api_snapshots
-write_public_api_snapshots(root / "backend" / "data", index, transit_sources)
-print("Prepared cold-start-safe source and accessibility priority API snapshots", flush=True)
+from backend.app.reachability import PILOT_RADIUS_M, build_reachability_index, pilot_gtfs_stops
+pilot_stops = pilot_gtfs_stops(graph, root / "backend" / "data" / "gtfs_vta.zip")
+pilot_index = build_reachability_index(graph, pilot_stops, {}, vta_schedule.feed_info)
+reachability_stops = {
+    "study_area": {"name": "Diridon Station pilot", "radius_m": PILOT_RADIUS_M},
+    "stop_count": len(pilot_index.stops),
+    "stops": pilot_index.stop_list(),
+    "source": "Actual VTA GTFS stops in the 1,500 m Diridon view of the county walking graph; nearest-node matches are not field checked.",
+}
+write_public_api_snapshots(
+    root / "backend" / "data",
+    index,
+    transit_sources,
+    reachability_stops=reachability_stops,
+)
+print("Prepared cold-start-safe source, priority, and reachability-stop API snapshots", flush=True)
 from backend.app.prepared_frontend import export_frontend
 export_frontend(graph, stops, gaps, os.environ['TRANSITGAP_REGION'], root / 'frontend' / 'public', rail_stops, transit_sources)
 print('Exported prepared stop and network-study snapshots for CDN delivery', flush=True)

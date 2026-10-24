@@ -46,6 +46,7 @@ from .groundtruth_cache import load_groundtruth
 from .public_api_snapshots import (
     DATA_SOURCES_FILE,
     PRIORITIES_FILE,
+    REACHABILITY_STOPS_FILE,
     page_priorities,
     read_public_api_snapshot,
     with_agency_sources,
@@ -568,6 +569,9 @@ def _reachability_study():
 @app.get("/accessibility/reachability/stops")
 def reachability_stops():
     """Actual VTA stops connected to the bounded Diridon pilot graph."""
+    snapshot = read_public_api_snapshot(data_dir(), REACHABILITY_STOPS_FILE)
+    if snapshot is not None:
+        return snapshot
     try:
         index = _reachability_study()
     except Exception as exc:

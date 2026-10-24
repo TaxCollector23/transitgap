@@ -59,3 +59,29 @@ def test_priorities_are_available_before_graph_initialization_and_keep_paginatio
     assert [item["id"] for item in first_page["candidates"]] == ["gap:0", "gap:1"]
     assert [item["id"] for item in second_page["candidates"]] == ["gap:2", "gap:3"]
 
+
+def test_reachability_stop_list_is_available_before_graph_initialization(tmp_path, monkeypatch):
+    snapshot = {
+        "study_area": {"name": "Diridon Station pilot", "radius_m": 1500},
+        "stop_count": 1,
+        "stops": [{
+            "stop_id": "test-stop",
+            "stop_name": "Test & 1st",
+            "latitude": 37.33,
+            "longitude": -121.90,
+            "connector_distance_m": 12.0,
+        }],
+        "source": "Prepared from the VTA GTFS and mapped walking graph.",
+    }
+    write_public_api_snapshots(tmp_path, EvidenceIndex(), {}, reachability_stops=snapshot)
+    monkeypatch.setattr(main, "data_dir", lambda: tmp_path)
+    monkeypatch.setitem(main.state, "graph", None)
+    monkeypatch.setitem(main.state, "stops", [])
+    monkeypatch.setattr(
+        main,
+        "_reachability_study",
+        lambda: (_ for _ in ()).throw(AssertionError("graph-backed study used")),
+    )
+
+    assert main.reachability_stops() == snapshot
+

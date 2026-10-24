@@ -43,6 +43,13 @@ from .profiles import SPEED_MPS, configuration
 from .routing import PROFILE_OBJECTIVES, calculate_route as base_calculate_route, _edge_coords
 from .data_sources.sanjose import load_sidewalks
 from .groundtruth_cache import load_groundtruth
+from .public_api_snapshots import (
+    DATA_SOURCES_FILE,
+    PRIORITIES_FILE,
+    page_priorities,
+    read_public_api_snapshot,
+    with_agency_sources,
+)
 from .observation_models import ObservationCreate, ObservationReview
 from .observations import (
     create_observation,
@@ -500,20 +507,12 @@ def _bbox(
 
 @app.get("/data-sources")
 def data_sources():
-    result = _groundtruth().source_status()
-    for agency_id, source in state.get("transit_sources", {}).items():
-        result["sources"].append({
-            "id": f"{agency_id}-gtfs",
-            "name": f"{source['name']} GTFS scheduled stops",
-            "status": "ready",
-            "url": source["developer_url"],
-            "feed_url": source["feed_url"],
-            "feature_count": source["stop_count"],
-            "feed_info": source["feed_info"],
-            "evidence_status": "SOURCE_DOCUMENTED",
-            "limitations": "Agency-published scheduled transit data and stop coordinates; this does not describe sidewalk access or real-time service.",
-        })
-    return result
+    snapshot = read_public_api_snapshot(data_dir(), DATA_SOURCES_FILE)
+    if snapshot is not None:
+        return snapshot
+    return with_agency_sources(
+        _groundtruth().source_status(), state.get("transit_sources", {})
+    )
 
 
 @app.get("/accessibility/gaps")
@@ -543,6 +542,9 @@ def accessibility_gap(candidate_id: str):
 def accessibility_priorities(
     limit: int = Query(50, ge=1, le=200), offset: int = Query(0, ge=0)
 ):
+    snapshot = read_public_api_snapshot(data_dir(), PRIORITIES_FILE, compressed=True)
+    if snapshot is not None:
+        return page_priorities(snapshot, limit=limit, offset=offset)
     return _groundtruth().get_priorities(limit=limit, offset=offset)
 
 

@@ -75,6 +75,9 @@ from backend.app.groundtruth_cache import load_groundtruth
 print("Preparing immutable municipal evidence index…", flush=True)
 index = load_groundtruth(graph, stops, sidewalks, root / "backend" / "data", gaps.signature)
 print(f"Prepared {len(index.gaps)} municipal review candidates", flush=True)
+from backend.app.public_api_snapshots import write_public_api_snapshots
+write_public_api_snapshots(root / "backend" / "data", index, transit_sources)
+print("Prepared cold-start-safe source and accessibility priority API snapshots", flush=True)
 from backend.app.prepared_frontend import export_frontend
 export_frontend(graph, stops, gaps, os.environ['TRANSITGAP_REGION'], root / 'frontend' / 'public', rail_stops, transit_sources)
 print('Exported prepared stop and network-study snapshots for CDN delivery', flush=True)

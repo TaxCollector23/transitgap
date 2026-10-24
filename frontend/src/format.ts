@@ -58,6 +58,8 @@ export type Place = {
   stops: Stop[];
   latitude: number;
   longitude: number;
+  duplicateName: boolean;
+  disambiguation: string;
 };
 
 function kindLabel(stops: Stop[], agency: Place["agency"], station: boolean) {
@@ -83,7 +85,7 @@ export function buildPlaces(stops: Stop[]): Place[] {
     const key = groupable ? `station:${stop.station_id}` : `stop:${stop.stop_id}`;
     groups.set(key, [...(groups.get(key) || []), stop]);
   }
-  return [...groups.entries()].map(([key, members]) => {
+  const places = [...groups.entries()].map(([key, members]) => {
     const first = members[0];
     const agency = agencyOf(first);
     const station = key.startsWith("station:");
@@ -95,8 +97,77 @@ export function buildPlaces(stops: Stop[]): Place[] {
       stops: members,
       latitude: members.reduce((sum, s) => sum + s.latitude, 0) / members.length,
       longitude: members.reduce((sum, s) => sum + s.longitude, 0) / members.length,
+      duplicateName: false,
+      disambiguation: "",
     };
   });
+  const byName = new Map<string, Place[]>();
+  for (const place of places) {
+    const key = normalize(place.name);
+    byName.set(key, [...(byName.get(key) || []), place]);
+  }
+  return places.map((place) => {
+    const matching = byName.get(normalize(place.name)) || [];
+    if (matching.length < 2) return place;
+    const details = baseDisambiguation(place);
+    const signature = details.join("|");
+    const sameDetail = matching.filter((candidate) => baseDisambiguation(candidate).join("|") === signature);
+    const locationDetail = sameDetail.length > 1 ? relativeStopLocation(place, sameDetail) : "";
+    return {
+      ...place,
+      duplicateName: true,
+      disambiguation: [...details, locationDetail].filter(Boolean).join(" · "),
+    };
+  });
+}
+
+function unique(values: Array<string | null | undefined>) {
+  return [...new Set(values.map((value) => value?.trim()).filter((value): value is string => Boolean(value)))];
+}
+
+function shortRoutes(stops: Stop[]) {
+  const routes = unique(stops.flatMap((stop) => stop.routes_served || []));
+  return routes.length
+    ? `Routes ${routes.slice(0, 4).join(", ")}${routes.length > 4 ? ` and ${routes.length - 4} more` : ""}`
+    : "Routes not listed in agency data";
+}
+
+function baseDisambiguation(place: Place) {
+  const directions = unique(place.stops.map((stop) => stop.direction));
+  const headsigns = unique(place.stops.flatMap((stop) => stop.headsigns || []));
+  const platforms = unique(place.stops.map((stop) => stop.platform_name));
+  const details: string[] = [];
+  if (directions.length) details.push(directions.join(" / "));
+  else if (headsigns.length) {
+    const shown = headsigns.slice(0, 3).join(", ");
+    details.push(`Agency trips head toward ${shown}${headsigns.length > 3 ? ` and ${headsigns.length - 3} more places` : ""}`);
+  } else details.push("Direction not listed in agency data");
+  if (platforms.length) details.push(`Bay or platform ${platforms.join(", ")}`);
+  else details.push("Bay or platform not listed in agency data");
+  details.push(shortRoutes(place.stops));
+  const extraDescriptions = unique(place.stops
+    .filter((stop) => !stop.direction)
+    .map((stop) => stop.stop_description));
+  if (extraDescriptions.length) details.push(`Agency stop detail: ${extraDescriptions.join(" / ")}`);
+  return details;
+}
+
+function relativeStopLocation(place: Place, peers: Place[]) {
+  const latitudeRange = Math.max(...peers.map((item) => item.latitude)) - Math.min(...peers.map((item) => item.latitude));
+  const longitudeRange = Math.max(...peers.map((item) => item.longitude)) - Math.min(...peers.map((item) => item.longitude));
+  if (latitudeRange < 0.000001 && longitudeRange < 0.000001) {
+    const stopCode = unique(place.stops.map((stop) => stop.stop_code))[0];
+    return stopCode ? `Agency stop code ${stopCode}` : "Agency data does not list a separate direction, platform, or location";
+  }
+  const useNorthSouth = latitudeRange >= longitudeRange;
+  const sorted = [...peers].sort((a, b) => useNorthSouth ? a.latitude - b.latitude : a.longitude - b.longitude);
+  const index = sorted.findIndex((item) => item.key === place.key);
+  const low = useNorthSouth ? "south" : "west";
+  const high = useNorthSouth ? "north" : "east";
+  if (sorted.length === 2) return `${index === 0 ? low : high} of the other listed stop`;
+  if (index === 0) return `the ${low}ernmost listed stop location`;
+  if (index === sorted.length - 1) return `the ${high}ernmost listed stop location`;
+  return `between the ${low}ern and ${high}ern listed stop locations`;
 }
 
 export function distanceM(a: [number, number], b: [number, number]) {
@@ -126,10 +197,17 @@ export function nearestStop(place: Place, point: [number, number] | null) {
 
 /** Compact feed-backed details that make nearby, similarly named stops distinct. */
 export function placeSearchDetail(place: Place) {
+  if (place.duplicateName) return [place.description, place.disambiguation].filter(Boolean).join(" · ");
   const platforms = [...new Set(place.stops.map((stop) => stop.platform_name).filter(Boolean))];
   const routes = [...new Set(place.stops.flatMap((stop) => stop.routes_served || []))];
   const details = [place.description];
   if (platforms.length) details.push(platforms.length === 1 ? platforms[0]! : `Platforms ${platforms.join(", ")}`);
   if (routes.length) details.push(`Routes ${routes.slice(0, 4).join(", ")}${routes.length > 4 ? ` +${routes.length - 4}` : ""}`);
   return details.join(" · ");
+}
+
+/** Short heading that preserves the feed-backed discriminator for duplicate names. */
+export function placeHeading(place: Place) {
+  const qualifier = place.duplicateName ? place.disambiguation.split(" · ")[0] : "";
+  return qualifier ? `${place.name} — ${qualifier}` : place.name;
 }

@@ -184,6 +184,7 @@ def _load() -> None:
             agency_schedule = agency_schedules.get(stop["agency"])
             stop["modes"] = _modes(agency_schedule.route_types(stop["source_stop_id"])) if agency_schedule else []
             stop["routes_served"] = agency_schedule.routes_served(stop["source_stop_id"]) if agency_schedule else []
+            stop["headsigns"] = agency_schedule.headsigns(stop["source_stop_id"]) if agency_schedule else []
         phase("spatial_index")
         # Prepare the spherical index once, rather than in the first route.
         nearest_graph_node(graph, CENTER[0], CENTER[1])
@@ -200,6 +201,7 @@ def _load() -> None:
         for stop in stops:
             stop["modes"] = _modes(schedule.route_types(stop["stop_id"])) if schedule else []
             stop["routes_served"] = schedule.routes_served(stop["stop_id"]) if schedule else []
+            stop["headsigns"] = schedule.headsigns(stop["stop_id"]) if schedule else []
         phase("municipal_snapshot")
         evidence_radius = DEFAULT_RADIUS_M
         try:

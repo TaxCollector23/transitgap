@@ -87,8 +87,9 @@ function insideCoverage(point: [number, number], coverage: Coverage) {
 
 /** Plain-language versions of service failures. Never invents a cause. */
 function routeProblem(status: number, detail: string) {
+  if (status === 408) return "The route request did not finish within 12 seconds. Each walking-network search has a 3-second limit. Try again, or choose a different start or stop.";
   if (status === 503 || status >= 500 || status === 0) return CONNECTION_PROBLEM;
-  if (/outside the supported area/i.test(detail)) return "That starting point is outside the area TransitGap covers. Choose a point inside the dotted boundary.";
+  if (/outside the supported area/i.test(detail)) return "That starting point is outside Santa Clara County. Choose a point inside the county boundary shown on the map.";
   if (/time limit|search exceeded.*limit|search.*\d+-second limit/i.test(detail)) return "The walking-network search reached its 3-second limit. Move the start to a street or sidewalk entrance, or try another transit stop.";
   if (/not connected to the mapped walking route/i.test(detail)) return "This start is not connected to the mapped walking route. Move the pin to a nearby street or sidewalk entrance and try again.";
   if (/from .* mapped (walking )?path|within .* of a mapped path/i.test(detail)) return "That starting point is too far from a mapped path. Choose a point on or near a street or sidewalk.";
@@ -102,6 +103,42 @@ function detailOf(data: unknown) {
   if (typeof detail === "string") return detail;
   if (detail && typeof detail === "object") return String((detail as { message?: string }).message || "");
   return "";
+}
+
+function waitForSignal<T>(promise: Promise<T>, signal: AbortSignal): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const cleanup = () => signal.removeEventListener("abort", onAbort);
+    const onAbort = () => {
+      cleanup();
+      reject(signal.reason || new Error("The request was cancelled."));
+    };
+    if (signal.aborted) return onAbort();
+    signal.addEventListener("abort", onAbort, { once: true });
+    promise.then(
+      (value) => { cleanup(); resolve(value); },
+      (error) => { cleanup(); reject(error); },
+    );
+  });
+}
+
+function coverageOutlinePath(coverage: Coverage | null) {
+  if (!coverage?.boundary) return "";
+  const polygons = coverage.boundary.type === "Polygon"
+    ? [coverage.boundary.coordinates]
+    : coverage.boundary.coordinates;
+  const rings = polygons.map((polygon) => polygon[0]).filter((ring) => ring.length > 0);
+  const points = rings.flat();
+  if (!points.length) return "";
+  const longitudes = points.map(([longitude]) => longitude);
+  const latitudes = points.map(([, latitude]) => latitude);
+  const west = Math.min(...longitudes), east = Math.max(...longitudes);
+  const south = Math.min(...latitudes), north = Math.max(...latitudes);
+  const width = Math.max(0.000001, east - west), height = Math.max(0.000001, north - south);
+  return rings.map((ring) => ring.map(([longitude, latitude], index) => {
+    const x = 2 + ((longitude - west) / width) * 52;
+    const y = 34 - ((latitude - south) / height) * 32;
+    return `${index ? "L" : "M"}${x.toFixed(2)},${y.toFixed(2)}`;
+  }).join(" ") + " Z").join(" ");
 }
 
 export default function App() {
@@ -157,6 +194,7 @@ export default function App() {
   const methodsTitleRef = useRef<HTMLHeadingElement>(null);
 
   const destination = useMemo(() => (place ? nearestStop(place, origin) : null), [place, origin]);
+  const countyOutlinePath = useMemo(() => coverageOutlinePath(coverage), [coverage]);
 
   useEffect(() => {
     try { localStorage.setItem("transitgap-profile-v1", profile); } catch { /* optional preference */ }
@@ -333,7 +371,7 @@ export default function App() {
 
   const setStart = (point: [number, number], label: string) => {
     if (coverage && !insideCoverage(point, coverage)) {
-      setProblem({ message: "That point is outside the area TransitGap covers. Choose a point inside the dotted boundary." });
+      setProblem({ message: "That point is outside Santa Clara County. Choose a point inside the county boundary shown on the map." });
       setStatus("Starting point was not changed");
       setPanelExpanded(true);
       return;
@@ -414,6 +452,11 @@ export default function App() {
     const key: RouteKey = { origin, stopId: stop.stop_id, algorithm, profile: routeProfile };
     requestRef.current?.abort();
     const controller = new AbortController();
+    const timeoutController = new AbortController();
+    const startedAt = performance.now();
+    let phase = "routing_warmup";
+    const attemptTimeout = window.setTimeout(() => timeoutController.abort(), 12_000);
+    const signal = AbortSignal.any([controller.signal, timeoutController.signal]);
     requestRef.current = controller;
     setCalculating(true);
     setComparison(null);
@@ -422,11 +465,13 @@ export default function App() {
     try {
       if (!routingWarm) {
         setStatus("Preparing the walking network. Your trip is queued; you can still change either location.");
-        const ready = await warmRouting();
+        const ready = await waitForSignal(warmRouting(), signal);
         if (controller.signal.aborted) return;
+        if (timeoutController.signal.aborted) throw Object.assign(new Error("Route preparation timed out."), { status: 408 });
         if (!ready) throw Object.assign(new Error("The routing service is still starting. Please try again."), { status: 503 });
         setRoutingWarm(true);
       }
+      phase = "route_request";
       let response: Response;
       try {
         response = await fetch(`${API}/route`, {
@@ -439,14 +484,24 @@ export default function App() {
             algorithm,
             profile: routeProfile,
           }),
-          signal: AbortSignal.any([controller.signal, AbortSignal.timeout(25000)]),
+          signal,
         });
       } catch (error) {
         if (controller.signal.aborted) return;
+        if (timeoutController.signal.aborted) throw Object.assign(new Error("Route request timed out."), { status: 408 });
         throw Object.assign(new Error(String(error)), { status: 0 });
       }
-      const data = await response.json().catch(() => ({}));
+      phase = "response_body";
+      let data: unknown;
+      try {
+        data = await response.json();
+      } catch (error) {
+        if (controller.signal.aborted) return;
+        if (timeoutController.signal.aborted) throw Object.assign(new Error("Route response timed out."), { status: 408 });
+        throw Object.assign(new Error(String(error)), { status: 0 });
+      }
       if (controller.signal.aborted) return;
+      if (timeoutController.signal.aborted) throw Object.assign(new Error("Route response timed out."), { status: 408 });
       if (!response.ok) throw Object.assign(new Error(detailOf(data)), { status: response.status });
       setRoutingWarm(true);
       setResult(data as Route);
@@ -457,10 +512,18 @@ export default function App() {
       setStatus(`Route found: ${formatDistance(route.distance_m)}, about ${formatDuration(route.duration_seconds)}, ${(route.directions || []).length} directions.`);
     } catch (error) {
       if (controller.signal.aborted) return;
-      const status = (error as { status?: number }).status ?? 0;
+      const status = timeoutController.signal.aborted ? 408 : (error as { status?: number }).status ?? 0;
+      const failure = status === 408 ? "client_timeout" : status === 0 ? "connection_failure" : "route_failure";
+      console.warn("TransitGap route attempt failed", {
+        phase,
+        elapsed_ms: Math.round(performance.now() - startedAt),
+        failure,
+        http_status: status || undefined,
+      });
       setProblem({ message: routeProblem(status, (error as Error).message), retry: () => void calculate(overrides) });
       setStatus("The route couldn't be calculated");
     } finally {
+      window.clearTimeout(attemptTimeout);
       if (requestRef.current === controller) {
         requestRef.current = null;
         setCalculating(false);
@@ -686,8 +749,8 @@ export default function App() {
   const reference: [number, number] | null =
     origin || mapCenter || (coverage ? [coverage.center.latitude, coverage.center.longitude] : null);
 
-  const sheetSummary = showingResult && result
-    ? `To ${place?.name}: ${formatDistance(result.distance_m)}, ${formatDuration(result.duration_seconds)}`
+  const sheetSummary = showingResult && result && place
+    ? `To ${place.duplicateName ? `${place.name} — ${place.disambiguation.split(" · ")[0]}` : place.name}: ${formatDistance(result.distance_m)}, ${formatDuration(result.duration_seconds)}`
     : view === "route" ? nextAction : view === "report" ? "Report an issue" : view === "methods" ? "Data & limits" : "For cities and advocates";
 
   return (
@@ -729,6 +792,14 @@ export default function App() {
           onViewChange={setMapCenter}
         />
         </Suspense>
+        {coverage?.boundary && (
+          <div className="map-coverage-badge" role="img" aria-label="Outline of Santa Clara County route coverage">
+            <svg viewBox="0 0 56 36" aria-hidden="true" focusable="false">
+              <path d={countyOutlinePath} />
+            </svg>
+            <span>Santa Clara County route coverage</span>
+          </div>
+        )}
         <div className="map-tools">
           {routeActive && (
             <button type="button" className="map-tool" aria-pressed={showStops} onClick={() => setShowStops((value) => !value)}>
@@ -739,6 +810,8 @@ export default function App() {
             <summary>Map key</summary>
             <span><b className="key-marker">A</b> Your start</span>
             <span><b className="key-marker key-b">B</b> Your destination</span>
+            {coverage?.boundary && <span className="legend-coverage"><i className="legend-coverage-line" aria-hidden="true" /> Santa Clara County route coverage boundary</span>}
+            {coverage?.boundary && <span className="legend-pilot"><i className="legend-pilot-line" aria-hidden="true" /> Diridon pilot: detailed City sidewalk records</span>}
             {routeActive ? (
               <>
                 <span className="legend-route">Walking route</span>
@@ -891,6 +964,7 @@ export default function App() {
                       </label>
                     ))}
                   </div>
+                  <p className="profile-persistence-note">Your travel profile stays selected for new trips. “Clear trip / Start over” resets it to Walking.</p>
                 </fieldset>
                 {PREPARED && dataReady && !routingWarm && !warmingRouting && (
                   <button className="text-button" type="button" onClick={() => void startRouting()}>Try connecting again</button>
@@ -978,7 +1052,9 @@ export default function App() {
                 <section className="advocate-overview" aria-labelledby="advocates-title">
                   <h2 id="advocates-title" ref={viewTitleRef} tabIndex={-1}>For cities and advocates</h2>
                   {advocateSummary.status === "loading" ? (
-                    <p role="status">Checking the Diridon pilot for nearby records flagged for review…</p>
+                    <p role="status">Loading sidewalk review records…</p>
+                  ) : advocateSummary.status === "calculating" ? (
+                    <p role="status">The sidewalk review list is ready. Counting nearby stops…</p>
                   ) : advocateSummary.status === "ready" ? (
                     <p><strong>{advocateSummary.nearbyStops} of {advocateSummary.totalStops} stops</strong> in the Diridon pilot are within 150 m of at least one map record flagged for review.</p>
                   ) : (
@@ -986,7 +1062,7 @@ export default function App() {
                   )}
                   <p>Nearby records are prompts for a closer look, not confirmed barriers. The wheelchair ranking below is a 32-stop sample, not a countywide ranking.</p>
                 </section>
-                <GapPanel onStudy={setStudy} onReachability={updateReachability} onRanking={setRankedStops} />
+                <GapPanel places={places} onStudy={setStudy} onReachability={updateReachability} onRanking={setRankedStops} />
                 <GroundTruthPanel
                   mode="evidence"
                   stops={stops}

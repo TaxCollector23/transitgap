@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { API } from "./data";
+import type { Place } from "./format";
 import type { Stop } from "./types";
 
 type Service = {
@@ -107,13 +108,18 @@ function PlatformService({ stop, label }: { stop: Stop; label: string | null }) 
   );
 }
 
-export default function StopService({ stops }: { stops: Stop[] }) {
+export default function StopService({ place, selectedStopId }: { place: Place; selectedStopId?: string }) {
+  const stops = place.stops;
   const first = stops[0];
   const entrances = first.entrances || [];
   return (
     <div className="stop-service">
       {stops.map((stop) => (
-        <PlatformService key={stop.stop_id} stop={stop} label={stops.length > 1 ? stop.platform_name || stop.stop_name : null} />
+        <PlatformService
+          key={stop.stop_id}
+          stop={stop}
+          label={stops.length > 1 ? stop.platform_name || stop.stop_name : place.duplicateName && stop.stop_id === selectedStopId ? place.disambiguation : null}
+        />
       ))}
       {entrances.length > 0 && (
         <>

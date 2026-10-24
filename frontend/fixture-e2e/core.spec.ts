@@ -136,8 +136,8 @@ test('source metadata failure does not hide available candidates or report contr
  await expect(page.getByRole('button',{name:'Report an issue'}).first()).toBeEnabled();
  await expect(page.getByText('Source metadata is unavailable. Candidate records still include their individual source details.')).toBeVisible();
  await page.locator('.gap-item').first().click();
- await expect(page.getByText('Evidence detail',{exact:true})).toBeVisible();
- await expect(page.locator('.gap-detail')).toContainText('These records are suggestions for inspection, not confirmed barriers.');
+ await expect(page.getByText('What to check',{exact:true})).toBeVisible();
+ await expect(page.locator('.gap-detail')).toContainText('These are inspection suggestions, not confirmed barriers.');
  await expect(page.locator('.gap-detail')).not.toContainText('reproducibly sampled graph-origin routes');
  await page.unroute('**/data-sources');
  await page.getByRole('button',{name:'Try loading evidence again'}).click();

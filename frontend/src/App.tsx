@@ -688,7 +688,7 @@ export default function App() {
 
   const sheetSummary = showingResult && result
     ? `To ${place?.name}: ${formatDistance(result.distance_m)}, ${formatDuration(result.duration_seconds)}`
-    : view === "route" ? nextAction : view === "report" ? "Report an issue" : view === "methods" ? "Methods & limitations" : "For cities and advocates";
+    : view === "route" ? nextAction : view === "report" ? "Report an issue" : view === "methods" ? "Data & limits" : "For cities and advocates";
 
   return (
     <main
@@ -1007,16 +1007,23 @@ export default function App() {
             )}
             {view === "methods" && (
               <section className="methods-panel" aria-labelledby="methods-title">
-                <h2 id="methods-title" ref={methodsTitleRef} tabIndex={-1}>Methods & limitations</h2>
+                <h2 id="methods-title" ref={methodsTitleRef} tabIndex={-1}>Data & limits</h2>
+                <p>TransitGap uses public map and transit records to suggest walking routes. The routes have not been checked in person, and missing information does not mean a sidewalk or crossing is safe or unsafe.</p>
                 <ul>
-                  <li>Walking routes cover Santa Clara County. Detailed City of San Jose sidewalk records cover the Diridon pilot only.</li>
-                  <li>Each route search has a 3-second network-search limit. A start can snap up to 120 m to a mapped walking path.</li>
-                  <li>Estimated speeds are 2.7 mph for walking and low vision, and 2.0 mph for wheelchair and stroller profiles.</li>
-                  <li>The wheelchair stop ranking uses a reproducible 32-stop sample. It is not a county-wide list of the hardest stops.</li>
-                  <li>Unmapped connectors are straight-line estimates and have not been checked for a usable path.</li>
-                  <li>Routes use recorded OpenStreetMap and agency data. TransitGap has not field-verified these routes or confirmed accessibility.</li>
+                  <li>Walking routes cover Santa Clara County. Detailed city sidewalk records are available only in the Diridon pilot area.</li>
+                  <li>The wheelchair comparison covers a small sample of stops, not every stop in the county.</li>
+                  <li>Some connections have no walking-path data, so TransitGap cannot confirm a usable path there.</li>
                 </ul>
-                <a href="https://github.com/TaxCollector23/transitgap/blob/main/docs/CAC_METHODS.md" target="_blank" rel="noreferrer">Full technical methodology</a>
+                <details className="plain-details">
+                  <summary>More detail</summary>
+                  <ul>
+                    <li>Each route search has a 3-second network-search limit. A starting point can snap up to 120 m to a mapped walking path.</li>
+                    <li>Estimated speeds are 2.7 mph for walking and low vision, and 2.0 mph for wheelchair and stroller profiles.</li>
+                    <li>The wheelchair stop ranking uses a reproducible 32-stop sample. It is not a countywide ranking of the hardest stops.</li>
+                    <li>Connections without a walking-path record use straight-line estimates and have not been checked for a usable path.</li>
+                  </ul>
+                  <a href="https://github.com/TaxCollector23/transitgap/blob/main/docs/CAC_METHODS.md" target="_blank" rel="noreferrer">Full technical methodology</a>
+                </details>
               </section>
             )}
             {view === "report" && (
@@ -1050,7 +1057,7 @@ export default function App() {
               <a href="https://www.vta.org/go/developers">VTA</a>
               <a href="https://www.caltrain.com/developer-resources">Caltrain</a>
               <a href="https://www.bart.gov/schedules/developers/gtfs">BART</a>
-              <button type="button" className="text-button" onClick={() => goTo("methods")}>Methods & limitations</button>
+              <button type="button" className="text-button" onClick={() => goTo("methods")}>Data & limits</button>
             </footer>
           </div>
         </div>

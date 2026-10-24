@@ -99,7 +99,7 @@ test('routing failures are actionable, clear on navigation, and do not recommend
   await expect(page.locator('.notice.error')).toContainText('3-second limit');
   await expect(page.locator('.notice.error')).toContainText('street or sidewalk entrance');
   await expect(page.locator('.notice.error')).not.toContainText('closer stop');
-  await page.getByRole('button',{name:'Which stops are harder to reach by wheelchair?'}).click();
+  await page.getByRole('button',{name:'For cities and advocates'}).click();
   await page.getByRole('button',{name:'← Back to route planning'}).click();
   await expect(page.locator('.notice.error')).toHaveCount(0);
 

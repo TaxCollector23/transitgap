@@ -898,7 +898,7 @@ export default function App() {
                 {editing && resultIsCurrent && (
                   <button type="button" className="text-button" onClick={() => setEditing(false)}>Back to the current route</button>
                 )}
-                {!origin && !place && dataReady && (
+                {dataReady && (
                   <div className="example-trips" aria-label="Example trips">
                   <button
                     type="button"

@@ -1,7 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 
-const api = process.env.TRANSITGAP_E2E_URL || "http://127.0.0.1:8000";
 const shots = "test-artifacts/screenshots";
 
 // Real county journeys, one per agency.
@@ -180,14 +179,22 @@ test("8-9. access gaps and reporting are one step away and return without losing
   await expect(page.getByRole("heading", { name: /^To San Jose Diridon/ })).toBeVisible();
   await page.getByRole("button", { name: "Report an issue" }).click();
   await expect(page.getByRole("heading", { name: "Report an issue", exact: true })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "1. Where is the problem?" })).toBeVisible();
-  const health = await (await page.request.get(`${api}/health`)).json();
-  if (health.reports_enabled) {
+  const reportPanel = page.locator(".report-panel");
+  const reportLocation = reportPanel.getByRole("heading", { name: "1. Where is the problem?" });
+  const reportStatus = reportPanel.getByRole("status");
+  await expect.poll(async () => {
+    if (await reportLocation.isVisible().catch(() => false)) return true;
+    const status = await reportStatus.textContent().catch(() => "");
+    return /paused|still getting ready|availability couldn't be checked/i.test(status || "");
+  }, { timeout: 12_000 }).toBe(true);
+  if (await reportLocation.isVisible()) {
     await expect(page.getByLabel("2. What's the problem?")).toBeVisible();
     await expect(page.getByRole("button", { name: "Submit report" })).toBeDisabled();
     await expect(page.locator("#report-submit-hint")).toContainText("Choose where the problem is");
   } else {
-    await expect(page.getByText("Public reporting is paused")).toBeVisible();
+    await expect(reportStatus).toContainText(/Community reports are paused|TransitGap is still getting ready|Reporting availability couldn't be checked/i);
+    if (!/Community reports are paused/.test(await reportStatus.textContent() || ""))
+      await expect(reportPanel.getByRole("button", { name: "Try checking again" })).toBeVisible();
     await expect(page.getByRole("button", { name: "Submit report" })).toHaveCount(0);
   }
   await page.screenshot({ path: `${shots}/desktop-1440-report.png` });

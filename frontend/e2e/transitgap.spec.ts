@@ -172,7 +172,7 @@ test("8-9. access gaps and reporting are one step away and return without losing
   await startAt(page, JOURNEYS.vta.origin);
   await goTo(page, JOURNEYS.vta.query, JOURNEYS.vta.option);
   await findRoute(page);
-  await page.getByRole("button", { name: "Which stops are harder to reach by wheelchair?" }).click();
+  await page.getByRole("button", { name: "For cities and advocates" }).click();
   await expect(page.getByRole("heading", { name: "Which stops are harder to reach by wheelchair?" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Where is accessibility information missing near a stop?" })).toBeVisible();
   await expect(page.locator(".gap-ranking li").first()).toBeVisible({ timeout: 30_000 });

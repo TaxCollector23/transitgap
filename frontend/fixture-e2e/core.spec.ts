@@ -7,6 +7,9 @@ test('synthetic CI fixture: keyboard route, profile changes, voice fallback and 
  await page.goto('/app');
  await expect(page.locator('.maplibregl-canvas')).toBeVisible();
  await expect(page.locator('main[data-data-state="ready"]')).toBeVisible();
+ await expect(page.locator('.map')).toHaveAttribute('data-map-state','ready');
+ const initialMap=await page.evaluate(()=>{const map=(window as any).__transitGapMap;return {center:map.getCenter(),zoom:map.getZoom()};});
+ expect(initialMap.center.lng).toBeCloseTo(-121.965,2);expect(initialMap.center.lat).toBeCloseTo(37.426,2);expect(initialMap.zoom).toBeGreaterThan(11);
  await page.getByText('Enter coordinates instead',{exact:true}).click();
  await page.getByLabel('Latitude',{exact:true}).fill('37.32875');await page.getByLabel('Longitude',{exact:true}).fill('-121.90442');
  await page.getByRole('button',{name:'Use coordinates',exact:true}).focus();await page.keyboard.press('Enter');
@@ -37,7 +40,7 @@ test('synthetic CI fixture: keyboard route, profile changes, voice fallback and 
  const savedResponse=await saved;expect(savedResponse.status()).toBe(201);
  const report=await savedResponse.json();expect(report.review_status).toBe('UNVERIFIED');
  await expect(page.getByText('Report saved as unverified community evidence.')).toBeVisible();
- await page.reload();await page.getByRole('button',{name:'Sidewalk records that need review',exact:true}).click();
+ await page.reload();await page.getByRole('button',{name:'For cities and advocates',exact:true}).click();
  await expect(page.getByText('SYNTHETIC CI persistence check, not a real observation.').first()).toBeVisible();
  const axe=await new AxeBuilder({page}).withTags(['wcag2a','wcag2aa','wcag21aa','wcag22aa']).analyze();expect(axe.violations.map(v=>v.id)).toEqual([]);
  expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
@@ -57,11 +60,11 @@ test('reporting disabled is explicit and never offers a submit form',async({page
 
 test('local speech controls pause, resume and stop',async({page})=>{
  await page.addInitScript(()=>{
-  const calls:string[]=[];(window as any).__speechCalls=calls;
+  const calls:string[]=[];const spoken:string[]=[];(window as any).__speechCalls=calls;(window as any).__spokenText=spoken;
   const voice={localService:true,lang:'en-US',voiceURI:'test-local',name:'Synthetic local voice',default:true};
   Object.defineProperty(window,'speechSynthesis',{configurable:true,value:{
    getVoices:()=>[voice],addEventListener:()=>{},removeEventListener:()=>{},
-   speak:()=>calls.push('speak'),cancel:()=>calls.push('cancel'),pause:()=>calls.push('pause'),resume:()=>calls.push('resume')
+   speak:(item:any)=>{calls.push('speak');spoken.push(item.text);},cancel:()=>calls.push('cancel'),pause:()=>calls.push('pause'),resume:()=>calls.push('resume')
   }});
   Object.defineProperty(window,'SpeechSynthesisUtterance',{configurable:true,value:class{constructor(public text:string){}}});
  });
@@ -73,6 +76,7 @@ test('local speech controls pause, resume and stop',async({page})=>{
  await page.getByRole('option',{name:/SYNTHETIC CI Stop/}).click();
  await page.getByRole('button',{name:'Find route',exact:true}).click();
  await page.getByRole('button',{name:'Read directions aloud',exact:true}).click();
+ expect((await page.evaluate(()=>(window as any).__spokenText)).join(' ')).toContain('Map data shows stairs');
  await expect(page.getByRole('button',{name:'Pause reading',exact:true})).toBeVisible();
  await page.getByRole('button',{name:'Pause reading',exact:true}).click();
  await page.getByRole('button',{name:'Resume reading',exact:true}).click();
@@ -91,7 +95,7 @@ test('source metadata failure does not hide available candidates or report contr
   provenance:{municipal_source:null,osm_source:{status:'SOURCE_DOCUMENTED'},interpretation:'Synthetic test only.'}
  }]}}));
  await page.goto('/app');await expect(page.locator('main[data-data-state="ready"]')).toBeVisible();
- await page.getByRole('button',{name:'Sidewalk records that need review',exact:true}).click();
+ await page.getByRole('button',{name:'For cities and advocates',exact:true}).click();
  await expect(page.locator('.gap-item').first()).toBeVisible();
  await expect(page.getByRole('button',{name:'Report an issue'}).first()).toBeEnabled();
  await expect(page.getByText('Source metadata is unavailable. Candidate records still include their individual source details.')).toBeVisible();

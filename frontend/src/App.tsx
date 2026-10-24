@@ -8,7 +8,7 @@ import type { GapDetail } from "./GapPanel";
 const GapPanel = lazy(() => import("./GapPanel"));
 const MapView = lazy(() => import("./MapView"));
 const GroundTruthPanel = lazy(() => import("./GroundTruthPanel"));
-import type { Coverage, ReachabilityAnalysis, RouteResult as Route, Stop } from "./types";
+import type { AdvocacySummary, Coverage, ReachabilityAnalysis, RouteResult as Route, Stop } from "./types";
 import { API, plannerData, PREPARED, warmRouting } from "./data";
 import {
   PROFILES,
@@ -28,9 +28,14 @@ const algorithms = [
   { value: "bellman_ford", label: "Bellman–Ford", description: "Finds a lowest-cost route by relaxing edges. Usually slower on large networks." },
   { value: "breadth_first", label: "Breadth-first search", description: "Chooses the fewest network segments. The walking distance may be longer." },
 ];
-type View = "route" | "gaps" | "evidence" | "report";
+type View = "route" | "advocates" | "report";
 type RouteKey = { origin: [number, number]; stopId: string; algorithm: string; profile: string };
 type Problem = { message: string; retry?: () => void };
+function initialView(): View {
+  const requested = new URLSearchParams(location.search).get("view");
+  if (requested === "gaps" || requested === "evidence" || requested === "advocates") return "advocates";
+  return requested === "report" ? "report" : "route";
+}
 
 const CONNECTION_PROBLEM =
   "TransitGap is having trouble connecting. Your map is still available. Try again.";
@@ -86,9 +91,7 @@ export default function App() {
   const [place, setPlace] = useState<Place | null>(null);
   const [algorithm, setAlgorithm] = useState("astar");
   const [profile, setProfile] = useState("standard");
-  const [view, setView] = useState<View>(
-    new URLSearchParams(location.search).get("view") === "gaps" ? "gaps" : "route",
-  );
+  const [view, setView] = useState<View>(initialView);
   const [editing, setEditing] = useState(false);
   const [recalculating, setRecalculating] = useState(false);
   const [study, setStudy] = useState<GapDetail | null>(null);
@@ -120,10 +123,13 @@ export default function App() {
   const [reportFocus, setReportFocus] = useState(0);
   const [candidateFocus, setCandidateFocus] = useState<[number, number] | null>(null);
   const [selectedCandidateId, setSelectedCandidateId] = useState<string | null>(null);
+  const [rankedStops, setRankedStops] = useState<GapDetail[]>([]);
+  const [advocateSummary, setAdvocateSummary] = useState<AdvocacySummary>({ status: "loading" });
   const dataLoadRef = useRef<Promise<void> | null>(null);
   const requestRef = useRef<AbortController | null>(null);
   const compareRef = useRef<AbortController | null>(null);
   const viewTitleRef = useRef<HTMLHeadingElement>(null);
+  const locationCenterAttempted = useRef(false);
 
   const destination = useMemo(() => (place ? nearestStop(place, origin) : null), [place, origin]);
 
@@ -176,6 +182,28 @@ export default function App() {
     void loadData();
     return () => requestRef.current?.abort();
   }, [loadData]);
+
+  useEffect(() => {
+    if (!coverage || origin || locationCenterAttempted.current) return;
+    locationCenterAttempted.current = true;
+    if (!navigator.geolocation || !navigator.permissions) return;
+    const permissions = navigator.permissions as Permissions & {
+      query: (descriptor: { name: "geolocation" }) => Promise<PermissionStatus>;
+    };
+    void permissions.query({ name: "geolocation" }).then((permission) => {
+      // Do not prompt on page load. Use a location only when the user has
+      // already granted permission; otherwise keep the district overview.
+      if (permission.state !== "granted") return;
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const point: [number, number] = [position.coords.latitude, position.coords.longitude];
+          if (insideCoverage(point, coverage)) setCandidateFocus(point);
+        },
+        () => undefined,
+        { enableHighAccuracy: false, timeout: 6000, maximumAge: 120000 },
+      );
+    }).catch(() => undefined);
+  }, [coverage, origin]);
 
   const currentKey = useMemo<RouteKey | null>(
     () => (origin && destination ? { origin, stopId: destination.stop_id, algorithm, profile } : null),
@@ -413,6 +441,7 @@ export default function App() {
   const goTo = (next: View) => {
     setView(next);
     setPanelExpanded(true);
+    if (next === "advocates") setCandidateFocus(null);
     if (next === "report") setReportFocus((n) => n + 1);
     if (next === "route") {
       setEvidenceFeatures({ type: "FeatureCollection", features: [] });
@@ -471,12 +500,12 @@ export default function App() {
     () => ({
       type: "FeatureCollection",
       features:
-        view === "gaps" && reachabilityStudy
+        view === "advocates" && reachabilityStudy
           ? [
               ...(reachabilityLayers.documented ? reachabilityStudy.documented.geometry.features.map((feature) => ({ ...feature, properties: { ...feature.properties, profile: "documented" } })) : []),
               ...(reachabilityLayers.unknown ? reachabilityStudy.unknown_gap.geometry.features.map((feature) => ({ ...feature, properties: { ...feature.properties, profile: "unknown" } })) : []),
             ]
-          : study && view === "gaps"
+          : study && view === "advocates"
             ? [
                 { type: "Feature", properties: { profile: "standard" }, geometry: study.standard.geometry },
                 { type: "Feature", properties: { profile: "wheelchair" }, geometry: study.wheelchair.geometry },
@@ -487,9 +516,9 @@ export default function App() {
   );
   const studyFocus = useMemo<[number, number] | null>(
     () =>
-      reachabilityStudy && view === "gaps"
+      reachabilityStudy && view === "advocates"
         ? [reachabilityStudy.stop.latitude, reachabilityStudy.stop.longitude]
-        : study && view === "gaps"
+        : study && view === "advocates"
           ? [study.latitude, study.longitude]
           : candidateFocus,
     [study, reachabilityStudy, view, candidateFocus],
@@ -509,6 +538,15 @@ export default function App() {
     setEvidenceFeatures(gaps);
     setSidewalkFeatures(sidewalks);
   }, []);
+
+  const advocateStopFeatures = useMemo<GeoJSON.FeatureCollection<GeoJSON.Point>>(() => ({
+    type: "FeatureCollection",
+    features: rankedStops.map((stop, index) => ({
+      type: "Feature",
+      properties: { rank: index + 1, stop_id: stop.stop_id, stop_name: stop.stop_name },
+      geometry: { type: "Point", coordinates: [stop.longitude, stop.latitude] },
+    })),
+  }), [rankedStops]);
 
   async function compare() {
     if (!origin || !destination) return;
@@ -583,7 +621,7 @@ export default function App() {
 
   const sheetSummary = showingResult && result
     ? `To ${place?.name}: ${formatDistance(result.distance_m)}, ${formatDuration(result.duration_seconds)}`
-    : view === "route" ? nextAction : view === "report" ? "Report an issue" : "Accessibility gaps";
+    : view === "route" ? nextAction : view === "report" ? "Report an issue" : "For cities and advocates";
 
   return (
     <main
@@ -611,10 +649,12 @@ export default function App() {
           onStop={chooseStop}
           evidence={evidenceFeatures}
           sidewalks={sidewalkFeatures}
+          advocateStops={advocateStopFeatures}
+          showAdvocateStops={view === "advocates"}
           focusPoint={studyFocus}
           onCandidate={(id) => {
             setSelectedCandidateId(id);
-            goTo("evidence");
+            goTo("advocates");
           }}
           reportPoint={reportPoint}
           routeActive={routeActive}
@@ -635,13 +675,14 @@ export default function App() {
             {routeActive ? (
               <>
                 <span className="legend-route">Walking route</span>
-                <span className="legend-connector">Connection not on the map</span>
-                <span><b className="key-dot" /> Mapped concern</span>
+                <span className="legend-connector">No walking-path data here</span>
+                <span><b className="key-dot" /> Possible issue recorded in map data</span>
                 {comparisonGeometry.features.length > 0 && <span className="legend-standard">Standard walking route</span>}
               </>
             ) : (
               <span><b className="key-stop" /> Transit stop or station. Numbers show how many stops are grouped.</span>
             )}
+            {view === "advocates" && <span><b className="key-rank">1</b> Highest wheelchair-model gap in the sample</span>}
           </details>
         </div>
         {selecting && (
@@ -782,6 +823,7 @@ export default function App() {
                   <button type="button" className="text-button" onClick={() => setEditing(false)}>Back to the current route</button>
                 )}
                 {!origin && !place && dataReady && (
+                  <div className="example-trips" aria-label="Example trips">
                   <button
                     type="button"
                     className="text-button example-link"
@@ -795,6 +837,20 @@ export default function App() {
                   >
                     Try an example trip near Diridon Station
                   </button>
+                  <button
+                    type="button"
+                    className="text-button example-link"
+                    onClick={() => {
+                      const example = places.find((p) => p.stops.some((s) => s.stop_id === "bart:S40-1"));
+                      if (example) {
+                        setStart([37.4076, -121.8910], "Example: near Milpitas BART");
+                        choosePlace(example);
+                      }
+                    }}
+                  >
+                    Try an example trip to Milpitas BART
+                  </button>
+                  </div>
                 )}
                 <details className="quiet-details advanced-settings">
                   <summary>Advanced options</summary>
@@ -834,22 +890,45 @@ export default function App() {
             )}
             {view === "route" && (
               <nav className="explore-links" aria-label="Accessibility information">
-                <button type="button" className="text-button" onClick={() => goTo("gaps")}>Which stops are harder to reach by wheelchair?</button>
-                <button type="button" className="text-button" onClick={() => goTo("evidence")}>Sidewalk records that need review</button>
+                <button type="button" className="button advocate-link" onClick={() => goTo("advocates")}>For cities and advocates</button>
               </nav>
             )}
-            {view === "gaps" && (
+            {view === "advocates" && (
               <Suspense fallback={<p role="status">Loading accessibility gaps…</p>}>
-                <h2 className="sr-only" ref={viewTitleRef} tabIndex={-1}>Accessibility gaps</h2>
-                <GapPanel onStudy={setStudy} onReachability={updateReachability} />
+                <section className="advocate-overview" aria-labelledby="advocates-title">
+                  <h2 id="advocates-title" ref={viewTitleRef} tabIndex={-1}>For cities and advocates</h2>
+                  {advocateSummary.status === "loading" ? (
+                    <p role="status">Checking the Diridon pilot for nearby records flagged for review…</p>
+                  ) : advocateSummary.status === "ready" ? (
+                    <p><strong>{advocateSummary.nearbyStops} of {advocateSummary.totalStops} stops</strong> in the Diridon pilot are within 150 m of at least one map record flagged for review.</p>
+                  ) : (
+                    <p role="status">This stop summary is unavailable because the pilot stops or source records could not be loaded.</p>
+                  )}
+                  <p>Nearby records are prompts for a closer look, not confirmed barriers. The wheelchair ranking below is a 32-stop sample, not a countywide ranking.</p>
+                </section>
+                <GapPanel onStudy={setStudy} onReachability={updateReachability} onRanking={setRankedStops} />
+                <GroundTruthPanel
+                  mode="evidence"
+                  onFeatures={showEvidence}
+                  onClearReportPoint={() => setReportPoint(null)}
+                  onRequestLocation={() => {
+                    setMapMode("report");
+                    setPanelExpanded(false);
+                    setStatus("Tap the map where the problem is. Press Escape to cancel.");
+                  }}
+                  reportPoint={reportPoint}
+                  onFocusCandidate={(point) => { setCandidateFocus(point); setSelectedCandidateId(null); }}
+                  selectedCandidateId={selectedCandidateId}
+                  onReport={() => goTo("report")}
+                  onAdvocacySummary={setAdvocateSummary}
+                />
               </Suspense>
             )}
-            {(view === "evidence" || view === "report") && (
+            {view === "report" && (
               <Suspense fallback={<p role="status">Loading…</p>}>
-                {view === "evidence" && <h2 className="sr-only" ref={viewTitleRef} tabIndex={-1}>Sidewalk records that need review</h2>}
                 <GroundTruthPanel
                   key={view}
-                  mode={view}
+                  mode="report"
                   onReport={() => goTo("report")}
                   onFeatures={showEvidence}
                   onClearReportPoint={() => setReportPoint(null)}

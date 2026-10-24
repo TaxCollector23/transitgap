@@ -39,7 +39,7 @@ export type Maneuver = {
 export type AccessibilitySummary = {
   headline: string;
   lines: string[];
-  documented_restrictions: Array<{ code: string; text: string; steps: number[] }>;
+  documented_restrictions: Array<{ code: string; text: string; steps: number[]; locations: string[] }>;
   missing_information: Array<{ attribute: string; label: string; distance_m: number; share: number | null }>;
   crossings: { total: number; unmarked: number; unrecorded_type: number };
   unmapped_connectors: Array<{ segment: number; distance_m: number; position: "start" | "end" }>;
@@ -143,6 +143,11 @@ export type GapFeature = {
     interpretation: string;
   };
 };
+
+export type AdvocacySummary =
+  | { status: "loading" }
+  | { status: "unavailable" }
+  | { status: "ready"; nearbyStops: number; totalStops: number };
 
 export type ReachabilityStop = {
   stop_id: string;

@@ -35,10 +35,13 @@ type Props = {
   reportPoint: [number, number] | null;
   routeActive: boolean;
   showStops: boolean;
+  advocateStops: GeoJSON.FeatureCollection<GeoJSON.Point>;
+  showAdvocateStops: boolean;
   onViewChange?: (center: [number, number]) => void;
 };
 
-const center: [number, number] = [-121.75, 37.2];
+// Census internal point for California's 17th Congressional District.
+const center: [number, number] = [-121.9649511, 37.4260511];
 
 function stopFeatures(
   stops: Stop[],
@@ -144,6 +147,8 @@ export default function MapView({
   reportPoint,
   routeActive,
   showStops,
+  advocateStops,
+  showAdvocateStops,
   onViewChange,
 }: Props) {
   const container = useRef<HTMLDivElement | null>(null);
@@ -179,7 +184,7 @@ export default function MapView({
     const map = new maplibregl.Map({
       container: container.current,
       center,
-      zoom: 9,
+      zoom: 12.2,
       minZoom: 8,
       maxZoom: 19,
       attributionControl: false,
@@ -275,7 +280,7 @@ export default function MapView({
           ),
           cluster: true,
           clusterRadius: 56,
-          clusterMaxZoom: 14,
+          clusterMaxZoom: 12,
         });
         map.addLayer({
           id: "stop-clusters",
@@ -314,6 +319,35 @@ export default function MapView({
             "circle-stroke-width": ["case", ["get", "selected"], 3, 2],
             "circle-opacity": 0.98,
           },
+        });
+      }
+      if (!map.getSource("advocate-stops")) {
+        map.addSource("advocate-stops", { type: "geojson", data: advocateStops });
+        map.addLayer({
+          id: "advocate-stop-circles",
+          type: "circle",
+          source: "advocate-stops",
+          paint: {
+            "circle-color": "#b45622",
+            "circle-radius": 13,
+            "circle-stroke-color": "#fffefa",
+            "circle-stroke-width": 2.5,
+          },
+          layout: { visibility: showAdvocateStops ? "visible" : "none" },
+        });
+        map.addLayer({
+          id: "advocate-stop-ranks",
+          type: "symbol",
+          source: "advocate-stops",
+          layout: {
+            "text-field": ["get", "rank"],
+            "text-font": ["Arial Bold"],
+            "text-size": 11,
+            "text-allow-overlap": true,
+            "text-ignore-placement": true,
+            visibility: showAdvocateStops ? "visible" : "none",
+          },
+          paint: { "text-color": "#ffffff" },
         });
       }
       if (!map.getSource("route")) {
@@ -574,29 +608,40 @@ export default function MapView({
     const updateCoverage = () => addCoverageLayer(map, coverage);
     if (map.getSource("vta-stops")) updateCoverage();
     else map.once("load", updateCoverage);
-    if (coverage.bounds) {
-      const { west, south, east, north } = coverage.bounds;
-      const mobile = window.matchMedia("(max-width: 760px)").matches;
-      const bottom =
-        mobile && panelExpanded ? (document.querySelector(".panel")?.getBoundingClientRect().height || 78) : 78;
-      map.fitBounds(
-        [
-          [west, south],
-          [east, north],
-        ],
-        {
+  }, [coverage]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    const apply = () => {
+      (map.getSource("advocate-stops") as maplibregl.GeoJSONSource | undefined)?.setData(advocateStops);
+      for (const layer of ["advocate-stop-circles", "advocate-stop-ranks"]) {
+        if (map.getLayer(layer)) map.setLayoutProperty(layer, "visibility", showAdvocateStops ? "visible" : "none");
+      }
+      if (showAdvocateStops && advocateStops.features.length > 0) {
+        const coordinates = advocateStops.features.map((feature) => feature.geometry.coordinates as [number, number]);
+        const west = Math.min(...coordinates.map(([longitude]) => longitude));
+        const east = Math.max(...coordinates.map(([longitude]) => longitude));
+        const south = Math.min(...coordinates.map(([, latitude]) => latitude));
+        const north = Math.max(...coordinates.map(([, latitude]) => latitude));
+        const mobile = window.matchMedia("(max-width: 760px)").matches;
+        const panel = document.querySelector(".panel")?.getBoundingClientRect();
+        map.fitBounds([[west, south], [east, north]], {
           padding: {
-            top: 76,
-            bottom: bottom + 24,
-            left: mobile ? 24 : Math.min((document.querySelector(".panel")?.getBoundingClientRect().right || 408)+20, window.innerWidth*.5),
-            right: 36,
+            top: 90,
+            right: 48,
+            bottom: mobile && panel ? Math.round(panel.height + 100) : 100,
+            left: mobile ? 48 : Math.round(Math.min((panel?.right || 408) + 56, window.innerWidth * 0.5)),
           },
           maxZoom: 11,
-          duration: 0,
-        },
-      );
-    }
-  }, [coverage]);
+          duration: 450,
+        });
+      }
+    };
+    if (map.isStyleLoaded()) apply();
+    else map.once("load", apply);
+    return () => { map.off("load", apply); };
+  }, [advocateStops, showAdvocateStops]);
 
   useEffect(() => {
     if (focusPoint && mapRef.current)

@@ -38,7 +38,7 @@ CROSSING_CLUSTER_M = 20.0
 
 LABELS = {
     "sidewalk": "the sidewalk",
-    "path": "the pedestrian path",
+    "path": "the walking path",
     "street": "the street",
     "service": "the service road",
     "platform": "the platform",
@@ -50,20 +50,35 @@ LABELS = {
 
 # Plain-language versions of documented concerns produced by profiles.assess().
 CONCERN_TEXT = {
-    "Mapped stairs": "Stairs are mapped here.",
-    "Mapped wheelchair=no": "This section is mapped as not wheelchair accessible.",
-    "Mapped restrictive barrier": "A gate or barrier is mapped here.",
-    "Mapped raised kerb at crossing": "A raised curb is mapped at a crossing.",
-    "Mapped loose or uneven surface": "A loose or uneven surface is mapped here.",
-    "Mapped poor smoothness": "A rough surface is mapped here.",
-    "Mapped slope exceeds profile model concern threshold": "A steep slope is mapped here.",
-    "Slope direction recorded; steepness unknown": "A slope is mapped here; its steepness isn't recorded.",
-    "Mapped sidewalk=no; road walking may be involved": "No sidewalk is mapped here; you may need to walk in the road.",
-    "Mapped passage is narrower than profile model minimum": "A narrow passage is mapped here.",
-    "Mapped surface exceeds profile smoothness limit": "A very rough surface is mapped here.",
-    "Mapped slope exceeds profile model limit": "A slope steeper than this profile allows is mapped here.",
+    "Mapped stairs": "The map shows stairs here.",
+    "Mapped wheelchair=no": "The map marks this section as not wheelchair accessible.",
+    "Mapped restrictive barrier": "The map shows a gate or barrier here.",
+    "Mapped raised kerb at crossing": "The map shows a raised curb at this crossing.",
+    "Mapped loose or uneven surface": "The map shows a loose or uneven surface here.",
+    "Mapped poor smoothness": "The map shows a rough surface here.",
+    "Mapped slope exceeds profile model concern threshold": "The map shows a steep slope here.",
+    "Slope direction recorded; steepness unknown": "The map shows a slope here, but its steepness isn't recorded.",
+    "Mapped sidewalk=no; road walking may be involved": "The map shows no sidewalk here, so the route may enter the road.",
+    "Mapped passage is narrower than profile model minimum": "The map shows a narrow passage here.",
+    "Mapped surface exceeds profile smoothness limit": "The map shows a very rough surface here.",
+    "Mapped slope exceeds profile model limit": "The map shows a slope steeper than this travel option allows.",
 }
-CONNECTOR_NOTE = "This connection isn't on the map, so we can't confirm a usable path."
+CONNECTOR_NOTE = "We can't confirm there's a usable way through this section."
+
+CONCERN_SUMMARY = {
+    "Mapped stairs": "stairs",
+    "Mapped wheelchair=no": "a section marked as not wheelchair accessible",
+    "Mapped restrictive barrier": "a gate or barrier",
+    "Mapped raised kerb at crossing": "a raised curb",
+    "Mapped loose or uneven surface": "a loose or uneven surface",
+    "Mapped poor smoothness": "a rough surface",
+    "Mapped slope exceeds profile model concern threshold": "a steep slope",
+    "Slope direction recorded; steepness unknown": "a slope with unknown steepness",
+    "Mapped sidewalk=no; road walking may be involved": "a place where no sidewalk is recorded",
+    "Mapped passage is narrower than profile model minimum": "a narrow passage",
+    "Mapped surface exceeds profile smoothness limit": "a very rough surface",
+    "Mapped slope exceeds profile model limit": "a slope steeper than this travel option allows",
+}
 
 
 # --------------------------------------------------------------------------- #
@@ -346,7 +361,7 @@ def _turn_phrase(turn: str) -> str:
     if turn == "u-turn":
         return "Turn around"
     size, side = turn.split("-")
-    return {"slight": "Bear", "turn": "Turn", "sharp": "Turn sharply"}[size] + " " + side
+    return {"slight": "Keep", "turn": "Turn", "sharp": "Turn sharply"}[size] + " " + side
 
 
 CROSSING_PRIORITY = {"unmarked": 0, "signals": 1, "marked": 2, "unrecorded": 3}
@@ -394,16 +409,19 @@ def _notes(segments: list[dict[str, Any]], indexes: list[int], leading_crossing:
     if leading_crossing and events:
         first = events[0]
         notes.append({
-            "unmarked": "This crossing is mapped as unmarked.",
-            "signals": "This crossing is mapped with traffic signals.",
-            "marked": "This crossing is mapped as marked.",
-            "unrecorded": "The type of this crossing isn't recorded.",
+            "unmarked": "The map shows no marked crosswalk at this crossing.",
+            "signals": "Traffic signals are recorded at this crossing.",
+            "marked": "The map shows a marked crosswalk here.",
+            "unrecorded": "The map doesn't say what kind of crossing this is.",
         }[first])
     if passing:
         unmarked = passing.count("unmarked")
-        text = f"Includes {_plural(len(passing), 'mapped crossing')} along the way"
+        text = f"{_plural(len(passing), 'crossing')} {'is' if len(passing) == 1 else 'are'} along this part of the route"
         if unmarked:
-            text += f"; {unmarked} {'is' if unmarked == 1 else 'are'} mapped as unmarked"
+            text += f". {_plural(unmarked, 'crossing')} {'has' if unmarked == 1 else 'have'} no marked crosswalk recorded on the map"
+        unrecorded = passing.count("unrecorded")
+        if unrecorded:
+            text += f". {_plural(unrecorded, 'crossing')} {'has' if unrecorded == 1 else 'have'} no crossing type recorded on the map"
         notes.append(text + ".")
     concerns: list[str] = []
     for i in indexes:
@@ -476,9 +494,9 @@ def directions(segments: list[dict[str, Any]], destination: dict[str, Any] | Non
             is_last = position == len(groups) - 1
             stop = (destination or {}).get("stop_name")
             instruction = (
-                f"Go from the end of the mapped path to {stop}" if is_last and stop
-                else "Go from the end of the mapped path to your destination" if is_last
-                else "Go from your starting point to the nearest mapped path"
+                f"No walking-path data is available between the last path shown on the map and {stop}" if is_last and stop
+                else "No walking-path data is available between the last path shown on the map and your destination" if is_last
+                else "No walking-path data is available between your start and the nearest path shown on the map"
             )
             maneuver = "connector"
             notes = [CONNECTOR_NOTE]
@@ -582,8 +600,16 @@ def accessibility_summary(segments: list[dict[str, Any]], maneuvers: list[dict[s
     restrictions: dict[str, dict[str, Any]] = {}
     for number, step in enumerate(maneuvers, start=1):
         for concern in step.get("documented_concerns", []):
-            item = restrictions.setdefault(concern, {"code": concern, "text": CONCERN_TEXT.get(concern, concern), "steps": []})
+            item = restrictions.setdefault(concern, {
+                "code": concern,
+                "text": CONCERN_TEXT.get(concern, concern),
+                "steps": [],
+                "locations": [],
+            })
             item["steps"].append(number)
+            name = step.get("name")
+            if name and name not in item["locations"]:
+                item["locations"].append(name)
     missing_distance: dict[str, float] = {}
     walked = 0.0
     connectors = []
@@ -608,28 +634,35 @@ def accessibility_summary(segments: list[dict[str, Any]], maneuvers: list[dict[s
     unrecorded = sum(step.get("crossings", {}).get("unrecorded", 0) for step in maneuvers)
     lines = []
     if restrictions:
-        lines.append(f"{_plural(len(restrictions), 'documented concern')} on this route. See the marked steps.")
+        concerns = []
+        for item in restrictions.values():
+            subject = CONCERN_SUMMARY.get(item["code"], "an accessibility concern")
+            location = ", ".join(item["locations"])
+            concerns.append(f"{subject} near {location}" if location else f"{subject} along this route")
+        if len(concerns) == 1:
+            lines.append(f"Map data shows {concerns[0]}.")
+        else:
+            lines.append(f"Map data shows these possible accessibility concerns: {'; '.join(concerns)}.")
     if missing:
-        lines.append("Some accessibility information is missing along this route.")
-    if crossing_total and (unmarked or unrecorded):
-        detail = []
-        if unmarked:
-            detail.append(f"{unmarked} mapped as unmarked")
-        if unrecorded:
-            detail.append(f"{unrecorded} with no recorded crossing type")
-        lines.append(f"This route includes {_plural(crossing_total, 'mapped crossing')}: {', '.join(detail)}.")
+        lines.append("Some walking paths on this route have no accessibility details recorded on the map.")
+    if unmarked:
+        lines.append(f"{_plural(unmarked, 'crossing')} {'has' if unmarked == 1 else 'have'} no marked crosswalk recorded on the map.")
+    if unrecorded:
+        lines.append(f"{_plural(unrecorded, 'crossing')} {'has' if unrecorded == 1 else 'have'} no crossing type recorded on the map.")
     if connectors:
         total = sum(c["distance_m"] for c in connectors)
-        lines.append(f"About {round(total * 3.28084 / 10) * 10 or 10} ft of the route connects to the map without a mapped path.")
+        positions = {connector["position"] for connector in connectors}
+        location = "near your start and destination" if len(positions) == 2 else "near your start" if "start" in positions else "near your destination"
+        lines.append(f"About {round(total * 3.28084 / 10) * 10 or 10} ft {location} has no walking-path data.")
     return {
-        "headline": lines[0] if lines else "No documented concerns were found in the mapped data for this route.",
+        "headline": lines[0] if lines else "No known accessibility concerns are recorded in the map data. This doesn't confirm the route is accessible.",
         "lines": lines,
         "documented_restrictions": list(restrictions.values()),
         "missing_information": missing,
         "crossings": {"total": crossing_total, "unmarked": unmarked, "unrecorded_type": unrecorded},
         "unmapped_connectors": connectors,
         "walking_distance_m": round(route_distance_m, 1),
-        "interpretation": "Missing information is unknown, not proof that a path is usable or unusable.",
+        "interpretation": "Missing information is unknown. It does not show that a route is accessible or inaccessible.",
     }
 
 

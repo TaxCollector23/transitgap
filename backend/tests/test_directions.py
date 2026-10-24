@@ -66,7 +66,7 @@ def test_continuous_unnamed_footway_split_into_many_edges_is_one_step():
     steps = walking(result)
     assert len(result["segments"]) == 10
     assert len(steps) == 1
-    assert steps[0]["instruction"] == "Head east along the pedestrian path"
+    assert steps[0]["instruction"] == "Head east along the walking path"
     assert result["directions"][-1]["instruction"] == "Arrive at Test Stop"
     assert_distance_preserved(result)
     no_jargon(result)
@@ -169,7 +169,7 @@ def test_straight_crossing_is_a_note_and_turning_crossing_is_a_step():
     steps = walking(straight)
     assert len(steps) == 1
     assert steps[0]["crossings"]["total"] == 1 and steps[0]["crossings"]["unmarked"] == 1
-    assert steps[0]["notes"] == ["Includes 1 mapped crossing along the way; 1 is mapped as unmarked."]
+    assert steps[0]["notes"] == ["1 crossing is along this part of the route. 1 crossing has no marked crosswalk recorded on the map."]
     assert "Mapped unmarked crossing" not in steps[0]["documented_concerns"]
 
     t = Builder()
@@ -181,7 +181,7 @@ def test_straight_crossing_is_a_note_and_turning_crossing_is_a_step():
     turned = t.route("a", "n")
     steps = walking(turned)
     assert steps[1]["instruction"] == "Turn left and cross the street, then continue along the sidewalk"
-    assert "This crossing is mapped with traffic signals." in steps[1]["notes"]
+    assert "Traffic signals are recorded at this crossing." in steps[1]["notes"]
     assert_distance_preserved(turned)
 
 
@@ -198,8 +198,9 @@ def test_stairs_are_their_own_step_and_wheelchair_takes_the_documented_detour():
     assert "steps" in kinds
     stairs = next(s for s in walking(standard) if s["maneuver"] == "steps")
     assert stairs["instruction"] == "Take the stairs"
-    assert stairs["warnings"] == ["Stairs are mapped here."]
+    assert stairs["warnings"] == ["The map shows stairs here."]
     assert standard["accessibility_summary"]["documented_restrictions"][0]["code"] == "Mapped stairs"
+    assert standard["accessibility_summary"]["headline"] == "Map data shows stairs along this route."
 
     wheelchair = b.route("a", "z", profile=Profile.wheelchair)
     assert wheelchair["distance_m"] > standard["distance_m"]
@@ -234,7 +235,7 @@ def test_missing_information_is_summarized_once_not_per_step():
     b.way([2, "x"], highway="footway")
     result = b.route(0, 5, profile=Profile.wheelchair)
     summary = result["accessibility_summary"]
-    assert summary["headline"] == "Some accessibility information is missing along this route."
+    assert summary["headline"] == "Some walking paths on this route have no accessibility details recorded on the map."
     assert {item["attribute"] for item in summary["missing_information"]} >= {"surface", "width"}
     assert all(step["warnings"] == [] for step in walking(result))
     assert "Missing surface" in result["segments"][0]["reasons"]  # edge evidence preserved

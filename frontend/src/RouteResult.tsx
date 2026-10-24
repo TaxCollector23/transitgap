@@ -46,8 +46,8 @@ function percent(share: number | null) {
 function stepText(step: Maneuver, index: number) {
   const distance = step.distance_m > 0 ? `, ${spokenDistance(step.distance_m)}` : "";
   const extra = step.maneuver === "connector"
-    ? step.notes || []
-    : [...step.warnings.map((w) => `Mapped concern: ${w}`), ...(step.notes || [])];
+    ? (step.notes || []).map((note) => `No walking-path data: ${note}`)
+    : [...step.warnings.map((w) => `Possible issue in map data: ${w}`), ...(step.notes || [])];
   return `Step ${index + 1}. ${step.instruction}${distance}. ${extra.join(" ")}`.trim();
 }
 
@@ -108,11 +108,11 @@ export default function RouteResult({
               {step.distance_m > 0 && <span className="direction-distance">{formatDistance(step.distance_m)}</span>}
             </button>
             {step.maneuver === "connector" ? (
-              <p className="direction-note"><strong>Not mapped: </strong>{step.notes?.[0]}</p>
+              <p className="direction-note"><strong>No walking-path data: </strong>{step.notes?.[0]}</p>
             ) : (
               <>
                 {step.warnings.map((warning) => (
-                  <p key={warning} className="direction-note direction-concern"><strong>Mapped concern: </strong>{warning}</p>
+                  <p key={warning} className="direction-note direction-concern"><strong>Possible issue in map data: </strong>{warning}</p>
                 ))}
                 {(step.notes || []).map((note) => (
                   <p key={note} className="direction-note">{note}</p>
@@ -210,7 +210,7 @@ export default function RouteResult({
           { label: "Route summary", text: () => `${summaryText} ${limitations.join(" ")}` },
           { label: "Directions", text: () => steps.map((step, index) => stepText(step, index)).join(" ") },
           {
-            label: "Accessibility details",
+            label: "More detail",
             text: () =>
               [
                 ...(summary?.documented_restrictions || []).map((item) => item.text),
@@ -221,8 +221,8 @@ export default function RouteResult({
       />
 
       <details className="plain-details">
-        <summary>Accessibility details</summary>
-        <h3>Mapped concerns</h3>
+        <summary>More detail</summary>
+        <h3>Possible issues recorded in the map data</h3>
         {summary?.documented_restrictions.length ? (
           <ul>
             {summary.documented_restrictions.map((item) => (
@@ -232,7 +232,7 @@ export default function RouteResult({
             ))}
           </ul>
         ) : (
-          <p>No mapped concerns on this route. That doesn't confirm the route is usable; much information is missing.</p>
+          <p>No known concerns are recorded for this route. That doesn't confirm the route is usable; some information may be missing.</p>
         )}
         <h3>Missing information</h3>
         {summary?.missing_information.length ? (
@@ -251,8 +251,8 @@ export default function RouteResult({
             <h3>Street crossings</h3>
             <p>
               {summary.crossings.total} crossing{summary.crossings.total === 1 ? "" : "s"}
-              {summary.crossings.unmarked ? `; ${summary.crossings.unmarked} mapped as unmarked` : ""}
-              {summary.crossings.unrecorded_type ? `; ${summary.crossings.unrecorded_type} without a recorded crossing type` : ""}.{" "}
+              {summary.crossings.unmarked ? `; ${summary.crossings.unmarked} with no marked crosswalk recorded` : ""}
+              {summary.crossings.unrecorded_type ? `; ${summary.crossings.unrecorded_type} with no crossing type recorded` : ""}.{" "}
               {route.accessibility
                 ? `Curb ramp information is recorded at ${route.accessibility.crossing_observations.known_kerb_information} of ${route.accessibility.crossing_observations.denominator}.`
                 : ""}
@@ -261,11 +261,11 @@ export default function RouteResult({
         )}
         {summary && summary.unmapped_connectors.length > 0 && (
           <>
-            <h3>Connections that aren't mapped</h3>
+            <h3>Parts with no walking-path data</h3>
             <ul>
               {summary.unmapped_connectors.map((item) => (
                 <li key={item.segment}>
-                  {item.position === "start" ? "From your starting point to the nearest mapped path" : "From the last mapped path to the stop"}: {formatDistance(item.distance_m)} in a straight line. We can't confirm a usable path here.
+                  {item.position === "start" ? "Near your start" : "Near your destination"}: about {formatDistance(item.distance_m)} in a straight line. The map has no walking-path data here, so we can't confirm a usable path.
                 </li>
               ))}
             </ul>

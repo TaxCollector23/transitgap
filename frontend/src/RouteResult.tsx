@@ -7,6 +7,7 @@ import {
   formatDuration,
   profileLabel,
   spokenDistance,
+  placeHeading,
   type Place,
 } from "./format";
 import type { Maneuver, RouteResult as Route } from "./types";
@@ -91,7 +92,7 @@ export default function RouteResult({
     return () => window.removeEventListener("keydown", onKey);
   }, [fullscreen]);
 
-  const destinationName = place.name;
+  const destinationName = placeHeading(place);
   const arrival = route.arrival?.type === "entrance" ? route.arrival.name : null;
   const summaryText = `Route to ${destinationName}. ${spokenDistance(route.distance_m)}, about ${formatDuration(route.duration_seconds)}, for ${profileLabel(route.profile)}.`;
   const limitations = summary?.lines.length ? summary.lines : [summary?.headline || route.accessibility_warning];
@@ -329,7 +330,7 @@ export default function RouteResult({
 
       <details className="plain-details">
         <summary>About {destinationName}</summary>
-        <StopService stops={place.stops} />
+        <StopService place={place} selectedStopId={route.destination.stop_id} />
       </details>
 
       </>}

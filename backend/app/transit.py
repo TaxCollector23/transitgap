@@ -171,6 +171,14 @@ class TransitSchedule:
             if trip in self.trips
         } - {""})
 
+    def headsigns(self, stop_id):
+        """Distinct published trip destinations serving this stop."""
+        return sorted({
+            str(self.trips[trip][2]).strip()
+            for _, trip in self.events.get(stop_id, [])
+            if trip in self.trips and str(self.trips[trip][2]).strip()
+        })
+
     def details(self, stop_id, now=None):
         now = (now or datetime.now(TIMEZONE)).astimezone(TIMEZONE)
         events = self.events.get(stop_id, [])

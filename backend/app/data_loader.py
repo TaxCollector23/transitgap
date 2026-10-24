@@ -27,8 +27,8 @@ COUNTY_RADIUS_M = 60_000
 COUNTY_BOUNDARY_PATH = Path(__file__).resolve().parent / "data_sources" / "santa_clara_county.geojson"
 GTFS_URL = "https://gtfs.vta.org/gtfs_vta.zip"
 GRAPH_SCHEMA_VERSION = 3
-# Bump when the filtered stop record changes (boarding-only, stations, entrances).
-STOP_SCHEMA_VERSION = 2
+# Bump when the filtered stop record changes (including public direction details).
+STOP_SCHEMA_VERSION = 3
 logger = logging.getLogger(__name__)
 _GRAPH_CACHE: dict[str, tuple[int, int, nx.MultiDiGraph]] = {}
 

@@ -17,6 +17,10 @@ export type Stop = {
   station_id?: string | null;
   station_name?: string | null;
   platform_name?: string | null;
+  direction?: string | null;
+  stop_description?: string | null;
+  stop_code?: string | null;
+  headsigns?: string[];
   station_url?: string | null;
   routes_served?: string[];
   entrances?: Entrance[];
@@ -148,6 +152,7 @@ export type GapFeature = {
 
 export type AdvocacySummary =
   | { status: "loading" }
+  | { status: "calculating" }
   | { status: "unavailable" }
   | { status: "ready"; nearbyStops: number; totalStops: number };
 
@@ -157,6 +162,9 @@ export type ReachabilityStop = {
   latitude: number;
   longitude: number;
   connector_distance_m: number | null;
+  direction?: string | null;
+  platform_name?: string | null;
+  routes_served?: string[];
 };
 
 export type ReachabilityAnalysis = {

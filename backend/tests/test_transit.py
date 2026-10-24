@@ -1,6 +1,7 @@
 from datetime import datetime
 from zipfile import ZipFile
 from backend.app.transit import TransitSchedule, TIMEZONE, seconds
+from backend.app.transit_agencies import station_fields
 
 
 def schedule(tmp_path):
@@ -35,11 +36,25 @@ def test_join_calendar_exceptions_and_overnight(tmp_path):
     result = data.details("s", datetime(2026, 10, 20, 1, 0, tzinfo=TIMEZONE))
     assert result["routes"][0]["route_short_name"] == "22"
     assert data.routes_served("s") == ["22"]
+    assert data.headsigns("s") == ["Special", "Station"]
     assert result["scheduled_departures"][0]["departure"].startswith("2026-10-20T01:10")
     assert result["scheduled_departures"][1]["headsign"] == "Special"
     assert len(result["scheduled_departures"]) == 2
     assert "outside" not in data.events
     assert result["schedule_type"] == "scheduled, not real-time"
+
+
+def test_stop_description_keeps_published_direction_and_public_code():
+    fields = station_fields(
+        {"stop_id": "409", "stop_name": "Santa Clara & Delmas", "stop_desc": "Eastbound", "stop_code": "60409"},
+        {},
+        {},
+        None,
+        "",
+    )
+    assert fields["direction"] == "Eastbound"
+    assert fields["stop_description"] == "Eastbound"
+    assert fields["stop_code"] == "60409"
 
 
 def test_cache_and_time_validation(tmp_path):

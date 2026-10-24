@@ -75,7 +75,8 @@ def test_segments_directions_connectors_and_unknown_confidence():
     assert result["data_confidence"] == 0
     assert all(s["status"] == "unknown" for s in result["segments"])
     assert result["directions"][0]["maneuver"] == "connector"
-    assert "isn't on the map" in result["directions"][0]["notes"][0]
+    assert "No walking-path data is available between your start and the nearest path shown on the map" in result["directions"][0]["instruction"]
+    assert "We can't confirm there's a usable way through this section." in result["directions"][0]["notes"][0]
     assert "Test Avenue" in result["directions"][1]["instruction"]
     assert result["walking_speed_mps_assumed"] == 0.9
     assert sum(s["length_m"] for s in result["segments"]) == pytest.approx(

@@ -43,6 +43,21 @@ for (const viewport of [{width:390,height:844},{width:768,height:1024},{width:14
   });
 }
 
+test('Data & limits uses plain language and hides model settings under More detail', async ({page}) => {
+  await page.setViewportSize({width:390,height:844});
+  await page.goto('/app');
+  await expect(page.locator('main[data-data-state="ready"]')).toBeVisible();
+  await page.getByRole('button',{name:'Data & limits',exact:true}).click();
+  await expect(page.getByRole('heading',{name:'Data & limits'})).toBeVisible();
+  await expect(page.getByText(/missing information does not mean a sidewalk or crossing is safe or unsafe/)).toBeVisible();
+  const moreDetail=page.locator('.methods-panel details');
+  await expect(moreDetail.locator('summary')).toHaveText('More detail');
+  await expect(page.getByText(/3-second network-search limit/)).toBeHidden();
+  await moreDetail.locator('summary').click();
+  await expect(page.getByText(/3-second network-search limit/)).toBeVisible();
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
+});
+
 test('new trip keeps a profile, app navigation keeps inputs, and clear resets everything', async ({page}) => {
   await page.goto('/app');
   await expect(page.locator('main[data-data-state="ready"]')).toBeVisible();
@@ -99,7 +114,7 @@ test('routing failures are actionable, clear on navigation, and do not recommend
   await expect(page.locator('.notice.error')).toContainText('3-second limit');
   await expect(page.locator('.notice.error')).toContainText('street or sidewalk entrance');
   await expect(page.locator('.notice.error')).not.toContainText('closer stop');
-  await page.getByRole('button',{name:'Which stops are harder to reach by wheelchair?'}).click();
+  await page.getByRole('button',{name:'For cities and advocates'}).click();
   await page.getByRole('button',{name:'← Back to route planning'}).click();
   await expect(page.locator('.notice.error')).toHaveCount(0);
 

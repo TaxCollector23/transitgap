@@ -73,9 +73,13 @@ export default function LandingPage() {
         <section className="landing-split" id="methodology">
           <h2>Built on information you can examine.</h2>
           <div>
-            <p>TransitGap uses public geographic and transit information to understand the paths connecting people to transit stops. Each source has its own strengths and limitations, which is why knowing where information comes from matters.</p>
+            <p>TransitGap uses public records to suggest walking routes to transit. Routes have not been checked in person, and records may be incomplete or out of date. When a detail is missing, TransitGap shows it as unknown. Unknown does not mean accessible or inaccessible.</p>
             <p><a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> supplies the walking network. <a href="https://www.vta.org/go/developers">VTA</a>, <a href="https://www.caltrain.com/developer-resources">Caltrain</a>, and <a href="https://www.bart.gov/schedules/developers/gtfs">BART</a> publish the transit stop and schedule data. <a href="https://geo.sanjoseca.gov/server/rest/services/OPN/OPN_OpenDataService/MapServer/185">San José municipal GIS</a> adds municipal sidewalk records in the Diridon pilot area.</p>
-            <p>Routes are based on recorded data, not field verification. <a href="https://github.com/TaxCollector23/transitgap/blob/main/docs/METHODOLOGY.md">Read the methods and limitations.</a></p>
+            <details className="plain-details">
+              <summary>More detail</summary>
+              <p>Walking connections without a path record are straight-line estimates. Stop comparisons use a sampled walking-network model, not ridership or a countywide accessibility score. City sidewalk records are available only in the Diridon pilot area.</p>
+              <p><a href="https://github.com/TaxCollector23/transitgap/blob/main/docs/METHODOLOGY.md">Read the full methods and limitations.</a></p>
+            </details>
           </div>
         </section>
         <section className="landing-final">

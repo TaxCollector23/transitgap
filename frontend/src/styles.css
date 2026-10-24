@@ -975,6 +975,15 @@ a:focus-visible {
 .explore-links .text-button { margin: 0; min-height: 40px; text-align: left; color: #285342; }
 .back-link { border: 0; background: none; padding: 0; min-height: 44px; margin-bottom: 8px; color: var(--accent); font-size: 14px; text-decoration: underline; }
 .panel-footer p { flex-basis: 100%; margin: 0; font-size: 14px !important; line-height: 1.5 !important; }
+.example-trips { display: grid; justify-items: start; gap: 4px; margin-top: 10px; }
+.advocate-link { min-height: 44px; margin-top: 14px; }
+.advocate-overview { margin: 0 0 24px; padding: 16px; background: #f3f2ec; border-left: 4px solid #176b5b; }
+.advocate-overview h2 { margin-top: 0; }
+.advocate-overview p:last-child { margin-bottom: 0; }
+.advocate-overview strong { color: #174e43; }
+.csv-download { min-height: 44px; margin: 0 0 10px; }
+.ranking-reason { display: block; margin-top: 4px; color: #536158; font-size: 13px; font-weight: 400; }
+.key-rank { display: inline-grid; width: 22px; height: 22px; margin-right: 5px; place-items: center; border-radius: 50%; color: #fff; background: #b45622; font-size: 12px; font-style: normal; }
 
 /* ---- Route result ----------------------------------------------------- */
 .route-result { border-top: 0; padding-top: 0; margin-top: 0; }

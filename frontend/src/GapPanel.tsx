@@ -16,9 +16,11 @@ type Item = { properties: GapDetail };
 export default function GapPanel({
   onStudy,
   onReachability,
+  onRanking,
 }: {
   onStudy: (detail: GapDetail | null) => void;
   onReachability: (analysis: ReachabilityAnalysis | null, layers: { documented: boolean; unknown: boolean }) => void;
+  onRanking: (stops: GapDetail[]) => void;
 }) {
   const [items, setItems] = useState<Item[]>([]),
     [count, setCount] = useState(0),
@@ -92,8 +94,10 @@ export default function GapPanel({
       .then((data) => {
         setItems(data.features);
         setCount(data.evaluated_stop_count);
+        onRanking(data.features.map(({ properties }: Item) => properties));
       })
       .catch((e) => {
+        onRanking([]);
         if (!controller.signal.aborted) setError(e.message);
       })
       .finally(() => { if (!controller.signal.aborted) setSummaryBusy(false); });
@@ -105,14 +109,11 @@ export default function GapPanel({
     <section className="gap-study" aria-label="Accessibility gaps">
       <h2>Which stops are harder to reach by wheelchair?</h2>
       <p>
-        Measured differences in reachable walking-network length, using standard
-        and wheelchair profiles. This ranking covers{" "}
-        {count || "the available sample of"} evaluated stops, not every county
-        stop.
+        These stops had the biggest modeled differences in how much mapped walking network can be reached in 10 minutes. The comparison uses standard walking and wheelchair profiles. It covers{" "}
+        {count || "the available sample of"} stops, not every stop in the county.
       </p>
       <p>
-        Different assumed speeds, 2.7 and 2.0 mph, and mapped constraints both
-        affect the results. Missing data is not a confirmed barrier.
+        The model uses different assumed speeds and map records. A larger difference does not confirm that a stop is inaccessible, and missing data is not a confirmed barrier.
       </p>
       {error && <p role="alert">{error}</p>}
       {summaryBusy && <p role="status"><span className="spinner" /> Loading the sampled stop study…</p>}
@@ -122,12 +123,40 @@ export default function GapPanel({
         </p>
       )}
       <h3>Biggest differences in the sample</h3>
+      {items.length > 0 && (
+        <button type="button" className="button csv-download" onClick={() => {
+          const quote = (value: string | number) => `"${String(value).replace(/"/g, '""')}"`;
+          const scope = `Top ${items.length} from a ${count}-stop, 10-minute sample; not a countywide ranking`;
+          const rows = [
+            ["Rank", "Stop", "Stop ID", "Modeled difference", "Reason", "Scope"],
+            ...items.map(({ properties: stop }, index) => {
+              const difference = stop.gap_score === null ? "Unavailable" : `${Math.round(stop.gap_score * 100)}%`;
+              const reason = stop.gap_score === null
+                ? "The modeled difference is unavailable."
+                : `The wheelchair model reached ${difference} less mapped walking-network distance than standard walking in the same 10-minute sample.`;
+              return [index + 1, stop.stop_name, stop.stop_id, difference, reason, scope];
+            }),
+          ];
+          const csv = rows.map((row) => row.map(quote).join(",")).join("\r\n");
+          const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
+          const link = document.createElement("a");
+          link.href = url;
+          link.download = "transitgap-wheelchair-reachability-sample.csv";
+          link.click();
+          window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+        }}>Download as CSV</button>
+      )}
       <ol className="gap-ranking">
         {items.map(({ properties: p }, i) => (
           <li key={p.stop_id}>
-            <button className="list-row" onClick={() => void select(p.stop_id)}>
+            <button type="button" className="list-row" onClick={() => void select(p.stop_id)}>
               <span>
                 {i + 1}. {p.stop_name}
+                <small className="ranking-reason">
+                  {p.gap_score === null
+                    ? "The model difference is unavailable."
+                    : `The wheelchair model reached ${Math.round(p.gap_score * 100)}% less mapped walking-network distance than standard walking.`}
+                </small>
               </span>
               <strong>
                 {p.gap_score === null

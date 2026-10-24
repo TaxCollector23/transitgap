@@ -21,7 +21,7 @@ from .accessibility import (
     uncertainty_penalties,
 )
 from .models import Algorithm, Profile
-from .geospatial import distance_m, nearest_graph_node
+from .geospatial import distance_m, nearest_graph_nodes
 from .directions import accessibility_summary, describe_edge, directions as group_directions, geometry_audit
 
 ACCESSIBILITY_WARNING = (
@@ -30,6 +30,7 @@ ACCESSIBILITY_WARNING = (
 )
 WALKING_SPEED_MPS = 1.2
 MAX_SNAP_DISTANCE_M = 120.0
+ROUTE_SEARCH_LIMIT_SECONDS = 3.0
 from .profiles import assess, evaluate, SPEED_MPS, OBJECTIVES
 
 PROFILE_OBJECTIVES = {p: OBJECTIVES[p.value] for p in Profile}
@@ -253,9 +254,10 @@ def _run(
     def weight(u, v, data):
         key = (u, v)
         if key not in costs:
-            if len(costs) % 256 == 0 and perf_counter() - search_started > 3.0:
+            if len(costs) % 256 == 0 and perf_counter() - search_started > ROUTE_SEARCH_LIMIT_SECONDS:
                 raise ValueError(
-                    "This search exceeded the time limit. Try A* or choose a nearer stop."
+                    f"Walking-network search exceeded its {ROUTE_SEARCH_LIMIT_SECONDS:g}-second limit. "
+                    "Try moving the start to a nearby street entrance or choosing another stop."
                 )
             costs[key] = _weight(graph, u, v, data, profile, penalties, report_effects)
         return costs[key]
@@ -390,28 +392,87 @@ def calculate_route(
     penalties = (
         uncertainty_penalties() if profile == Profile.prefer_documented_paths else {}
     )
-    # Search the complete graph. Selecting the largest component can snap a
-    # nearby origin to a distant component and makes legitimate isolated paths
-    # impossible to route. The selected component is instead handled naturally
-    # by the directed shortest-path search below.
-    nearest, snap_distance = nearest_graph_node(graph, lat, lon)
-    if snap_distance > MAX_SNAP_DISTANCE_M:
-        raise ValueError(
-            f"Starting point is {round(snap_distance)} m from the walk network; choose a point within {MAX_SNAP_DISTANCE_M:g} m of a mapped path."
-        )
     if (
         destination_node not in graph
         and isinstance(destination_node, str)
         and destination_node.isdigit()
     ):
         destination_node = int(destination_node)
+    targets = [destination_node]
+    candidates = [
+        (node, distance)
+        for node, distance in nearest_graph_nodes(graph, lat, lon, count=24)
+        if distance <= MAX_SNAP_DISTANCE_M
+    ]
+    if not candidates:
+        _, snap_distance = nearest_graph_nodes(graph, lat, lon, count=1)[0]
+        raise ValueError(
+            f"Starting point is {round(snap_distance)} m from a mapped walking path; "
+            f"the limit is {MAX_SNAP_DISTANCE_M:g} m. Move the pin closer to a street or sidewalk."
+        )
+
+    # A pin may land inside a building or on an isolated mapped feature. Check
+    # nearby nodes against the destination's connected component before running
+    # an expensive full-network search. The checks are bounded: prefer a
+    # confirmed directed connection, remembering the nearest inconclusive
+    # candidate as a fallback. Directionality and mobility rules still come
+    # from the selected routing algorithm below.
+    def reaches_target(start: Any, *, directed: bool, limit: int = 4096) -> bool | None:
+        if start in targets:
+            return True
+        seen = {start}
+        queue = deque([start])
+        while queue:
+            current = queue.popleft()
+            neighbors = set(graph.successors(current))
+            if not directed:
+                neighbors.update(graph.predecessors(current))
+            for neighbor in neighbors:
+                if neighbor in targets:
+                    return True
+                if neighbor not in seen:
+                    seen.add(neighbor)
+                    if len(seen) >= limit:
+                        return None
+                    queue.append(neighbor)
+        return False
+
+    eligible = []
+    uncertain = None
+    for candidate, snap_distance in candidates:
+        weak = reaches_target(candidate, directed=False)
+        if weak is False:
+            continue
+        if weak is None:
+            uncertain = uncertain or (candidate, snap_distance)
+            continue
+        directed = reaches_target(candidate, directed=True)
+        if directed is False:
+            continue
+        if directed is None:
+            uncertain = uncertain or (candidate, snap_distance)
+            continue
+        eligible.append((candidate, snap_distance))
+        # Prefer the closest candidate with a confirmed directed connection.
+        break
+    if not eligible and uncertain:
+        # No nearby candidate had a connection that the bounded probes could
+        # confirm. Preserve best-effort routing from the nearest plausible node.
+        eligible.append(uncertain)
+    if not eligible:
+        raise LookupError(
+            "This start is not connected to the mapped walking route for this stop. "
+            "Move the pin to a nearby street or sidewalk entrance, then try again."
+        )
+    nearest, snap_distance = eligible[0]
     try:
         nodes, optimization_edge_cost = _run(
             graph, nearest, destination_node, algorithm, profile, penalties, report_effects
         )
     except (nx.NodeNotFound, nx.NetworkXNoPath) as exc:
         raise LookupError(
-            "No walking route connects this starting point to the selected stop with the chosen profile."
+            "No mapped walking route connects this start and stop for the chosen profile. "
+            "Try a nearby street entrance or another stop."
         ) from exc
 
     coords: list[list[float]] = []

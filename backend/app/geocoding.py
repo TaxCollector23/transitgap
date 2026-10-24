@@ -1,4 +1,4 @@
-"""Explicit address search, no autocomplete, bounded in-memory cache and 1 req/s."""
+"""Explicit address search, county-filtered results, memory cache and 1 req/s."""
 
 import time
 from collections import OrderedDict
@@ -37,7 +37,7 @@ def search(query, boundary):
                     "q": query,
                     "format": "jsonv2",
                     "limit": 5,
-                    "bounded": 1,
+                    # Prefer local results without hiding matches outside the county.
                     "viewbox": f"{west},{north},{east},{south}",
                     "countrycodes": "us",
                 },
@@ -45,17 +45,21 @@ def search(query, boundary):
             response.raise_for_status()
             from shapely.geometry import Point
 
-            results = [
+            matches = [
                 {
                     "name": r["display_name"],
                     "latitude": float(r["lat"]),
                     "longitude": float(r["lon"]),
+                    "inside_coverage": boundary.covers(Point(float(r["lon"]), float(r["lat"]))),
                 }
                 for r in response.json()
-                if boundary.covers(Point(float(r["lon"]), float(r["lat"])))
             ]
+            results = [{k: v for k, v in item.items() if k != "inside_coverage"}
+                       for item in matches if item["inside_coverage"]]
         result = {
             "results": results,
+            "reason": "outside_coverage" if not results and any(not item["inside_coverage"] for item in matches) else None,
+            "coverage_region": "Santa Clara County",
             "attribution": "© OpenStreetMap contributors, Nominatim",
             "privacy": "Search text is sent to Nominatim. TransitGap keeps a bounded memory cache for 10 minutes; it does not persist addresses.",
         }

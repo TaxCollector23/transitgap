@@ -123,3 +123,13 @@ export function nearestStop(place: Place, point: [number, number] | null) {
       distanceM(point, [b.latitude, b.longitude]),
   )[0];
 }
+
+/** Compact feed-backed details that make nearby, similarly named stops distinct. */
+export function placeSearchDetail(place: Place) {
+  const platforms = [...new Set(place.stops.map((stop) => stop.platform_name).filter(Boolean))];
+  const routes = [...new Set(place.stops.flatMap((stop) => stop.routes_served || []))];
+  const details = [place.description];
+  if (platforms.length) details.push(platforms.length === 1 ? platforms[0]! : `Platforms ${platforms.join(", ")}`);
+  if (routes.length) details.push(`Routes ${routes.slice(0, 4).join(", ")}${routes.length > 4 ? ` +${routes.length - 4}` : ""}`);
+  return details.join(" · ");
+}

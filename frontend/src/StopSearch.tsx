@@ -5,6 +5,7 @@ import {
   distanceM,
   formatDistance,
   normalize,
+  placeSearchDetail,
 } from "./format";
 
 const FILTERS: Array<{ value: AgencyFilter; label: string }> = [
@@ -22,6 +23,7 @@ type Props = {
   disabled?: boolean;
   onSelect: (place: Place) => void;
   onClear: () => void;
+  onInputChange?: () => void;
 };
 
 export default function StopSearch({
@@ -32,6 +34,7 @@ export default function StopSearch({
   disabled,
   onSelect,
   onClear,
+  onInputChange,
 }: Props) {
   const id = useId();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -45,7 +48,8 @@ export default function StopSearch({
     return places
       .filter((place) => agency === "all" || place.agency === agency)
       .map((place) => {
-        const haystack = normalize(`${place.name} ${place.description}`);
+        const details = placeSearchDetail(place);
+        const haystack = normalize(`${place.name} ${details}`);
         const name = normalize(place.name);
         const matches = terms.every((term) => haystack.includes(term));
         return {
@@ -150,6 +154,7 @@ export default function StopSearch({
           setQuery(event.target.value);
           setActive(0);
           setOpen(true);
+          onInputChange?.();
         }}
         onKeyDown={(event) => {
           if (event.key === "ArrowDown") {
@@ -192,7 +197,7 @@ export default function StopSearch({
           >
             <span className="stop-option-name">
               <strong>{place.name}</strong>
-              <span>{place.description}</span>
+              <span>{placeSearchDetail(place)}</span>
             </span>
             {distance != null && (
               <span className="stop-option-distance">{formatDistance(distance)}</span>

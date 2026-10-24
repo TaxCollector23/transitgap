@@ -162,6 +162,15 @@ class TransitSchedule:
         return sorted({str(self.routes.get(self.trips[trip][0], {}).get("route_type", ""))
                        for _, trip in self.events.get(stop_id, []) if trip in self.trips} - {""})
 
+    def routes_served(self, stop_id):
+        """Distinct public route names present in this stop's loaded GTFS trips."""
+        return sorted({
+            str(self.routes.get(self.trips[trip][0], {}).get("route_short_name", "")).strip()
+            or str(self.routes.get(self.trips[trip][0], {}).get("route_long_name", "")).strip()
+            for _, trip in self.events.get(stop_id, [])
+            if trip in self.trips
+        } - {""})
+
     def details(self, stop_id, now=None):
         now = (now or datetime.now(TIMEZONE)).astimezone(TIMEZONE)
         events = self.events.get(stop_id, [])

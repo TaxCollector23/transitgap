@@ -1,8 +1,10 @@
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import OriginSearch from "./OriginSearch";
 import type { GapFeature, Observation, SourceStatus } from "./types";
 
-import { API, serviceJSON, warmRouting } from "./data";
+import { API, serviceJSON } from "./data";
+import { distanceM, formatDistance } from "./format";
+import type { Stop } from "./types";
 const METERS_PER_MILE = 1609.344;
 type Props = {
   onFeatures: (
@@ -17,6 +19,7 @@ type Props = {
   focusReport?: number;
   mode?: "evidence" | "report";
   onReport?: () => void;
+  stops?: Stop[];
 };
 const emptyPolygons: GeoJSON.FeatureCollection = {
   type: "FeatureCollection",
@@ -38,6 +41,42 @@ const categories = [
   ["other", "Other accessibility concern"],
 ];
 
+function candidateExplanation(gap: GapFeature) {
+  const hasCity = Boolean(gap.provenance.municipal_source);
+  const hasOsm = Boolean(gap.provenance.osm_source);
+  if (hasCity && hasOsm) {
+    return gap.classification === "CONFLICTING_SOURCES"
+      ? "City and OpenStreetMap records disagree about this sidewalk detail. An in-person check could record the actual condition and measurement method."
+      : "City and OpenStreetMap records are close together here, but they may describe different paths. An in-person check could confirm what is present and connected."
+  }
+  if (hasCity)
+    return "A City sidewalk record has no close mapped walking path match. This is a difference between data sources, not proof that a sidewalk or path is missing. An in-person check could confirm the path and where it connects."
+  const missingLabels: Record<string, string> = {
+    width: "path width", surface: "surface", smoothness: "surface condition", wheelchair: "wheelchair access",
+    incline: "slope", kerb: "curb ramp", crossing: "crossing details",
+  };
+  const missing = gap.missing_information.map((item) => missingLabels[item] || item.replace(/_/g, " "));
+  const details = missing.length ? `The map doesn't record ${missing.join(", ")} here.` : "The map and City records do not provide enough detail to compare this location."
+  return `${details} An in-person check could record those details. This is an inspection suggestion, not a confirmed barrier.`
+}
+
+function candidateSummary(gap: GapFeature) {
+  const hasCity = Boolean(gap.provenance.municipal_source);
+  const hasOsm = Boolean(gap.provenance.osm_source);
+  if (hasCity && hasOsm && gap.classification === "CONFLICTING_SOURCES")
+    return "City and map records disagree; check the actual sidewalk condition and measurement.";
+  if (hasCity && !hasOsm)
+    return "A City sidewalk record has no nearby mapped-path match; check whether a path connects.";
+  const fields: Record<string, string> = {
+    width: "path width", surface: "surface", smoothness: "surface condition",
+    wheelchair: "wheelchair access", incline: "slope", kerb: "curb ramp", crossing: "crossing details",
+  };
+  const missing = gap.missing_information.map((item) => fields[item] || item.replace(/_/g, " "));
+  return missing.length
+    ? `The map doesn't record ${missing.join(", ")}; check in person.`
+    : "Available records don't give enough detail; check this location in person.";
+}
+
 export default function GroundTruthPanel({
   onFeatures,
   onClearReportPoint,
@@ -48,6 +87,7 @@ export default function GroundTruthPanel({
   focusReport = 0,
   mode = "evidence",
   onReport,
+  stops = [],
 }: Props) {
   const [gaps, setGaps] = useState<GapFeature[]>([]);
   const [reports, setReports] = useState<Observation[]>([]);
@@ -68,9 +108,43 @@ export default function GroundTruthPanel({
   const [reportsState, setReportsState] = useState<"loading" | "ready" | "unavailable">("loading");
   const [sourcesUnavailable, setSourcesUnavailable] = useState(false);
   const [reportAvailabilityError, setReportAvailabilityError] = useState(false);
+  const [checkingReports, setCheckingReports] = useState(false);
   const [message, setMessage] = useState("");
   const [saved, setSaved] = useState("");
   const submission = useRef<{body:string; key:string} | null>(null);
+
+  const candidateLocations = useMemo(() => new Map<string, { stop_name: string; distance_m: number } | null>(
+    gaps.map((gap) => {
+      const listed = gap.nearby_stops?.[0];
+      if (listed) return [gap.id, listed];
+      const nearest = stops.reduce<{ stop_name: string; distance_m: number } | null>((best, stop) => {
+        const distance = distanceM([gap.latitude, gap.longitude], [stop.latitude, stop.longitude]);
+        return !best || distance < best.distance_m ? { stop_name: stop.stop_name, distance_m: distance } : best;
+      }, null);
+      return [gap.id, nearest];
+    }),
+  ), [gaps, stops]);
+
+  async function checkReportAvailability() {
+    setReportAvailabilityError(false);
+    setCheckingReports(true);
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), 4000);
+    try {
+      const response = await fetch(`${API}/health`, { signal: controller.signal, cache: "no-store" });
+      if (!response.ok) throw new Error("Report service is unavailable.");
+      const health = await response.json();
+      if (health.reports_enabled === true) setReportsEnabled(true);
+      else if (health.ready === true) setReportsEnabled(false);
+      else throw new Error("Report service is still starting.");
+    } catch {
+      setReportsEnabled(null);
+      setReportAvailabilityError(true);
+    } finally {
+      window.clearTimeout(timeout);
+      setCheckingReports(false);
+    }
+  }
 
   function evidenceData(
     items: GapFeature[],
@@ -122,14 +196,7 @@ export default function GroundTruthPanel({
         setReports(data.observations as Observation[]);
         setReportsState("ready");
       }).catch(() => setReportsState("unavailable")),
-      serviceJSON(`${API}/health`).then(async data => {
-        if (!data.ready && !data.error) {
-          if (!await warmRouting()) throw Error("Service is still starting");
-          data = await serviceJSON(`${API}/health`);
-        }
-        setReportsEnabled(data.reports_enabled === true);
-      })
-        .catch(() => { setReportsEnabled(null); setReportAvailabilityError(true); }),
+      checkReportAvailability(),
     ]);
   }
 
@@ -230,9 +297,20 @@ export default function GroundTruthPanel({
         <h2 id="report-title" tabIndex={-1}>Report an issue</h2>
         <p>Tell others about a sidewalk or crossing problem. Reports are shown as unverified until someone reviews them. Please don't include personal details.</p>
         {reportsEnabled === false ? (
-          <p role="status" className="notice">Public reporting is paused until durable storage is connected. No report will be saved here.</p>
+          <div role="status" className="notice">
+            <p>Community reports are paused in this version. No report will be saved here.</p>
+            <p>To report a sidewalk or crossing problem, contact <a href="https://www.vta.org/about/contact" target="_blank" rel="noreferrer">VTA</a> or <a href="https://311.sanjoseca.gov/" target="_blank" rel="noreferrer">San José 311</a>.</p>
+          </div>
         ) : reportsEnabled === null ? (
-          <p role="status">{reportAvailabilityError ? "Reporting availability could not be checked. No report can be submitted until the service responds." : "Checking report availability…"}</p>
+          <div role="status" className="notice">
+            {reportAvailabilityError ? (
+              <>
+                <p>Reporting availability couldn't be checked. No report has been submitted or saved.</p>
+                <p>Contact <a href="https://www.vta.org/about/contact" target="_blank" rel="noreferrer">VTA</a> or <a href="https://311.sanjoseca.gov/" target="_blank" rel="noreferrer">San José 311</a> instead.</p>
+                <button type="button" className="text-button" onClick={() => void checkReportAvailability()}>Try checking again</button>
+              </>
+            ) : <p>{checkingReports ? "Checking report availability…" : "Checking report availability…"}</p>}
+          </div>
         ) : (
           <>
             <section className="report-step" aria-labelledby="report-where">
@@ -380,11 +458,16 @@ export default function GroundTruthPanel({
               {gap.priority_score === null
                 ? "—"
                 : Math.round(gap.priority_score)}
+              <span>route proximity</span>
             </span>
             <span className="gap-copy">
               <strong>
                 {gap.classification.replace(/_/g, " ").toLowerCase()}
               </strong>
+              <span>{candidateLocations.get(gap.id)
+                ? `Near ${candidateLocations.get(gap.id)!.stop_name} · ${formatDistance(candidateLocations.get(gap.id)!.distance_m)}`
+                : `${gap.latitude.toFixed(5)}, ${gap.longitude.toFixed(5)}`}</span>
+              <span>{candidateSummary(gap)}</span>
             </span>
           </button>
         ))}
@@ -408,8 +491,9 @@ export default function GroundTruthPanel({
               ×
             </button>
           </div>
-          <p>{selected.explanation}</p>
-          <p>{selected.provenance.interpretation}</p>
+          {candidateLocations.get(selected.id) && <p>Nearest transit stop in the loaded data: {candidateLocations.get(selected.id)!.stop_name}, {formatDistance(candidateLocations.get(selected.id)!.distance_m)} away.</p>}
+          <p>{candidateExplanation(selected)}</p>
+          <p>The score describes how often this location is near the sampled routes; it does not measure barrier severity. These records are suggestions for inspection, not confirmed barriers.</p>
           <dl>
             <div>
               <dt>Municipal source</dt>

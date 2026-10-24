@@ -69,7 +69,22 @@ def test_disconnected_components_and_empty_graphs_are_explicit(routing_graph):
                         Algorithm.dijkstra, Profile.standard, {})
 
 
-def test_origin_snaps_to_nearest_component_instead_of_largest_component():
+def test_building_interior_pin_skips_nearest_disconnected_component():
+    graph = nx.MultiDiGraph()
+    origin = (37.33, -121.9)
+    graph.add_node("interior", y=origin[0], x=origin[1])
+    graph.add_node("sidewalk", y=origin[0], x=origin[1] + 0.0001)
+    graph.add_node("stop", y=origin[0], x=origin[1] + 0.0002)
+    graph.add_edge("sidewalk", "stop", key="walkway", length=9, highway="footway")
+    stop = {"stop_id": "nearby", "stop_name": "Nearby stop", "latitude": origin[0], "longitude": origin[1] + 0.0002}
+
+    result = calculate_route(graph, origin, "stop", Algorithm.astar, Profile.standard, stop)
+
+    assert result["selected_edges"] == [{"from": "sidewalk", "to": "stop", "key": "walkway", "reference": '["sidewalk","stop","walkway"]'}]
+    assert result["distance_m"] > 9  # the short off-network connector stays explicit in route distance
+
+
+def test_origin_skips_nearest_isolated_point_for_connected_sidewalk():
     graph = nx.MultiDiGraph()
     graph.add_node("near", y=37.3296, x=-121.903)
     graph.add_node("far-a", y=37.33014, x=-121.903)
@@ -78,8 +93,10 @@ def test_origin_snaps_to_nearest_component_instead_of_largest_component():
     graph.add_edge("far-a", "far-b", length=11)
     graph.add_edge("far-b", "far-c", length=11)
     stop = {"stop_id": "island", "stop_name": "Separate component", "latitude": 37.33023, "longitude": -121.903}
-    with pytest.raises(LookupError, match="No walking route"):
-        calculate_route(graph, (37.3296, -121.903), "far-b", Algorithm.dijkstra, Profile.standard, stop)
+    result = calculate_route(graph, (37.3296, -121.903), "far-b", Algorithm.dijkstra, Profile.standard, stop)
+    assert result["accessibility"]["selected_edge_keys"][0]["from"] == "far-a"
+    assert result["accessibility"]["selected_edge_keys"][0]["to"] == "far-b"
+    assert result["distance_m"] > graph["far-a"]["far-b"][0]["length"]
 
 
 def test_parallel_edges_keep_selected_key_and_curved_geometry():
@@ -151,7 +168,7 @@ def test_missing_length_uses_edge_geometry_and_nonfinite_input_is_rejected(routi
 
 def test_unreasonable_origin_snap_is_rejected(routing_graph):
     stop = {"stop_id": "fixture", "stop_name": "Fixture stop", "latitude": 37.32978, "longitude": -121.903}
-    with pytest.raises(ValueError, match="from the walk network"):
+    with pytest.raises(ValueError, match="from a mapped walking path"):
         calculate_route(routing_graph, (37.332, -121.903), 2,
                         Algorithm.dijkstra, Profile.standard, stop)
 

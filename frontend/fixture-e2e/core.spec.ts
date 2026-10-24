@@ -51,8 +51,24 @@ test('reporting disabled is explicit and never offers a submit form',async({page
  await page.goto('/app');
  await expect(page.locator('main[data-data-state="ready"]')).toBeVisible();
  await page.getByRole('button',{name:'Report an issue',exact:true}).click();
- await expect(page.getByText('Public reporting is paused until durable storage is connected. No report will be saved here.')).toBeVisible();
+ await expect(page.getByText('Community reports are paused in this version. No report will be saved here.')).toBeVisible();
+ await expect(page.getByRole('link',{name:'VTA'}).first()).toBeVisible();
+ await expect(page.getByRole('link',{name:'San José 311'})).toBeVisible();
  await expect(page.getByRole('button',{name:'Submit report'})).toHaveCount(0);
+});
+
+test('report availability that stalls fails visibly within a bounded time',async({page})=>{
+ await page.goto('/app');
+ await expect(page.locator('main[data-data-state="ready"]')).toBeVisible();
+ await page.route('**/health',async route=>{
+  await new Promise(resolve=>setTimeout(resolve,5500));
+  try { await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({ready:true,reports_enabled:false})}); } catch {}
+ });
+ await page.getByRole('button',{name:'Report an issue',exact:true}).click();
+ await expect(page.getByText(/Reporting availability couldn't be checked/)).toBeVisible({timeout:7000});
+ await expect(page.getByRole('button',{name:'Submit report'})).toHaveCount(0);
+ await expect(page.getByText('Checking report availability…')).toHaveCount(0);
+ await page.waitForTimeout(1200);
 });
 
 test('local speech controls pause, resume and stop',async({page})=>{
@@ -93,10 +109,14 @@ test('source metadata failure does not hide available candidates or report contr
  await page.goto('/app');await expect(page.locator('main[data-data-state="ready"]')).toBeVisible();
  await page.getByRole('button',{name:'Sidewalk records that need review',exact:true}).click();
  await expect(page.locator('.gap-item').first()).toBeVisible();
+ await expect(page.locator('.gap-item').first()).toContainText('Near SYNTHETIC CI Stop');
+ await expect(page.locator('.gap-item').first()).toContainText('path width');
  await expect(page.getByRole('button',{name:'Report an issue'}).first()).toBeEnabled();
  await expect(page.getByText('Source metadata is unavailable. Candidate records still include their individual source details.')).toBeVisible();
  await page.locator('.gap-item').first().click();
  await expect(page.getByText('Evidence detail',{exact:true})).toBeVisible();
+ await expect(page.locator('.gap-detail')).toContainText('These records are suggestions for inspection, not confirmed barriers.');
+ await expect(page.locator('.gap-detail')).not.toContainText('reproducibly sampled graph-origin routes');
  await page.unroute('**/data-sources');
  await page.getByRole('button',{name:'Try loading evidence again'}).click();
  await expect(page.getByText('Source metadata is unavailable. Candidate records still include their individual source details.')).toHaveCount(0);

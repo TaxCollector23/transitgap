@@ -107,7 +107,7 @@ export default function GroundTruthPanel({
   const [reportsEnabled, setReportsEnabled] = useState<boolean | null>(null);
   const [reportsState, setReportsState] = useState<"loading" | "ready" | "unavailable">("loading");
   const [sourcesUnavailable, setSourcesUnavailable] = useState(false);
-  const [reportAvailabilityError, setReportAvailabilityError] = useState(false);
+  const [reportAvailabilityError, setReportAvailabilityError] = useState<"starting" | "unavailable" | null>(null);
   const [checkingReports, setCheckingReports] = useState(false);
   const [message, setMessage] = useState("");
   const [saved, setSaved] = useState("");
@@ -126,7 +126,7 @@ export default function GroundTruthPanel({
   ), [gaps, stops]);
 
   async function checkReportAvailability() {
-    setReportAvailabilityError(false);
+    setReportAvailabilityError(null);
     setCheckingReports(true);
     const controller = new AbortController();
     const timeout = window.setTimeout(() => controller.abort(), 4000);
@@ -134,12 +134,14 @@ export default function GroundTruthPanel({
       const response = await fetch(`${API}/health`, { signal: controller.signal, cache: "no-store" });
       if (!response.ok) throw new Error("Report service is unavailable.");
       const health = await response.json();
-      if (health.reports_enabled === true) setReportsEnabled(true);
-      else if (health.ready === true) setReportsEnabled(false);
-      else throw new Error("Report service is still starting.");
+      if (health.ready !== true) {
+        setReportsEnabled(null);
+        setReportAvailabilityError("starting");
+      } else if (health.reports_enabled === true) setReportsEnabled(true);
+      else setReportsEnabled(false);
     } catch {
       setReportsEnabled(null);
-      setReportAvailabilityError(true);
+      setReportAvailabilityError("unavailable");
     } finally {
       window.clearTimeout(timeout);
       setCheckingReports(false);
@@ -176,11 +178,17 @@ export default function GroundTruthPanel({
   }
 
   async function refresh() {
+    // Reporting only needs a health check. Loading the evidence index here
+    // starts unrelated, expensive requests on a cold serverless worker and can
+    // leave a stale routing error beside the report form.
+    if (mode === "report") {
+      await checkReportAvailability();
+      return;
+    }
     setEvidenceState("loading");
     setReportsState("loading");
     setSourcesUnavailable(false);
-    setReportAvailabilityError(false);
-    // Source metadata and community/health requests must not hold back the
+    // Source metadata and community-report requests must not hold back the
     // independently available source-linked candidate records.
     await Promise.allSettled([
       serviceJSON(`${API}/data-sources`).then(data => setSources(data as SourceStatus))
@@ -196,7 +204,6 @@ export default function GroundTruthPanel({
         setReports(data.observations as Observation[]);
         setReportsState("ready");
       }).catch(() => setReportsState("unavailable")),
-      checkReportAvailability(),
     ]);
   }
 
@@ -305,8 +312,14 @@ export default function GroundTruthPanel({
           <div role="status" className="notice">
             {reportAvailabilityError ? (
               <>
-                <p>Reporting availability couldn't be checked. No report has been submitted or saved.</p>
-                <p>Contact <a href="https://www.vta.org/about/contact" target="_blank" rel="noreferrer">VTA</a> or <a href="https://311.sanjoseca.gov/" target="_blank" rel="noreferrer">San José 311</a> instead.</p>
+                {reportAvailabilityError === "starting" ? (
+                  <p>TransitGap is still getting ready. Nothing has been submitted or saved; check again in a moment.</p>
+                ) : (
+                  <>
+                    <p>Reporting availability couldn't be checked. No report has been submitted or saved.</p>
+                    <p>Contact <a href="https://www.vta.org/about/contact" target="_blank" rel="noreferrer">VTA</a> or <a href="https://311.sanjoseca.gov/" target="_blank" rel="noreferrer">San José 311</a> instead.</p>
+                  </>
+                )}
                 <button type="button" className="text-button" onClick={() => void checkReportAvailability()}>Try checking again</button>
               </>
             ) : <p>{checkingReports ? "Checking report availability…" : "Checking report availability…"}</p>}

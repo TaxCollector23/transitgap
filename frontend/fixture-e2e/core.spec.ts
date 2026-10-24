@@ -57,6 +57,19 @@ test('reporting disabled is explicit and never offers a submit form',async({page
  await expect(page.getByRole('button',{name:'Submit report'})).toHaveCount(0);
 });
 
+test('a cold report service explains the delay and can be checked again',async({page})=>{
+ await page.goto('/app');
+ await expect(page.locator('main[data-data-state="ready"]')).toBeVisible();
+ await page.route('**/health',route=>route.fulfill({status:200,json:{ready:false,reports_enabled:false}}));
+ await page.getByRole('button',{name:'Report an issue',exact:true}).click();
+ await expect(page.getByText('TransitGap is still getting ready. Nothing has been submitted or saved; check again in a moment.')).toBeVisible();
+ await expect(page.getByRole('button',{name:'Submit report'})).toHaveCount(0);
+ await page.unroute('**/health');
+ await page.getByRole('button',{name:'Try checking again'}).click();
+ await expect(page.getByRole('heading',{name:'1. Where is the problem?'})).toBeVisible();
+ await expect(page.getByLabel("2. What's the problem?")).toBeVisible();
+});
+
 test('report availability that stalls fails visibly within a bounded time',async({page})=>{
  await page.goto('/app');
  await expect(page.locator('main[data-data-state="ready"]')).toBeVisible();

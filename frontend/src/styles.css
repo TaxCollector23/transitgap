@@ -763,6 +763,50 @@ a:focus-visible {
 .gap-copy {
   font-size: 14px;
   line-height: 1.5;
+  display: grid;
+  gap: 3px;
+}
+.gap-copy > span {
+  color: #39463e;
+}
+.gap-score {
+  display: grid;
+  justify-items: start;
+  gap: 2px;
+}
+.gap-score > span {
+  min-width: 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.25;
+  font-weight: 400;
+}
+.coverage-summary,
+.schedule-notice {
+  margin: 0 0 15px;
+  padding: 12px 14px;
+  background: #fffefa;
+  border-left: 3px solid var(--accent);
+  line-height: 1.5;
+}
+.schedule-notice {
+  margin: 12px 0;
+  background: #f3f2ec;
+}
+.methods-panel {
+  line-height: 1.55;
+}
+.methods-panel ul {
+  padding-left: 22px;
+}
+.methods-panel li + li {
+  margin-top: 10px;
+}
+.route-profile-note {
+  margin: 0 0 14px;
+  padding: 12px 14px;
+  background: #f3f2ec;
+  line-height: 1.5;
 }
 .gap-detail {
   border-top: 2px solid var(--accent);

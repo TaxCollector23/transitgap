@@ -28,13 +28,35 @@ const algorithms = [
   { value: "bellman_ford", label: "Bellman–Ford", description: "Finds a lowest-cost route by relaxing edges. Usually slower on large networks." },
   { value: "breadth_first", label: "Breadth-first search", description: "Chooses the fewest network segments. The walking distance may be longer." },
 ];
-type View = "route" | "advocates" | "report";
+type View = "route" | "advocates" | "report" | "methods";
 type RouteKey = { origin: [number, number]; stopId: string; algorithm: string; profile: string };
 type Problem = { message: string; retry?: () => void };
 function initialView(): View {
   const requested = new URLSearchParams(location.search).get("view");
   if (requested === "gaps" || requested === "evidence" || requested === "advocates") return "advocates";
-  return requested === "report" ? "report" : "route";
+  return requested === "report" ? "report" : requested === "methods" ? "methods" : "route";
+}
+type ScheduleNotice = { message: string; agency: string; url: string };
+
+const ROUTE_PROFILES = ["standard", "wheelchair", "stroller", "low_vision", "prefer_documented_paths"];
+const SHARED_PROFILE_VALUES = new Set(ROUTE_PROFILES);
+
+function initialProfile() {
+  const shared = new URLSearchParams(location.search).get("profile");
+  if (shared && SHARED_PROFILE_VALUES.has(shared)) return shared;
+  try {
+    const saved = localStorage.getItem("transitgap-profile-v1");
+    if (saved && SHARED_PROFILE_VALUES.has(saved)) return saved;
+  } catch {
+    // Storage can be disabled; the planner still works with the default.
+  }
+  return "standard";
+}
+
+function feedDate(value?: string) {
+  return value && /^\d{8}$/.test(value)
+    ? `${value.slice(4, 6)}/${value.slice(6, 8)}/${value.slice(0, 4)}`
+    : value || "not stated";
 }
 
 const CONNECTION_PROBLEM =
@@ -67,8 +89,9 @@ function insideCoverage(point: [number, number], coverage: Coverage) {
 function routeProblem(status: number, detail: string) {
   if (status === 503 || status >= 500 || status === 0) return CONNECTION_PROBLEM;
   if (/outside the supported area/i.test(detail)) return "That starting point is outside the area TransitGap covers. Choose a point inside the dotted boundary.";
-  if (/time limit/i.test(detail)) return "This route took too long to calculate. Try again, or choose a closer stop.";
-  if (/from the walk network|within .* of a mapped path/i.test(detail)) return "That starting point is too far from any mapped path. Choose a point on or near a street or path.";
+  if (/time limit|search exceeded.*limit|search.*\d+-second limit/i.test(detail)) return "The walking-network search reached its 3-second limit. Move the start to a street or sidewalk entrance, or try another transit stop.";
+  if (/not connected to the mapped walking route/i.test(detail)) return "This start is not connected to the mapped walking route. Move the pin to a nearby street or sidewalk entrance and try again.";
+  if (/from .* mapped (walking )?path|within .* of a mapped path/i.test(detail)) return "That starting point is too far from a mapped path. Choose a point on or near a street or sidewalk.";
   if (status === 404) return "That stop is no longer in the loaded transit data. Choose another stop.";
   if (status === 422) return NO_ROUTE;
   return "The route couldn't be calculated. Try again.";
@@ -90,7 +113,7 @@ export default function App() {
   const [locating, setLocating] = useState(false);
   const [place, setPlace] = useState<Place | null>(null);
   const [algorithm, setAlgorithm] = useState("astar");
-  const [profile, setProfile] = useState("standard");
+  const [profile, setProfile] = useState(initialProfile);
   const [view, setView] = useState<View>(initialView);
   const [editing, setEditing] = useState(false);
   const [recalculating, setRecalculating] = useState(false);
@@ -125,13 +148,48 @@ export default function App() {
   const [selectedCandidateId, setSelectedCandidateId] = useState<string | null>(null);
   const [rankedStops, setRankedStops] = useState<GapDetail[]>([]);
   const [advocateSummary, setAdvocateSummary] = useState<AdvocacySummary>({ status: "loading" });
+  const [scheduleNotice, setScheduleNotice] = useState<ScheduleNotice | null>(null);
   const dataLoadRef = useRef<Promise<void> | null>(null);
   const requestRef = useRef<AbortController | null>(null);
   const compareRef = useRef<AbortController | null>(null);
   const viewTitleRef = useRef<HTMLHeadingElement>(null);
   const locationCenterAttempted = useRef(false);
+  const methodsTitleRef = useRef<HTMLHeadingElement>(null);
 
   const destination = useMemo(() => (place ? nearestStop(place, origin) : null), [place, origin]);
+
+  useEffect(() => {
+    try { localStorage.setItem("transitgap-profile-v1", profile); } catch { /* optional preference */ }
+  }, [profile]);
+
+  useEffect(() => {
+    setScheduleNotice(null);
+    if (!destination) return;
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), 5000);
+    fetch(`${API}/stops/${encodeURIComponent(destination.stop_id)}`, { signal: controller.signal, cache: "no-store" })
+      .then(async (response) => {
+        if (!response.ok) return null;
+        return response.json();
+      })
+      .then((data) => {
+        const service = data?.service;
+        const validity = service?.schedule_validity;
+        if (!service || !validity || validity.status === "current") return;
+        const start = feedDate(validity.feed_start_date || service.feed_info?.[0]?.feed_start_date);
+        const end = feedDate(validity.feed_end_date || service.feed_info?.[0]?.feed_end_date);
+        setScheduleNotice({
+          message: validity.status === "unknown"
+            ? `The loaded ${data.agency} timetable doesn't state which dates it covers. Check the agency for today's times.`
+            : `This timetable doesn't cover today. The loaded feed covers ${start} to ${end}. Check ${data.agency} for today's times.`,
+          agency: data.agency,
+          url: data.schedule_url || data.agency_url,
+        });
+      })
+      .catch(() => { /* Schedule status is supplemental; route planning remains available. */ })
+      .finally(() => window.clearTimeout(timeout));
+    return () => { window.clearTimeout(timeout); controller.abort(); };
+  }, [destination?.stop_id]);
 
   const startRouting = useCallback(async () => {
     setWarmingRouting(true);
@@ -161,8 +219,6 @@ export default function App() {
           setOrigin([lat, lon]);
           setOriginLabel("Shared starting point");
         }
-        if (["standard", "wheelchair", "stroller", "low_vision", "prefer_documented_paths"].includes(params.get("profile") || ""))
-          setProfile(params.get("profile")!);
         setDataReady(true);
         setStatus("Route planner ready");
       } catch {
@@ -433,15 +489,25 @@ export default function App() {
     setEditing(false);
     setMapMode("idle");
     setProblem(null);
+    setBenchmark([]);
+    history.replaceState(null, "", location.pathname);
     setStatus("Plan a new trip");
     setPanelExpanded(true);
     requestAnimationFrame(() => document.getElementById("origin-title")?.focus());
+  };
+
+  const clearTrip = () => {
+    newTrip();
+    setProfile("standard");
+    try { localStorage.setItem("transitgap-profile-v1", "standard"); } catch { /* optional preference */ }
+    setStatus("Trip cleared. Choose a starting point to begin again.");
   };
 
   const goTo = (next: View) => {
     setView(next);
     setPanelExpanded(true);
     if (next === "advocates") setCandidateFocus(null);
+    setProblem(null);
     if (next === "report") setReportFocus((n) => n + 1);
     if (next === "route") {
       setEvidenceFeatures({ type: "FeatureCollection", features: [] });
@@ -450,7 +516,8 @@ export default function App() {
     requestAnimationFrame(() =>
       (next === "route"
         ? document.getElementById(showingResult ? "route-title" : "origin-title")
-        : next === "report" ? document.getElementById("report-title") : viewTitleRef.current
+        : next === "report" ? document.getElementById("report-title")
+        : next === "methods" ? methodsTitleRef.current : viewTitleRef.current
       )?.focus(),
     );
   };
@@ -621,7 +688,7 @@ export default function App() {
 
   const sheetSummary = showingResult && result
     ? `To ${place?.name}: ${formatDistance(result.distance_m)}, ${formatDuration(result.duration_seconds)}`
-    : view === "route" ? nextAction : view === "report" ? "Report an issue" : "For cities and advocates";
+    : view === "route" ? nextAction : view === "report" ? "Report an issue" : view === "methods" ? "Methods & limitations" : "For cities and advocates";
 
   return (
     <main
@@ -747,6 +814,7 @@ export default function App() {
                   requestAnimationFrame(() => document.getElementById("origin-title")?.focus());
                 }}
                 onNewTrip={newTrip}
+                onClearTrip={clearTrip}
                 onShare={share}
                 onFocusStep={(point) => setCandidateFocus([...point] as [number, number])}
                 comparison={comparison}
@@ -756,6 +824,7 @@ export default function App() {
             )}
             {view === "route" && !showingResult && (
               <div className="planner" role="group" aria-label="Plan a route" data-next-step={plannerStep}>
+                <p className="coverage-summary">TransitGap covers Santa Clara County. Detailed city sidewalk records cover the Diridon pilot only.</p>
                 <section className={`step-section ${plannerStep === "origin" ? "step-current" : "step-complete"}`} aria-labelledby="origin-title">
                   <h2 id="origin-title" tabIndex={-1}><span className="step-number" aria-hidden="true">{origin ? "✓" : "1"}</span>Where are you starting?</h2>
                   {origin ? (
@@ -764,7 +833,7 @@ export default function App() {
                         <strong>{originLabel || "Starting point"}</strong>
                         <span className="sr-only">{origin[0].toFixed(5)}, {origin[1].toFixed(5)}</span>
                       </span>
-                      <button type="button" className="text-button field-change" onClick={() => { cancelRouteRequest(); setOrigin(null); setOriginLabel(""); }}>
+                      <button type="button" className="text-button field-change" onClick={() => { cancelRouteRequest(); setProblem(null); setOrigin(null); setOriginLabel(""); setResult(null); setResultKey(null); }}>
                         Change<span className="sr-only"> starting point</span>
                       </button>
                     </div>
@@ -789,7 +858,7 @@ export default function App() {
                           Choose on map
                         </button>
                       </div>
-                      <OriginSearch onChoose={setStart} />
+                      <OriginSearch onChoose={setStart} onInputChange={() => setProblem(null)} />
                     </>
                   )}
                 </section>
@@ -802,15 +871,22 @@ export default function App() {
                     referenceLabel={origin ? "your starting point" : "the middle of the map"}
                     disabled={!dataReady}
                     onSelect={choosePlace}
-                    onClear={() => { cancelRouteRequest(); setPlace(null); }}
+                    onClear={() => { cancelRouteRequest(); setProblem(null); setPlace(null); setResult(null); setResultKey(null); }}
+                    onInputChange={() => setProblem(null)}
                   />
                 </section>
+                {scheduleNotice && destination && (
+                  <p className="notice schedule-notice" role="status">
+                    {scheduleNotice.message}{" "}
+                    <a href={scheduleNotice.url} target="_blank" rel="noreferrer">Check {scheduleNotice.agency}</a>.
+                  </p>
+                )}
                 <fieldset className={`step-section profile-section ${plannerStep === "ready" ? "step-current" : ""}`}>
                   <legend><h2 id="travel-title" tabIndex={-1}><span className="step-number" aria-hidden="true">3</span>How do you travel?</h2></legend>
                   <div className="profile-options">
                     {PROFILES.map((option) => (
                       <label key={option.value}>
-                        <input type="radio" name="profile" value={option.value} checked={profile === option.value} onChange={() => setProfile(option.value)} />
+                        <input type="radio" name="profile" value={option.value} checked={profile === option.value} onChange={() => { setProblem(null); setProfile(option.value); }} />
                         <span>{option.label}</span>
                       </label>
                     ))}
@@ -859,7 +935,7 @@ export default function App() {
                     Prefer paths with documented accessibility information
                   </label>
                   <label htmlFor="algorithm">Routing algorithm</label>
-                  <select id="algorithm" value={algorithm} onChange={(e) => setAlgorithm(e.target.value)}>
+                    <select id="algorithm" value={algorithm} onChange={(e) => { setProblem(null); setAlgorithm(e.target.value); }}>
                     {algorithms.map((item) => (
                       <option value={item.value} key={item.value}>{item.label}</option>
                     ))}
@@ -868,7 +944,10 @@ export default function App() {
                   <button type="button" className="button" onClick={() => void runBenchmark()} disabled={!origin || !destination || benchmarking}>
                     {benchmarking ? "Measuring…" : "Compare all five algorithms"}
                   </button>
-                  {benchmark.length > 0 && (
+                  {benchmark.length > 0 && !benchmark.some((row) => !row.error) && (
+                    <p role="status" className="benchmark-unavailable">No tested algorithm found a route. Move the start to a nearby street entrance or choose another stop.</p>
+                  )}
+                  {benchmark.length > 0 && benchmark.some((row) => !row.error) && (
                     <>
                       <table className="benchmark-table">
                         <thead><tr><th>Algorithm</th><th>ms</th><th>Distance</th></tr></thead>
@@ -886,6 +965,7 @@ export default function App() {
                     </>
                   )}
                 </details>
+                {(origin || place) && <button type="button" className="text-button clear-trip" onClick={clearTrip}>Clear trip / Start over</button>}
               </div>
             )}
             {view === "route" && (
@@ -909,6 +989,7 @@ export default function App() {
                 <GapPanel onStudy={setStudy} onReachability={updateReachability} onRanking={setRankedStops} />
                 <GroundTruthPanel
                   mode="evidence"
+                  stops={stops}
                   onFeatures={showEvidence}
                   onClearReportPoint={() => setReportPoint(null)}
                   onRequestLocation={() => {
@@ -924,11 +1005,26 @@ export default function App() {
                 />
               </Suspense>
             )}
+            {view === "methods" && (
+              <section className="methods-panel" aria-labelledby="methods-title">
+                <h2 id="methods-title" ref={methodsTitleRef} tabIndex={-1}>Methods & limitations</h2>
+                <ul>
+                  <li>Walking routes cover Santa Clara County. Detailed City of San Jose sidewalk records cover the Diridon pilot only.</li>
+                  <li>Each route search has a 3-second network-search limit. A start can snap up to 120 m to a mapped walking path.</li>
+                  <li>Estimated speeds are 2.7 mph for walking and low vision, and 2.0 mph for wheelchair and stroller profiles.</li>
+                  <li>The wheelchair stop ranking uses a reproducible 32-stop sample. It is not a county-wide list of the hardest stops.</li>
+                  <li>Unmapped connectors are straight-line estimates and have not been checked for a usable path.</li>
+                  <li>Routes use recorded OpenStreetMap and agency data. TransitGap has not field-verified these routes or confirmed accessibility.</li>
+                </ul>
+                <a href="https://github.com/TaxCollector23/transitgap/blob/main/docs/CAC_METHODS.md" target="_blank" rel="noreferrer">Full technical methodology</a>
+              </section>
+            )}
             {view === "report" && (
               <Suspense fallback={<p role="status">Loading…</p>}>
                 <GroundTruthPanel
                   key={view}
                   mode="report"
+                  stops={stops}
                   onReport={() => goTo("report")}
                   onFeatures={showEvidence}
                   onClearReportPoint={() => setReportPoint(null)}
@@ -954,7 +1050,7 @@ export default function App() {
               <a href="https://www.vta.org/go/developers">VTA</a>
               <a href="https://www.caltrain.com/developer-resources">Caltrain</a>
               <a href="https://www.bart.gov/schedules/developers/gtfs">BART</a>
-              <a href="/#methodology">Data & limits</a>
+              <button type="button" className="text-button" onClick={() => goTo("methods")}>Methods & limitations</button>
             </footer>
           </div>
         </div>

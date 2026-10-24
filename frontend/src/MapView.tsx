@@ -119,9 +119,9 @@ function addCoverageLayer(map: Map, coverage: Coverage | null) {
     source: "coverage",
     paint: {
       "line-color": "#176b5b",
-      "line-width": 1.5,
+      "line-width": 2,
       "line-dasharray": [2, 2],
-      "line-opacity": 0.65,
+      "line-opacity": 0.9,
     },
   });
 }

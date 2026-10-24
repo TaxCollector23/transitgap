@@ -29,6 +29,7 @@ type Props = {
   onProfile: (profile: string) => void;
   onEdit: () => void;
   onNewTrip: () => void;
+  onClearTrip: () => void;
   onShare: () => void;
   onFocusStep: (location: [number, number]) => void;
   comparison: Comparison | null;
@@ -59,6 +60,7 @@ export default function RouteResult({
   onProfile,
   onEdit,
   onNewTrip,
+  onClearTrip,
   onShare,
   onFocusStep,
   comparison,
@@ -137,6 +139,13 @@ export default function RouteResult({
         <span aria-hidden="true"> · </span>
         <span>{profileLabel(route.profile)}</span>
       </p>
+      {!updating && route.profile !== "standard" && route.same_mapped_route_as_standard && (
+        <p className="route-profile-note">
+          {route.profile === "low_vision"
+            ? "This follows the same mapped path as Walking. Check for unmarked crossings and whether tactile paving and audible crossing signals are present; the map doesn't confirm these details."
+            : "This follows the same mapped path as Walking. The time estimate changes because TransitGap assumes a different speed for this profile."}
+        </p>
+      )}
       {arrival && !updating && <p className="route-arrival">Ends at the station entrance: {arrival}.</p>}
 
       <div className="profile-switch" role="radiogroup" aria-label="How do you travel?">
@@ -330,6 +339,9 @@ export default function RouteResult({
         </button>
         <button type="button" className="text-button" onClick={onNewTrip}>
           Plan a new trip
+        </button>
+        <button type="button" className="text-button" onClick={onClearTrip}>
+          Clear trip / Start over
         </button>
       </div>
     </section>

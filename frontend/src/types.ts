@@ -18,6 +18,7 @@ export type Stop = {
   station_name?: string | null;
   platform_name?: string | null;
   station_url?: string | null;
+  routes_served?: string[];
   entrances?: Entrance[];
   modes?: string[];
 };
@@ -142,6 +143,7 @@ export type GapFeature = {
     osm_source: { status: string } | null;
     interpretation: string;
   };
+  nearby_stops?: Array<{ stop_id: string; stop_name: string; distance_m: number }>;
 };
 
 export type AdvocacySummary =

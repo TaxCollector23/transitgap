@@ -49,7 +49,7 @@ test("the CA-17 example starts at the district view and reaches Milpitas BART", 
   await expect(page.locator(".field-value").nth(1)).toContainText("Milpitas");
   await page.getByRole("button", { name: "Find route", exact: true }).click();
   await expect(page.locator(".route-result")).toBeVisible({ timeout: 30_000 });
-  await expect(page.locator(".route-limitations")).toContainText(/Map data shows.*stairs/i);
+  await expect(page.locator(".route-limitations")).toContainText(/Some walking paths on this route have no accessibility details recorded on the map/i);
   await expect(page.locator(".route-limitations")).toContainText(/no walking-path data/i);
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
 });

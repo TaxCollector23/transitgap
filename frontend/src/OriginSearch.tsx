@@ -7,10 +7,12 @@ export default function OriginSearch({
   onChoose,
   label = "Address or place",
   placeholder = "Street address or place",
+  onInputChange,
 }: {
   onChoose: (point: [number, number], name: string) => void;
   label?: string;
   placeholder?: string;
+  onInputChange?: () => void;
 }) {
   const id = useId();
   const [query, setQuery] = useState("");
@@ -41,7 +43,9 @@ export default function OriginSearch({
             if (!r.ok) throw Error(typeof data.detail === "string" ? data.detail : "Address search is unavailable right now.");
             setItems(data.results);
             if (!data.results.length)
-              setMessage("No address found inside the supported area. Try a nearby street or landmark.");
+              setMessage(data.reason === "outside_coverage"
+                ? "That place is outside Santa Clara County, which TransitGap covers. Try a place inside the county."
+                : "No matching address was found. Try a street or landmark in Santa Clara County, or choose on the map.");
           } catch (error) {
             setMessage(
               error instanceof DOMException && error.name === "TimeoutError"
@@ -61,7 +65,7 @@ export default function OriginSearch({
           className="text-input"
           value={query}
           placeholder={placeholder}
-          onChange={(e) => setQuery(e.target.value)}
+          onChange={(e) => { setQuery(e.target.value); onInputChange?.(); }}
           maxLength={200}
           autoComplete="street-address"
         />

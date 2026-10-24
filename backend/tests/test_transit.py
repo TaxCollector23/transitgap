@@ -34,6 +34,7 @@ def test_join_calendar_exceptions_and_overnight(tmp_path):
     assert data.active_services(datetime(2026, 10, 20).date()) == {"special"}
     result = data.details("s", datetime(2026, 10, 20, 1, 0, tzinfo=TIMEZONE))
     assert result["routes"][0]["route_short_name"] == "22"
+    assert data.routes_served("s") == ["22"]
     assert result["scheduled_departures"][0]["departure"].startswith("2026-10-20T01:10")
     assert result["scheduled_departures"][1]["headsign"] == "Special"
     assert len(result["scheduled_departures"]) == 2

@@ -34,6 +34,12 @@ function pacificToday() {
   }).format(new Date()).replace(/-/g, "");
 }
 
+function displayFeedDate(value?: string) {
+  return value && /^\d{8}$/.test(value)
+    ? `${value.slice(4, 6)}/${value.slice(6, 8)}/${value.slice(0, 4)}`
+    : value || "not stated";
+}
+
 function PlatformService({ stop, label }: { stop: Stop; label: string | null }) {
   const [data, setData] = useState<Service | null>(null);
   const [failed, setFailed] = useState(false);
@@ -73,8 +79,7 @@ function PlatformService({ stop, label }: { stop: Stop; label: string | null }) 
           </p>
           {validity === "not_yet_valid" || validity === "expired" ? (
             <p>
-              {service.schedule_validity?.message ||
-                (validity === "expired" ? "This published schedule has ended." : "This published schedule hasn't started yet.")}{" "}
+              This timetable doesn't cover today. The loaded feed covers {displayFeedDate(feedStart)} to {displayFeedDate(feedEnd)}. {" "}
               <a href={scheduleLink} target="_blank" rel="noreferrer">Check {data.agency} for current times</a>.
             </p>
           ) : service.scheduled_departures.length ? (

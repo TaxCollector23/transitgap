@@ -86,8 +86,12 @@ test("2-3. find a stop by name and agency, and set an origin without the map", a
   await page.getByRole("radio", { name: "Caltrain" }).check();
   await box.fill("santa clara");
   await expect(stopOptions(page).filter({ hasText: /Santa Clara Caltrain Station/ })).toHaveCount(1);
-  // Platforms are grouped into one station, not listed twice.
-  await expect(stopOptions(page).filter({ hasText: /Northbound|Southbound/ })).toHaveCount(0);
+  // The search result is one station option, with platform details grouped
+  // inside that option instead of separate selectable platform rows.
+  const santaClaraStation = stopOptions(page).filter({ hasText: /Santa Clara Caltrain Station/ });
+  await expect(santaClaraStation).toHaveCount(1);
+  await expect(santaClaraStation.first()).toContainText("Northbound platform");
+  await expect(santaClaraStation.first()).toContainText("Southbound platform");
   await page.getByRole("radio", { name: "All" }).check();
   await box.fill("");
   await expect(stopOptions(page).first()).toBeVisible();
@@ -120,10 +124,14 @@ for (const key of ["vta", "caltrain", "bart"] as const) {
     checkDirections(wheelchair);
 
     // 6-7. Readable directions and one route-level missing-data message.
-    await expect(page.locator(".directions > li").first()).toContainText(/Head|Go from/);
+    const connectorDirections = page.locator(".directions > li.is-connector");
+    for (let index = 0; index < await connectorDirections.count(); index++) {
+      await expect(connectorDirections.nth(index)).toContainText("No walking-path data:");
+    }
+    await expect(page.locator(".directions > li:not(.is-connector)").first()).toContainText(/Head|Go from/);
     await expect(page.getByText("Information missing")).toHaveCount(0);
-    await expect(page.locator(".route-limitations")).toContainText("Some accessibility information is missing along this route.");
-    await page.locator("summary", { hasText: "Accessibility details" }).click();
+    await expect(page.locator(".route-limitations")).toContainText(/accessibility details recorded|unknown steepness|no marked crosswalk|no walking-path data/i);
+    await page.locator("summary", { hasText: /^More detail$/ }).click();
     await expect(page.locator(".route-result")).toContainText(/not recorded for/);
     await page.locator("summary", { hasText: /^About / }).click();
     await expect(page.locator(".stop-service")).toContainText(/boarding/i);

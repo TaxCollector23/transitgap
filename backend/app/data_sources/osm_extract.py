@@ -10,6 +10,8 @@ from xml.sax.saxutils import quoteattr
 import osmium
 import osmnx as ox
 from pyproj import Transformer
+from shapely.geometry import Point
+from shapely.prepared import prep
 from shapely.ops import transform
 
 
@@ -40,13 +42,15 @@ def graph_from_extract(path: Path, boundary, *, remove_source: bool = False):
     to_wgs84 = Transformer.from_crs(26910, 4326, always_xy=True)
     buffered = transform(to_wgs84.transform, transform(to_meters.transform, boundary).buffer(500))
     west, south, east, north = buffered.bounds
-    # Keep only IDs in the county envelope. A full Northern California node
-    # location index can exceed a small deployment worker's memory budget.
-    envelope_nodes: set[int] = set()
+    # Use the buffered county shape rather than its much larger bounding box.
+    # This keeps the regional extract focused and lowers peak graph memory.
+    buffered_area = prep(buffered)
+    region_nodes: set[int] = set()
     for node in osmium.FileProcessor(path, osmium.osm.NODE):
-        if west <= node.lon <= east and south <= node.lat <= north:
-            envelope_nodes.add(node.id)
-    print(f"Located {len(envelope_nodes)} nodes in the county envelope", flush=True)
+        if (west <= node.lon <= east and south <= node.lat <= north
+                and buffered_area.covers(Point(node.lon, node.lat))):
+            region_nodes.add(node.id)
+    print(f"Located {len(region_nodes)} nodes in the buffered county area", flush=True)
     node_ids: set[int] = set()
     ways: list[str] = []
     processor = (osmium.FileProcessor(path, osmium.osm.WAY)
@@ -56,13 +60,13 @@ def graph_from_extract(path: Path, boundary, *, remove_source: bool = False):
         if not walkable(tags) or len(way.nodes) < 2:
             continue
         refs = [node.ref for node in way.nodes]
-        if not any(ref in envelope_nodes for ref in refs):
+        if not any(ref in region_nodes for ref in refs):
             continue
         node_ids.update(refs)
         ways.append(f'<way id="{way.id}">' + "".join(f'<nd ref="{ref}"/>' for ref in refs)
                     + "".join(f'<tag k={quoteattr(key)} v={quoteattr(value)}/>' for key, value in tags.items()) + '</way>\n')
     del processor
-    del envelope_nodes
+    del region_nodes
     gc.collect()
     if not ways:
         raise ValueError("The OSM extract contains no walking ways intersecting Santa Clara County")
@@ -79,11 +83,23 @@ def graph_from_extract(path: Path, boundary, *, remove_source: bool = False):
                 output.write('</node>\n')
             output.writelines(ways)
             output.write('</osm>')
+        # The parser and graph simplifier need only the XML now. Release the
+        # large extraction indexes before constructing the NetworkX graph.
+        del nodes, ways, node_ids, refs, tags, way
+        gc.collect()
         # The regional download is a disposable build input. Release its disk
         # space before OSMnx writes the larger uncompressed graph cache.
         if remove_source:
             path.unlink()
-        graph = ox.graph_from_xml(xml_path, bidirectional=True, simplify=True, retain_all=True)
+        # OSMnx's simplifier defensively copies its input. This graph is newly
+        # built and unshared, so simplify it in place to avoid duplicating the
+        # county network during Vercel's memory-limited build.
+        graph = ox.graph_from_xml(xml_path, bidirectional=True, simplify=False, retain_all=True)
+        graph.copy = lambda: graph
+        try:
+            graph = ox.simplification.simplify_graph(graph)
+        finally:
+            del graph.copy
     graph = ox.truncate.truncate_graph_polygon(graph, boundary, truncate_by_edge=False)
     graph.graph.update(source="OpenStreetMap via Geofabrik Northern California", source_url=NORCAL_URL,
                        walk_filter=network_filter)

@@ -30,7 +30,10 @@ ACCESSIBILITY_WARNING = (
 )
 WALKING_SPEED_MPS = 1.2
 MAX_SNAP_DISTANCE_M = 120.0
-ROUTE_SEARCH_LIMIT_SECONDS = 3.0
+# The county graph is large enough that profile constraints can require more
+# exploration than an ordinary A* trip. Keep a bound, but allow a realistic
+# search window so longer wheelchair, stroller, and low-vision trips can finish.
+ROUTE_SEARCH_LIMIT_SECONDS = 8.0
 from .profiles import assess, evaluate, SPEED_MPS, OBJECTIVES
 
 PROFILE_OBJECTIVES = {p: OBJECTIVES[p.value] for p in Profile}

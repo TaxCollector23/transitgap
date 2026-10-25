@@ -44,24 +44,26 @@ const categories = [
 function candidateCheck(gap: GapFeature) {
   const hasCity = Boolean(gap.provenance.municipal_source);
   const hasOsm = Boolean(gap.provenance.osm_source);
-  if (hasCity && hasOsm) {
-    return gap.classification === "CONFLICTING_SOURCES"
-      ? "Check whether the City sidewalk record and the mapped path describe the same path; compare the sidewalk details in person."
-      : "Check whether the nearby City sidewalk record and mapped path describe the same path, and confirm where each one connects."
-  }
-  if (hasCity)
-    return "Check whether the City sidewalk record connects to a walking path shown on the map. The records do not line up closely, which does not prove that a path is missing."
   const missingLabels: Record<string, string> = {
-    width: "sidewalk width", surface: "surface", smoothness: "surface condition", wheelchair: "wheelchair access",
+    width: "sidewalk width", "sidewalk width": "sidewalk width", surface: "surface", smoothness: "surface condition", wheelchair: "wheelchair access",
     incline: "slope", kerb: "curb ramp details", crossing: "crossing details", "tactile paving": "tactile paving",
   };
   const missing = [...new Set(gap.missing_information.map((item) => {
-    const field = item.toLowerCase().replace(/^osm\s+/, "").replace(/\s+tag$/, "").replace(/_/g, " ");
+    const field = item.toLowerCase().replace(/^(osm|municipal)\s+/, "").replace(/\s+tag$/, "").replace(/_/g, " ");
     return missingLabels[field] || "another walking detail";
   }))];
-  return missing.length
+  const missingText = missing.length
     ? `Not recorded on the map: ${missing.join(", ")}. Check in person.`
-    : "Available records do not give enough detail about this location. Compare the map with the sidewalk in person."
+    : "";
+  if (hasCity && hasOsm) {
+    const sourceText = gap.classification === "CONFLICTING_SOURCES"
+      ? "Check whether the City sidewalk record and the mapped path describe the same path; compare the sidewalk details in person."
+      : "Check whether the nearby City sidewalk record and mapped path describe the same path, and confirm where each one connects.";
+    return [sourceText, missingText].filter(Boolean).join(" ");
+  }
+  if (hasCity)
+    return ["Check whether the City sidewalk record connects to a walking path shown on the map. The records do not line up closely, which does not prove that a path is missing.", missingText].filter(Boolean).join(" ");
+  return missingText || "Available records do not give enough detail about this location. Compare the map with the sidewalk in person.";
 }
 
 function candidateExplanation(gap: GapFeature) {

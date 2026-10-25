@@ -125,7 +125,7 @@ test('source metadata failure does not hide available candidates or report contr
   id:'gap:synthetic-ci',latitude:37.32875,longitude:-121.90442,
   classification:'UNKNOWN_DATA',category:'synthetic_ci',priority_score:1,
   explanation:'Synthetic CI candidate, not a real observation.',affected_vta_stop_count:1,
-  missing_information:['width'],matched_distance_m:null,
+  missing_information:['municipal sidewalk width','OSM smoothness','OSM wheelchair tag','OSM incline','OSM tactile paving','OSM kerb'],matched_distance_m:null,
   provenance:{municipal_source:null,osm_source:{status:'SOURCE_DOCUMENTED'},interpretation:'Synthetic test only.'}
  }]}}));
  await page.goto('/app');await expect(page.locator('main[data-data-state="ready"]')).toBeVisible();
@@ -137,6 +137,7 @@ test('source metadata failure does not hide available candidates or report contr
  await expect(page.getByText('Source metadata is unavailable. Candidate records still include their individual source details.')).toBeVisible();
  await page.locator('.gap-item').first().click();
  await expect(page.getByText('What to check',{exact:true})).toBeVisible();
+ await expect(page.locator('.gap-detail')).toContainText('Not recorded on the map: sidewalk width, surface condition, wheelchair access, slope, tactile paving, curb ramp details. Check in person.');
  await expect(page.locator('.gap-detail')).toContainText('These are inspection suggestions, not confirmed barriers.');
  await expect(page.locator('.gap-detail')).not.toContainText('reproducibly sampled graph-origin routes');
  await page.unroute('**/data-sources');

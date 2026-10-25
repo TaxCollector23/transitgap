@@ -9,7 +9,7 @@ test('synthetic CI fixture: keyboard route, profile changes, voice fallback and 
  await expect(page.locator('main[data-data-state="ready"]')).toBeVisible();
  await expect(page.locator('.map')).toHaveAttribute('data-map-state','ready');
  const initialMap=await page.evaluate(()=>{const map=(window as any).__transitGapMap;return {center:map.getCenter(),zoom:map.getZoom()};});
- expect(initialMap.center.lng).toBeCloseTo(-121.965,2);expect(initialMap.center.lat).toBeCloseTo(37.426,2);expect(initialMap.zoom).toBeGreaterThan(11);
+ expect(initialMap.center.lng).toBeCloseTo(-121.915,2);expect(initialMap.center.lat).toBeCloseTo(37.385,2);expect(initialMap.zoom).toBeGreaterThan(11);
  await page.getByText('Enter coordinates instead',{exact:true}).click();
  await page.getByLabel('Latitude',{exact:true}).fill('37.32875');await page.getByLabel('Longitude',{exact:true}).fill('-121.90442');
  await page.getByRole('button',{name:'Use coordinates',exact:true}).focus();await page.keyboard.press('Enter');
@@ -132,7 +132,7 @@ test('source metadata failure does not hide available candidates or report contr
  await page.getByRole('button',{name:'For cities and advocates',exact:true}).click();
  await expect(page.locator('.gap-item').first()).toBeVisible();
  await expect(page.locator('.gap-item').first()).toContainText('Near SYNTHETIC CI Stop');
- await expect(page.locator('.gap-item').first()).toContainText('path width');
+ await expect(page.locator('.gap-item').first()).toContainText('sidewalk width');
  await expect(page.getByRole('button',{name:'Report an issue'}).first()).toBeEnabled();
  await expect(page.getByText('Source metadata is unavailable. Candidate records still include their individual source details.')).toBeVisible();
  await page.locator('.gap-item').first().click();

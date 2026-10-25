@@ -40,8 +40,9 @@ type Props = {
   onViewChange?: (center: [number, number]) => void;
 };
 
-// Census internal point for California's 17th Congressional District.
-const center: [number, number] = [-121.9649511, 37.4260511];
+// Default to the Milpitas / North San Jose corridor, where transit stops are
+// visible at street level. A previously granted location can still recenter it.
+const center: [number, number] = [-121.915, 37.385];
 const diridonPilotCenter: [number, number] = [-121.903, 37.3296];
 const diridonPilotRadiusM = 1500;
 

@@ -154,7 +154,13 @@ export type AdvocacySummary =
   | { status: "loading" }
   | { status: "calculating" }
   | { status: "unavailable" }
-  | { status: "ready"; nearbyStops: number; totalStops: number };
+  | {
+      status: "ready";
+      nearbyStops: number;
+      totalStops: number;
+      radiusM: number;
+      topStops: Array<{ stop_id: string; name: string; recordCount: number }>;
+    };
 
 export type ReachabilityStop = {
   stop_id: string;

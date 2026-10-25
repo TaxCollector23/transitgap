@@ -52,12 +52,15 @@ function candidateCheck(gap: GapFeature) {
   if (hasCity)
     return "Check whether the City sidewalk record connects to a walking path shown on the map. The records do not line up closely, which does not prove that a path is missing."
   const missingLabels: Record<string, string> = {
-    width: "path width", surface: "surface", smoothness: "surface condition", wheelchair: "wheelchair access",
-    incline: "slope", kerb: "curb ramp", crossing: "crossing details",
+    width: "sidewalk width", surface: "surface", smoothness: "surface condition", wheelchair: "wheelchair access",
+    incline: "slope", kerb: "curb ramp details", crossing: "crossing details", "tactile paving": "tactile paving",
   };
-  const missing = gap.missing_information.map((item) => missingLabels[item] || "another walking detail");
+  const missing = [...new Set(gap.missing_information.map((item) => {
+    const field = item.toLowerCase().replace(/^osm\s+/, "").replace(/\s+tag$/, "").replaceAll("_", " ");
+    return missingLabels[field] || "another walking detail";
+  }))];
   return missing.length
-    ? `The map does not list ${missing.join(", ")} here. Check these details in person.`
+    ? `Not recorded on the map: ${missing.join(", ")}. Check in person.`
     : "Available records do not give enough detail about this location. Compare the map with the sidewalk in person."
 }
 
@@ -202,14 +205,37 @@ export default function GroundTruthPanel({
         const candidates = firstCandidates.concat(...laterPages.map((page) => page.candidates as GapFeature[]));
         if (candidates.length !== totalCandidateCount)
           throw new Error("The review record list is incomplete.");
-        const nearby = new Set<string>();
+        const reviewCounts = new Map<string, { stop_id: string; name: string; recordCount: number }>();
+        const pilotStops = pilotData.stops as Array<{
+          stop_id: string;
+          stop_name: string;
+          latitude: number;
+          longitude: number;
+          platform_name?: string | null;
+          direction?: string | null;
+        }>;
+        for (const stop of pilotStops) reviewCounts.set(stop.stop_id, {
+          stop_id: stop.stop_id,
+          name: `${stop.stop_name}${stop.platform_name ? ` · ${stop.platform_name}` : stop.direction ? ` · ${stop.direction}` : ""}`,
+          recordCount: 0,
+        });
         for (const candidate of candidates) {
-          for (const stop of pilotData.stops as Array<{ stop_id: string; latitude: number; longitude: number }>) {
-            if (distanceM([candidate.latitude, candidate.longitude], [stop.latitude, stop.longitude]) <= 150)
-              nearby.add(stop.stop_id);
+          for (const stop of pilotStops) {
+            if (distanceM([candidate.latitude, candidate.longitude], [stop.latitude, stop.longitude]) <= 50) {
+              const count = reviewCounts.get(stop.stop_id);
+              if (count) count.recordCount += 1;
+            }
           }
         }
-        onAdvocacySummary({ status: "ready", nearbyStops: nearby.size, totalStops: pilotData.stops.length });
+        const rankedStops = [...reviewCounts.values()].sort((a, b) => b.recordCount - a.recordCount || a.name.localeCompare(b.name));
+        const nearbyStops = rankedStops.filter((stop) => stop.recordCount > 0);
+        onAdvocacySummary({
+          status: "ready",
+          nearbyStops: nearbyStops.length,
+          totalStops: pilotStops.length,
+          radiusM: 50,
+          topStops: nearbyStops.slice(0, 3),
+        });
       } catch {
         onAdvocacySummary({ status: "unavailable" });
       }
@@ -522,7 +548,7 @@ export default function GroundTruthPanel({
           {candidateLocations.get(selected.id) && <p>Look near {candidateLocations.get(selected.id)!.stop_name}, about {formatDistance(candidateLocations.get(selected.id)!.distance_m)} away.</p>}
           <p>{candidateExplanation(selected)}</p>
           <details className="technical-detail">
-            <summary>Technical detail</summary>
+            <summary>More detail</summary>
             <p>{selected.priority_score == null
               ? "Review priority score is unavailable."
               : `Review priority score: ${selected.priority_score}/100 — this is a proximity-based review priority, not a measure of barrier severity.`}</p>

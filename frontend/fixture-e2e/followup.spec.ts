@@ -115,6 +115,8 @@ test("sidewalk review leads with a human location and keeps scores in technical 
   await page.goto("/app");
   await expect(page.locator('main[data-data-state="ready"]')).toBeVisible();
   await page.getByRole("button", { name: "For cities and advocates" }).click();
+  await expect(page.locator(".review-count-summary")).toContainText(/Of \d+ stops within 150 m of the \d+ map locations selected for review, \d+ have at least one record within 50 m/);
+  await expect(page.locator(".review-count-summary")).toContainText("not confirmed barriers");
   const firstItem = page.locator(".gap-item").first();
   await expect(firstItem).toBeVisible({ timeout: 15_000 });
   await expect(page.locator(".advocate-overview")).not.toContainText(/Checking the Diridon pilot|Loading sidewalk review records/);
@@ -125,7 +127,7 @@ test("sidewalk review leads with a human location and keeps scores in technical 
   await expect(page.locator(".gap-detail")).toContainText(/Not recorded on the map: .+\. Check in person\./);
   await expect(page.locator(".gap-detail .technical-detail dd").last()).toBeHidden();
   await expect(page.getByText(/Review priority score:/)).toBeHidden();
-  await page.getByText("More detail", { exact: true }).click();
+  await page.locator(".gap-detail .technical-detail summary").click();
   await expect(page.getByText(/Review priority score: .*proximity-based review priority, not a measure of barrier severity/)).toBeVisible();
 });
 

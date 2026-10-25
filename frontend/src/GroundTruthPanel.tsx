@@ -19,7 +19,12 @@ type Props = {
   mode?: "evidence" | "report";
   onReport?: () => void;
   stops?: Stop[];
+  onReviewSummary?: (summary: ReviewSummary) => void;
 };
+export type ReviewSummary =
+  | { state: "loading" }
+  | { state: "unavailable" }
+  | { state: "ready"; candidates: number; stopsWithin150m: number; stopsWithin50m: number };
 const emptyPolygons: GeoJSON.FeatureCollection = {
   type: "FeatureCollection",
   features: [],
@@ -80,6 +85,7 @@ export default function GroundTruthPanel({
   mode = "evidence",
   onReport,
   stops = [],
+  onReviewSummary,
 }: Props) {
   const [gaps, setGaps] = useState<GapFeature[]>([]);
   const [reports, setReports] = useState<Observation[]>([]);
@@ -116,6 +122,31 @@ export default function GroundTruthPanel({
       return [gap.id, nearest];
     }),
   ), [gaps, stops]);
+
+  useEffect(() => {
+    if (!onReviewSummary) return;
+    if (evidenceState === "loading" || evidenceState === "unavailable") {
+      onReviewSummary({ state: evidenceState });
+      return;
+    }
+    const stopsWithin150m = new Set<string>();
+    const stopsWithin50m = new Set<string>();
+    for (const gap of gaps.slice(0, 80)) {
+      for (const stop of stops) {
+        const distance = distanceM([gap.latitude, gap.longitude], [stop.latitude, stop.longitude]);
+        if (distance <= 150) {
+          stopsWithin150m.add(stop.stop_id);
+          if (distance <= 50) stopsWithin50m.add(stop.stop_id);
+        }
+      }
+    }
+    onReviewSummary({
+      state: "ready",
+      candidates: Math.min(gaps.length, 80),
+      stopsWithin150m: stopsWithin150m.size,
+      stopsWithin50m: stopsWithin50m.size,
+    });
+  }, [evidenceState, gaps, onReviewSummary, stops]);
 
   async function checkReportAvailability() {
     setReportAvailabilityError(null);

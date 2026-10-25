@@ -5,6 +5,7 @@ import OriginSearch from "./OriginSearch";
 import StopSearch from "./StopSearch";
 import RouteResult, { type Comparison } from "./RouteResult";
 import type { GapDetail } from "./GapPanel";
+import type { ReviewSummary } from "./GroundTruthPanel";
 const GapPanel = lazy(() => import("./GapPanel"));
 const MapView = lazy(() => import("./MapView"));
 const GroundTruthPanel = lazy(() => import("./GroundTruthPanel"));
@@ -184,6 +185,7 @@ export default function App() {
   const [candidateFocus, setCandidateFocus] = useState<[number, number] | null>(null);
   const [selectedCandidateId, setSelectedCandidateId] = useState<string | null>(null);
   const [rankedStops, setRankedStops] = useState<GapDetail[]>([]);
+  const [reviewSummary, setReviewSummary] = useState<ReviewSummary>({ state: "loading" });
   const [scheduleNotice, setScheduleNotice] = useState<ScheduleNotice | null>(null);
   const dataLoadRef = useRef<Promise<void> | null>(null);
   const requestRef = useRef<AbortController | null>(null);
@@ -1051,11 +1053,29 @@ export default function App() {
                 <section className="advocate-overview" aria-labelledby="advocates-title">
                   <h2 id="advocates-title" ref={viewTitleRef} tabIndex={-1}>For cities and advocates</h2>
                   <p>Nearby records are prompts for a closer look, not confirmed barriers. The wheelchair ranking below is a 32-stop sample, not a countywide ranking.</p>
+                  <div className="review-count-summary" aria-live="polite">
+                    {reviewSummary.state === "loading" ? (
+                      <p role="status">Counting nearby sidewalk records to review…</p>
+                    ) : reviewSummary.state === "unavailable" ? (
+                      <p role="status">The nearby sidewalk-record count is unavailable. The count is unknown.</p>
+                    ) : reviewSummary.candidates === 0 ? (
+                      <p>No nearby sidewalk review records are available. This does not confirm that sidewalks are accessible.</p>
+                    ) : (
+                      <>
+                        <p><strong>Nearby sidewalk records to review:</strong> Of {reviewSummary.stopsWithin150m} stops within 150 m of the {reviewSummary.candidates} map locations selected for review, {reviewSummary.stopsWithin50m} have at least one record within 50 m. These records need a closer look; they are not confirmed barriers.</p>
+                        <details className="technical-detail">
+                          <summary>More detail</summary>
+                          <p>The count compares stop locations with the first {reviewSummary.candidates} records in the proximity-weighted review list. A stop is counted once, even if several records are nearby. “Nearby” means within 150 m; the closer count means within 50 m. These distances point to map records for review, not a measured path or an in-person accessibility check.</p>
+                        </details>
+                      </>
+                    )}
+                  </div>
                 </section>
                 <GapPanel places={places} onStudy={setStudy} onReachability={updateReachability} onRanking={setRankedStops} />
                 <GroundTruthPanel
                   mode="evidence"
                   stops={stops}
+                  onReviewSummary={setReviewSummary}
                   onFeatures={showEvidence}
                   onClearReportPoint={() => setReportPoint(null)}
                   onRequestLocation={() => {

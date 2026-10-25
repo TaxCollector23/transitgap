@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import OriginSearch from "./OriginSearch";
-import type { AdvocacySummary, GapFeature, Observation, SourceStatus, Stop } from "./types";
+import type { GapFeature, Observation, SourceStatus, Stop } from "./types";
 
-import { API, reachabilityStops, serviceJSON } from "./data";
+import { API, serviceJSON } from "./data";
 import { distanceM, formatDistance } from "./format";
 const METERS_PER_MILE = 1609.344;
 type Props = {
@@ -18,7 +18,6 @@ type Props = {
   focusReport?: number;
   mode?: "evidence" | "report";
   onReport?: () => void;
-  onAdvocacySummary?: (summary: AdvocacySummary) => void;
   stops?: Stop[];
 };
 const emptyPolygons: GeoJSON.FeatureCollection = {
@@ -80,7 +79,6 @@ export default function GroundTruthPanel({
   focusReport = 0,
   mode = "evidence",
   onReport,
-  onAdvocacySummary,
   stops = [],
 }: Props) {
   const [gaps, setGaps] = useState<GapFeature[]>([]);
@@ -183,64 +181,11 @@ export default function GroundTruthPanel({
     setReportsState("loading");
     setSourcesUnavailable(false);
     setReportAvailabilityError(null);
-    onAdvocacySummary?.({ status: "loading" });
     async function loadPriorities() {
-      const pageSize = onAdvocacySummary ? 200 : 80;
-      const first = await serviceJSON(`${API}/accessibility/priorities?limit=${pageSize}`);
+      const first = await serviceJSON(`${API}/accessibility/priorities?limit=80`);
       const firstCandidates = first.candidates as GapFeature[];
       setGaps(firstCandidates.slice(0, 80));
       setEvidenceState("ready");
-      if (!onAdvocacySummary) return;
-      onAdvocacySummary({ status: "calculating" });
-      try {
-        const totalCandidateCount = Number(first.count);
-        if (!Number.isFinite(totalCandidateCount) || totalCandidateCount < firstCandidates.length)
-          throw new Error("The number of review records is unavailable.");
-        const offsets = Array.from(
-          { length: Math.ceil(Math.max(0, totalCandidateCount - pageSize) / pageSize) },
-          (_, index) => pageSize * (index + 1),
-        );
-        const [pilotData, laterPages] = await Promise.all([
-          reachabilityStops(),
-          Promise.all(offsets.map((offset) => serviceJSON(`${API}/accessibility/priorities?limit=${pageSize}&offset=${offset}`))),
-        ]);
-        const candidates = firstCandidates.concat(...laterPages.map((page) => page.candidates as GapFeature[]));
-        if (candidates.length !== totalCandidateCount)
-          throw new Error("The review record list is incomplete.");
-        const reviewCounts = new Map<string, { stop_id: string; name: string; recordCount: number }>();
-        const pilotStops = pilotData.stops as Array<{
-          stop_id: string;
-          stop_name: string;
-          latitude: number;
-          longitude: number;
-          platform_name?: string | null;
-          direction?: string | null;
-        }>;
-        for (const stop of pilotStops) reviewCounts.set(stop.stop_id, {
-          stop_id: stop.stop_id,
-          name: `${stop.stop_name}${stop.platform_name ? ` · ${stop.platform_name}` : stop.direction ? ` · ${stop.direction}` : ""}`,
-          recordCount: 0,
-        });
-        for (const candidate of candidates) {
-          for (const stop of pilotStops) {
-            if (distanceM([candidate.latitude, candidate.longitude], [stop.latitude, stop.longitude]) <= 50) {
-              const count = reviewCounts.get(stop.stop_id);
-              if (count) count.recordCount += 1;
-            }
-          }
-        }
-        const rankedStops = [...reviewCounts.values()].sort((a, b) => b.recordCount - a.recordCount || a.name.localeCompare(b.name));
-        const nearbyStops = rankedStops.filter((stop) => stop.recordCount > 0);
-        onAdvocacySummary({
-          status: "ready",
-          nearbyStops: nearbyStops.length,
-          totalStops: pilotStops.length,
-          radiusM: 50,
-          topStops: nearbyStops.slice(0, 3),
-        });
-      } catch {
-        onAdvocacySummary({ status: "unavailable" });
-      }
     }
     // Source metadata and community-report requests must not hold back the
     // independently available source-linked candidate records.
@@ -249,7 +194,6 @@ export default function GroundTruthPanel({
         .catch(() => setSourcesUnavailable(true)),
       loadPriorities().catch(error => {
         setEvidenceState("unavailable");
-        onAdvocacySummary?.({ status: "unavailable" });
         setMessage(error instanceof Error ? error.message : "Accessibility evidence unavailable.");
       }),
       serviceJSON(`${API}/accessibility/observations?limit=100`).then(data => {

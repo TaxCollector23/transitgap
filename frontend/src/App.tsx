@@ -8,7 +8,7 @@ import type { GapDetail } from "./GapPanel";
 const GapPanel = lazy(() => import("./GapPanel"));
 const MapView = lazy(() => import("./MapView"));
 const GroundTruthPanel = lazy(() => import("./GroundTruthPanel"));
-import type { AdvocacySummary, Coverage, ReachabilityAnalysis, RouteResult as Route, Stop } from "./types";
+import type { Coverage, ReachabilityAnalysis, RouteResult as Route, Stop } from "./types";
 import { API, plannerData, PREPARED, warmRouting } from "./data";
 import {
   PROFILES,
@@ -184,7 +184,6 @@ export default function App() {
   const [candidateFocus, setCandidateFocus] = useState<[number, number] | null>(null);
   const [selectedCandidateId, setSelectedCandidateId] = useState<string | null>(null);
   const [rankedStops, setRankedStops] = useState<GapDetail[]>([]);
-  const [advocateSummary, setAdvocateSummary] = useState<AdvocacySummary>({ status: "loading" });
   const [scheduleNotice, setScheduleNotice] = useState<ScheduleNotice | null>(null);
   const dataLoadRef = useRef<Promise<void> | null>(null);
   const requestRef = useRef<AbortController | null>(null);
@@ -1051,18 +1050,6 @@ export default function App() {
               <Suspense fallback={<p role="status">Loading accessibility gaps…</p>}>
                 <section className="advocate-overview" aria-labelledby="advocates-title">
                   <h2 id="advocates-title" ref={viewTitleRef} tabIndex={-1}>For cities and advocates</h2>
-                  {advocateSummary.status === "loading" ? (
-                    <p role="status">Loading sidewalk review records…</p>
-                  ) : advocateSummary.status === "calculating" ? (
-                    <p role="status">The sidewalk review list is ready. Counting nearby stops…</p>
-                  ) : advocateSummary.status === "ready" ? (
-                    <p>
-                      Within {advocateSummary.radiusM} m, <strong>{advocateSummary.nearbyStops} of {advocateSummary.totalStops} Diridon pilot stops</strong> have at least one map record to review.
-                      {advocateSummary.topStops.length > 0 && <> Most nearby records: {advocateSummary.topStops.map((stop) => `${stop.name} (${stop.recordCount})`).join(", ")}.</>}
-                    </p>
-                  ) : (
-                    <p role="status">This stop summary is unavailable because the pilot stops or source records could not be loaded.</p>
-                  )}
                   <p>Nearby records are prompts for a closer look, not confirmed barriers. The wheelchair ranking below is a 32-stop sample, not a countywide ranking.</p>
                 </section>
                 <GapPanel places={places} onStudy={setStudy} onReachability={updateReachability} onRanking={setRankedStops} />
@@ -1080,7 +1067,6 @@ export default function App() {
                   onFocusCandidate={(point) => { setCandidateFocus(point); setSelectedCandidateId(null); }}
                   selectedCandidateId={selectedCandidateId}
                   onReport={() => goTo("report")}
-                  onAdvocacySummary={setAdvocateSummary}
                 />
               </Suspense>
             )}

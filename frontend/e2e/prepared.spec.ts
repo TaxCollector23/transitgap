@@ -25,8 +25,8 @@ test("prepared production views work while the route engine is unavailable", asy
   await page.getByRole("button", { name: "For cities and advocates" }).click();
   await expect(page.getByRole("heading", { name: "Which stops are harder to reach by wheelchair?" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Download as CSV" })).toBeVisible();
-  await expect(page.locator(".advocate-overview")).toContainText(/Within 50 m, \d+ of \d+ Diridon pilot stops/, { timeout: 30_000 });
-  await expect(page.locator(".advocate-overview")).toContainText(/Most nearby records: .+ \(\d+\)/);
+  await expect(page.locator(".advocate-overview")).not.toContainText(/within \d+ m, \d+ of \d+ Diridon pilot stops/i);
+  await expect(page.locator(".advocate-overview")).not.toContainText(/Most nearby records:/i);
   await expect(page.locator(".gap-ranking li")).toHaveCount(10);
   const downloadPromise = page.waitForEvent("download");
   await page.getByRole("button", { name: "Download as CSV" }).click();

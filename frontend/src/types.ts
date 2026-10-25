@@ -150,18 +150,6 @@ export type GapFeature = {
   nearby_stops?: Array<{ stop_id: string; stop_name: string; distance_m: number }>;
 };
 
-export type AdvocacySummary =
-  | { status: "loading" }
-  | { status: "calculating" }
-  | { status: "unavailable" }
-  | {
-      status: "ready";
-      nearbyStops: number;
-      totalStops: number;
-      radiusM: number;
-      topStops: Array<{ stop_id: string; name: string; recordCount: number }>;
-    };
-
 export type ReachabilityStop = {
   stop_id: string;
   stop_name: string;

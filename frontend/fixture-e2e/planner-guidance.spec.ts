@@ -112,7 +112,7 @@ test('routing failures are actionable, clear on navigation, and do not recommend
   await page.getByRole('option',{name:/SYNTHETIC CI Stop/}).click();
   await page.getByRole('button',{name:'Find route',exact:true}).click();
   await expect(page.locator('.notice.error')).toContainText('8-second search limit');
-  await expect(page.locator('.notice.error')).toContainText('street or sidewalk entrance');
+  await expect(page.locator('.notice.error')).toContainText('mapped street or sidewalk');
   await expect(page.locator('.notice.error')).not.toContainText('closer stop');
   await page.getByRole('button',{name:'For cities and advocates'}).click();
   await page.getByRole('button',{name:'← Back to route planning'}).click();

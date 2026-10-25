@@ -352,16 +352,16 @@ export default function GroundTruthPanel({
         <p>Tell others about a sidewalk or crossing problem. Reports are shown as unverified until someone reviews them. Please don't include personal details.</p>
         {reportsEnabled !== true && (
           <div role="status" className="notice">
-            {reportAvailabilityError ? (
+            {reportsEnabled === false ? (
+              <p>Reports are not saved by this deployment. Use the form to prepare an email to ranganbalaji23@gmail.com.</p>
+            ) : reportAvailabilityError ? (
               <>
                 {reportAvailabilityError === "starting" ? (
                   <p>TransitGap report storage is unavailable. You can still prepare an email report below.</p>
                 ) : (
-                  <>
-                    <p>{reportsEnabled === false ? "Reports are not saved by this deployment." : "Report storage could not be checked."} Use the form to prepare an email to ranganbalaji23@gmail.com.</p>
-                  </>
+                  <p>Report storage could not be checked. Use the form to prepare an email to ranganbalaji23@gmail.com.</p>
                 )}
-                {reportsEnabled !== false && <button type="button" className="text-button" onClick={() => void checkReportAvailability()}>Try checking storage again</button>}
+                <button type="button" className="text-button" onClick={() => void checkReportAvailability()}>Try checking storage again</button>
               </>
             ) : <p>{checkingReports ? "Checking report storage…" : "Report storage is unavailable. You can prepare an email report below."}</p>}
           </div>

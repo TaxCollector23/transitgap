@@ -1056,7 +1056,10 @@ export default function App() {
                   ) : advocateSummary.status === "calculating" ? (
                     <p role="status">The sidewalk review list is ready. Counting nearby stops…</p>
                   ) : advocateSummary.status === "ready" ? (
-                    <p><strong>{advocateSummary.nearbyStops} of {advocateSummary.totalStops} stops</strong> in the Diridon pilot are within 150 m of at least one map record flagged for review.</p>
+                    <p>
+                      Within {advocateSummary.radiusM} m, <strong>{advocateSummary.nearbyStops} of {advocateSummary.totalStops} Diridon pilot stops</strong> have at least one map record to review.
+                      {advocateSummary.topStops.length > 0 && <> Most nearby records: {advocateSummary.topStops.map((stop) => `${stop.name} (${stop.recordCount})`).join(", ")}.</>}
+                    </p>
                   ) : (
                     <p role="status">This stop summary is unavailable because the pilot stops or source records could not be loaded.</p>
                   )}

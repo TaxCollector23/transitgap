@@ -136,7 +136,7 @@ test("a stalled route request times out promptly and retry succeeds", async ({ p
   await page.route("**/route", async (route) => {
     attempts += 1;
     if (attempts === 1) {
-      await new Promise((resolve) => setTimeout(resolve, 14_000));
+      await new Promise((resolve) => setTimeout(resolve, 26_000));
       try { await route.continue(); } catch { /* The client timeout has already cancelled this request. */ }
       return;
     }
@@ -153,7 +153,7 @@ test("a stalled route request times out promptly and retry succeeds", async ({ p
   await search.fill("SYNTHETIC CI Stop");
   await page.getByRole("option", { name: /SYNTHETIC CI Stop/ }).click();
   await page.getByRole("button", { name: "Find route", exact: true }).click();
-  await expect(page.getByText(/did not finish within 12 seconds/)).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByText(/took too long after the walking network was ready/)).toBeVisible({ timeout: 28_000 });
   await page.getByRole("button", { name: "Try again", exact: true }).click();
   await expect(page.locator(".route-result")).toBeVisible({ timeout: 8_000 });
   await page.getByRole("radio", { name: "Wheelchair", exact: true }).check();

@@ -88,10 +88,10 @@ function insideCoverage(point: [number, number], coverage: Coverage) {
 
 /** Plain-language versions of service failures. Never invents a cause. */
 function routeProblem(status: number, detail: string) {
-  if (status === 408) return "The route request did not finish within 12 seconds. Each walking-network search has a 3-second limit. Try again, or choose a different start or stop.";
+  if (status === 408) return "The route request took too long after the walking network was ready. Try again; there is no maximum walking distance.";
   if (status === 503 || status >= 500 || status === 0) return CONNECTION_PROBLEM;
   if (/outside the supported area/i.test(detail)) return "That starting point is outside Santa Clara County. Choose a point inside the county boundary shown on the map.";
-  if (/time limit|search exceeded.*limit|search.*\d+-second limit/i.test(detail)) return "The walking-network search reached its 3-second limit. Move the start to a street or sidewalk entrance, or try another transit stop.";
+  if (/time limit|search exceeded.*limit|search.*\d+-second limit/i.test(detail)) return "This route took longer than the 8-second search limit. TransitGap has no distance cap; try again or choose a start on a mapped street or sidewalk.";
   if (/not connected to the mapped walking route/i.test(detail)) return "This start is not connected to the mapped walking route. Move the pin to a nearby street or sidewalk entrance and try again.";
   if (/from .* mapped (walking )?path|within .* of a mapped path/i.test(detail)) return "That starting point is too far from a mapped path. Choose a point on or near a street or sidewalk.";
   if (status === 404) return "That stop is no longer in the loaded transit data. Choose another stop.";
@@ -456,7 +456,7 @@ export default function App() {
     const timeoutController = new AbortController();
     const startedAt = performance.now();
     let phase = "routing_warmup";
-    const attemptTimeout = window.setTimeout(() => timeoutController.abort(), 12_000);
+    let attemptTimeout: number | null = null;
     const signal = AbortSignal.any([controller.signal, timeoutController.signal]);
     requestRef.current = controller;
     setCalculating(true);
@@ -472,6 +472,10 @@ export default function App() {
         if (!ready) throw Object.assign(new Error("The routing service is still starting. Please try again."), { status: 503 });
         setRoutingWarm(true);
       }
+      // Cold-start preparation has its own bounded retry loop. Start the route
+      // deadline only once the county graph is ready, leaving enough room for
+      // the profile search and its standard-route comparison.
+      attemptTimeout = window.setTimeout(() => timeoutController.abort(), 24_000);
       phase = "route_request";
       let response: Response;
       try {
@@ -524,7 +528,7 @@ export default function App() {
       setProblem({ message: routeProblem(status, (error as Error).message), retry: () => void calculate(overrides) });
       setStatus("The route couldn't be calculated");
     } finally {
-      window.clearTimeout(attemptTimeout);
+      if (attemptTimeout !== null) window.clearTimeout(attemptTimeout);
       if (requestRef.current === controller) {
         requestRef.current = null;
         setCalculating(false);
@@ -1102,7 +1106,7 @@ export default function App() {
                 <details className="plain-details">
                   <summary>More detail</summary>
                   <ul>
-                    <li>Each route search has a 3-second network-search limit. A starting point can snap up to 120 m to a mapped walking path.</li>
+                    <li>Each route search has an 8-second network-search limit. There is no maximum walking distance. A starting point can snap up to 120 m to a mapped walking path.</li>
                     <li>Estimated speeds are 2.7 mph for walking and low vision, and 2.0 mph for wheelchair and stroller profiles.</li>
                     <li>The wheelchair stop ranking uses a reproducible 32-stop sample. It is not a countywide ranking of the hardest stops.</li>
                     <li>Connections without a walking-path record use straight-line estimates and have not been checked for a usable path.</li>

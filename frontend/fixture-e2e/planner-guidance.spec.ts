@@ -52,9 +52,9 @@ test('Data & limits uses plain language and hides model settings under More deta
   await expect(page.getByText(/missing information does not mean a sidewalk or crossing is safe or unsafe/)).toBeVisible();
   const moreDetail=page.locator('.methods-panel details');
   await expect(moreDetail.locator('summary')).toHaveText('More detail');
-  await expect(page.getByText(/3-second network-search limit/)).toBeHidden();
+  await expect(page.getByText(/8-second network-search limit/)).toBeHidden();
   await moreDetail.locator('summary').click();
-  await expect(page.getByText(/3-second network-search limit/)).toBeVisible();
+  await expect(page.getByText(/8-second network-search limit/)).toBeVisible();
   expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
 });
 
@@ -101,7 +101,7 @@ test('the planner states when the loaded transit schedule does not cover today',
 });
 
 test('routing failures are actionable, clear on navigation, and do not recommend failed algorithms', async ({page}) => {
-  await page.route('**/route', route => route.fulfill({status:422,json:{detail:'Walking-network search exceeded its 3-second limit. Try moving the start to a nearby street entrance or choosing another stop.'}}));
+  await page.route('**/route', route => route.fulfill({status:422,json:{detail:'Walking-network search exceeded its 8-second limit. Try moving the start to a nearby street entrance or choosing another stop.'}}));
   await page.goto('/app');
   await expect(page.locator('main[data-data-state="ready"]')).toBeVisible();
   await page.getByText('Enter coordinates instead',{exact:true}).click();
@@ -111,8 +111,8 @@ test('routing failures are actionable, clear on navigation, and do not recommend
   await page.getByRole('combobox',{name:'Where are you going?'}).fill('SYNTHETIC');
   await page.getByRole('option',{name:/SYNTHETIC CI Stop/}).click();
   await page.getByRole('button',{name:'Find route',exact:true}).click();
-  await expect(page.locator('.notice.error')).toContainText('3-second limit');
-  await expect(page.locator('.notice.error')).toContainText('street or sidewalk entrance');
+  await expect(page.locator('.notice.error')).toContainText('8-second search limit');
+  await expect(page.locator('.notice.error')).toContainText('mapped street or sidewalk');
   await expect(page.locator('.notice.error')).not.toContainText('closer stop');
   await page.getByRole('button',{name:'For cities and advocates'}).click();
   await page.getByRole('button',{name:'← Back to route planning'}).click();

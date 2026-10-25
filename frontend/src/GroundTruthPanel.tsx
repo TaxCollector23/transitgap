@@ -288,6 +288,26 @@ export default function GroundTruthPanel({
 
   async function submit(event: FormEvent) {
     event.preventDefault();
+    if (reportsEnabled !== true) {
+      const location = latitude && longitude ? `${Number(latitude).toFixed(6)}, ${Number(longitude).toFixed(6)}` : "Not provided";
+      const subject = `TransitGap report: ${categories.find(([value]) => value === category)?.[1] || category}`;
+      const body = [
+        "I found missing or incorrect accessibility information in TransitGap.",
+        "",
+        `Problem: ${categories.find(([value]) => value === category)?.[1] || category}`,
+        `Location (latitude, longitude): ${location}`,
+        `Map: ${window.location.href}`,
+        "",
+        "Details:",
+        description.trim() || "No additional details provided.",
+        "",
+        "Please do not include personal or sensitive information.",
+      ].join("\n");
+      const params = new URLSearchParams({ subject, body });
+      window.location.href = `mailto:ranganbalaji23@gmail.com?${params.toString()}`;
+      setSaved("Your email draft is ready. Review it and press Send in your email app; TransitGap does not send it automatically.");
+      return;
+    }
     setBusy(true);
     setMessage("");
     setSaved("");
@@ -330,29 +350,23 @@ export default function GroundTruthPanel({
       <section className="groundtruth-panel report-panel" aria-labelledby="report-title">
         <h2 id="report-title" tabIndex={-1}>Report an issue</h2>
         <p>Tell others about a sidewalk or crossing problem. Reports are shown as unverified until someone reviews them. Please don't include personal details.</p>
-        {reportsEnabled === false ? (
+        {reportsEnabled !== true && (
           <div role="status" className="notice">
-            <p>Community reports are paused in this version. No report will be saved here.</p>
-            <p>To report a sidewalk or crossing problem, contact <a href="https://www.vta.org/about/contact" target="_blank" rel="noreferrer">VTA</a> or <a href="https://311.sanjoseca.gov/" target="_blank" rel="noreferrer">San José 311</a>.</p>
-          </div>
-        ) : reportsEnabled === null ? (
-          <div role="status" className="notice">
-            {reportAvailabilityError ? (
+            {reportsEnabled === false ? (
+              <p>Reports are not saved by this deployment. Use the form to prepare an email to ranganbalaji23@gmail.com.</p>
+            ) : reportAvailabilityError ? (
               <>
                 {reportAvailabilityError === "starting" ? (
-                  <p>TransitGap is still getting ready. Nothing has been submitted or saved; check again in a moment.</p>
+                  <p>TransitGap report storage is unavailable. You can still prepare an email report below.</p>
                 ) : (
-                  <>
-                    <p>Reporting availability couldn't be checked. No report has been submitted or saved.</p>
-                    <p>Contact <a href="https://www.vta.org/about/contact" target="_blank" rel="noreferrer">VTA</a> or <a href="https://311.sanjoseca.gov/" target="_blank" rel="noreferrer">San José 311</a> instead.</p>
-                  </>
+                  <p>Report storage could not be checked. Use the form to prepare an email to ranganbalaji23@gmail.com.</p>
                 )}
-                <button type="button" className="text-button" onClick={() => void checkReportAvailability()}>Try checking again</button>
+                <button type="button" className="text-button" onClick={() => void checkReportAvailability()}>Try checking storage again</button>
               </>
-            ) : <p>{checkingReports ? "Checking report availability…" : "Checking report availability…"}</p>}
+            ) : <p>{checkingReports ? "Checking report storage…" : "Report storage is unavailable. You can prepare an email report below."}</p>}
           </div>
-        ) : (
-          <>
+        )}
+        <>
             <section className="report-step" aria-labelledby="report-where">
               <h3 id="report-where">1. Where is the problem?</h3>
               {locationText ? (
@@ -388,12 +402,11 @@ export default function GroundTruthPanel({
               <label htmlFor="report-details"><span className="report-step-title">3. Details</span> (optional)</label>
               <textarea id="report-details" maxLength={500} rows={3} value={description} onChange={(event) => setDescription(event.target.value)} placeholder="What did you see? For example: the curb ramp is blocked by a pole." />
               <button className="button button-primary report-submit" disabled={busy || !latitude || !longitude} aria-describedby="report-submit-hint" type="submit">
-                {busy ? "Saving…" : "Submit report"}
+                {busy ? "Saving…" : reportsEnabled === true ? "Submit report" : "Prepare email report"}
               </button>
               {(!latitude || !longitude) && <p className="field-hint" id="report-submit-hint">Choose where the problem is (step 1) to submit.</p>}
             </form>
-          </>
-        )}
+        </>
         {message && <p className="notice error" role="alert">{message}</p>}
         {saved && <p className="notice success" role="status">{saved}</p>}
       </section>

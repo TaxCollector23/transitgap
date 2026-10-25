@@ -46,7 +46,7 @@ test('synthetic CI fixture: keyboard route, profile changes, voice fallback and 
  expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
 });
 
-test('reporting disabled is explicit and never offers a submit form',async({page})=>{
+test('reporting disabled offers an email fallback instead of claiming reports are saved',async({page})=>{
  await page.route('**/health',async route=>{
   const response=await route.fetch();const body=await response.json();
   await route.fulfill({response,json:{...body,reports_enabled:false}});
@@ -54,10 +54,8 @@ test('reporting disabled is explicit and never offers a submit form',async({page
  await page.goto('/app');
  await expect(page.locator('main[data-data-state="ready"]')).toBeVisible();
  await page.getByRole('button',{name:'Report an issue',exact:true}).click();
- await expect(page.getByText('Community reports are paused in this version. No report will be saved here.')).toBeVisible();
- await expect(page.getByRole('link',{name:'VTA'}).first()).toBeVisible();
- await expect(page.getByRole('link',{name:'San José 311'})).toBeVisible();
- await expect(page.getByRole('button',{name:'Submit report'})).toHaveCount(0);
+ await expect(page.getByText(/Reports are not saved by this deployment/)).toBeVisible();
+ await expect(page.getByRole('button',{name:'Prepare email report'})).toBeVisible();
 });
 
 test('a cold report service explains the delay and can be checked again',async({page})=>{
@@ -65,10 +63,10 @@ test('a cold report service explains the delay and can be checked again',async({
  await expect(page.locator('main[data-data-state="ready"]')).toBeVisible();
  await page.route('**/health',route=>route.fulfill({status:200,json:{ready:false,reports_enabled:false}}));
  await page.getByRole('button',{name:'Report an issue',exact:true}).click();
- await expect(page.getByText('TransitGap is still getting ready. Nothing has been submitted or saved; check again in a moment.')).toBeVisible();
- await expect(page.getByRole('button',{name:'Submit report'})).toHaveCount(0);
+ await expect(page.getByText(/report storage is unavailable/)).toBeVisible();
+ await expect(page.getByRole('button',{name:'Prepare email report'})).toBeVisible();
  await page.unroute('**/health');
- await page.getByRole('button',{name:'Try checking again'}).click();
+ await page.getByRole('button',{name:'Try checking storage again'}).click();
  await expect(page.getByRole('heading',{name:'1. Where is the problem?'})).toBeVisible();
  await expect(page.getByLabel("2. What's the problem?")).toBeVisible();
 });
@@ -81,9 +79,9 @@ test('report availability that stalls fails visibly within a bounded time',async
   try { await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({ready:true,reports_enabled:false})}); } catch {}
  });
  await page.getByRole('button',{name:'Report an issue',exact:true}).click();
- await expect(page.getByText(/Reporting availability couldn't be checked/)).toBeVisible({timeout:7000});
- await expect(page.getByRole('button',{name:'Submit report'})).toHaveCount(0);
- await expect(page.getByText('Checking report availability…')).toHaveCount(0);
+ await expect(page.getByText(/Report storage could not be checked/)).toBeVisible({timeout:7000});
+ await expect(page.getByRole('button',{name:'Prepare email report'})).toBeVisible();
+ await expect(page.getByText('Checking report storage…')).toHaveCount(0);
  await page.waitForTimeout(1200);
 });
 

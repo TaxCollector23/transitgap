@@ -127,7 +127,7 @@ test("sidewalk review leads with a human location and keeps scores in technical 
   await expect(page.locator(".gap-detail")).toContainText(/Not recorded on the map: .+\. Check in person\./);
   await expect(page.locator(".gap-detail .technical-detail dd").last()).toBeHidden();
   await expect(page.getByText(/Review priority score:/)).toBeHidden();
-  await page.getByText("More detail", { exact: true }).click();
+  await page.locator(".gap-detail .technical-detail summary").click();
   await expect(page.getByText(/Review priority score: .*proximity-based review priority, not a measure of barrier severity/)).toBeVisible();
 });
 

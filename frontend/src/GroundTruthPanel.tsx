@@ -56,7 +56,7 @@ function candidateCheck(gap: GapFeature) {
     incline: "slope", kerb: "curb ramp details", crossing: "crossing details", "tactile paving": "tactile paving",
   };
   const missing = [...new Set(gap.missing_information.map((item) => {
-    const field = item.toLowerCase().replace(/^osm\s+/, "").replace(/\s+tag$/, "").replaceAll("_", " ");
+    const field = item.toLowerCase().replace(/^osm\s+/, "").replace(/\s+tag$/, "").replace(/_/g, " ");
     return missingLabels[field] || "another walking detail";
   }))];
   return missing.length

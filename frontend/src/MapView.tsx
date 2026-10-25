@@ -40,9 +40,9 @@ type Props = {
   onViewChange?: (center: [number, number]) => void;
 };
 
-// Default to the Milpitas / North San Jose corridor, where transit stops are
-// visible at street level. A previously granted location can still recenter it.
-const center: [number, number] = [-121.915, 37.385];
+// Default to Santa Clara city center with nearby rail and VTA stops in view.
+// A previously granted location can still recenter the map.
+const center: [number, number] = [-121.9552, 37.3541];
 const diridonPilotCenter: [number, number] = [-121.903, 37.3296];
 const diridonPilotRadiusM = 1500;
 
@@ -260,7 +260,7 @@ export default function MapView({
     const map = new maplibregl.Map({
       container: container.current,
       center,
-      zoom: 12.2,
+      zoom: 13.2,
       minZoom: 8,
       maxZoom: 19,
       attributionControl: false,

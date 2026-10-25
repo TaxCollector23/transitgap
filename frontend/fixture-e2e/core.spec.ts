@@ -9,7 +9,7 @@ test('synthetic CI fixture: keyboard route, profile changes, voice fallback and 
  await expect(page.locator('main[data-data-state="ready"]')).toBeVisible();
  await expect(page.locator('.map')).toHaveAttribute('data-map-state','ready');
  const initialMap=await page.evaluate(()=>{const map=(window as any).__transitGapMap;return {center:map.getCenter(),zoom:map.getZoom()};});
- expect(initialMap.center.lng).toBeCloseTo(-121.915,2);expect(initialMap.center.lat).toBeCloseTo(37.385,2);expect(initialMap.zoom).toBeGreaterThan(11);
+ expect(initialMap.center.lng).toBeCloseTo(-121.9552,2);expect(initialMap.center.lat).toBeCloseTo(37.3541,2);expect(initialMap.zoom).toBeGreaterThan(12);
  await page.getByText('Enter coordinates instead',{exact:true}).click();
  await page.getByLabel('Latitude',{exact:true}).fill('37.32875');await page.getByLabel('Longitude',{exact:true}).fill('-121.90442');
  await page.getByRole('button',{name:'Use coordinates',exact:true}).focus();await page.keyboard.press('Enter');
